@@ -214,14 +214,13 @@ export default class GameScene extends Phaser.Scene {
             return true;
         });
 
-        // Sure-Hit Ticks
+        // Sure-Hit Ticks (capped to 1 per frame to prevent lag cascades)
         if (this.domainActive && this.domainOwner) {
             if (this.sureHitTimer === undefined) this.sureHitTimer = 0;
             this.sureHitTimer += delta;
             
-            // Check if accumulated lag caused multiple ticks to pass
-            while (this.sureHitTimer >= 500 && this.domainActive) {
-                this.sureHitTimer -= 500;
+            if (this.sureHitTimer >= 500) {
+                this.sureHitTimer = 0; // Hard reset, no accumulation
                 this.domainOwner.applySureHitTick(this.domainOwner === this.p1 ? this.p2 : this.p1);
             }
         }

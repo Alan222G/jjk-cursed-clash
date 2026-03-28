@@ -285,18 +285,8 @@ export default class Sukuna extends Fighter {
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
 
-        // Auto-slash damage
+        // Auto-slash damage only — no graphics allocation
         const dmg = Math.floor(DOMAIN.SURE_HIT_DPS * (DOMAIN.SURE_HIT_INTERVAL / 1000) * this.power);
         opponent.takeDamage(dmg, 50 * this.facing, 0, 100);
-
-        // Visual: random slashes appear on opponent
-        const ox = opponent.sprite.x;
-        const oy = opponent.sprite.y;
-        this.spawnSlashEffect(
-            ox + (Math.random() - 0.5) * 40,
-            oy + (Math.random() - 0.5) * 60 - 20,
-            0xFF4444,
-            40 + Math.random() * 30
-        );
     }
 }

@@ -202,24 +202,6 @@ export default class Gojo extends Fighter {
             opponent.stateMachine.setState('domain_stunned');
         }
         opponent.sprite.body.setVelocity(0, 0);
-
-        // Visual: information overload particles around opponent
-        const ox = opponent.sprite.x;
-        const oy = opponent.sprite.y;
-        for (let i = 0; i < 2; i++) {
-            const px = ox + (Math.random() - 0.5) * 60;
-            const py = oy + (Math.random() - 0.5) * 80 - 20;
-            const info = this.scene.add.text(px, py, '∞', {
-                fontSize: '12px',
-                color: '#44CCFF',
-            }).setDepth(15).setAlpha(0.8);
-            this.scene.tweens.add({
-                targets: info,
-                y: py - 30,
-                alpha: 0,
-                duration: 800,
-                onComplete: () => info.destroy(),
-            });
-        }
+        // No visual effects — prevents VRAM saturation on integrated GPUs
     }
 }
