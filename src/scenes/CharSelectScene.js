@@ -5,10 +5,10 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 
-// Map character key → portrait texture key
-const PORTRAIT_KEY = {
-    GOJO: 'portrait_gojo',
-    SUKUNA: 'portrait_sukuna',
+// Map character key → menu avatar texture key
+const MENU_KEY = {
+    GOJO: 'menu_gojo',
+    SUKUNA: 'menu_sukuna',
 };
 
 export default class CharSelectScene extends Phaser.Scene {
@@ -82,12 +82,12 @@ export default class CharSelectScene extends Phaser.Scene {
             });
 
             // Portrait thumbnail inside the slot (if texture loaded)
-            const texKey = PORTRAIT_KEY[key];
+            const texKey = MENU_KEY[key];
             if (texKey && this.textures.exists(texKey)) {
-                const thumb = this.add.image(sx, sy - 6, texKey)
+                const thumb = this.add.image(sx, sy, texKey)
                     .setDisplaySize(this.slotSize - 16, this.slotSize - 16)
                     .setDepth(5)
-                    .setAlpha(0.85);
+                    .setAlpha(0.9);
                 this.slotImages.push({ key, img: thumb });
             }
 
@@ -101,56 +101,33 @@ export default class CharSelectScene extends Phaser.Scene {
             }).setOrigin(0.5).setDepth(6);
         });
 
-        // ── Player 1 Portrait Area (Left) ──
-        this.p1FrameGraphics = this.add.graphics().setDepth(6);
-        this.p1PortraitImg = null; // will be created dynamically
-
-        this.p1NameText = this.add.text(160, 540, '', {
+        // ── Selection Display ──
+        this.p1NameText = this.add.text(300, GAME_HEIGHT / 2 - 20, '', {
             fontFamily: 'Arial Black, Impact, sans-serif',
-            fontSize: '26px',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5).setDepth(7);
-
-        this.p1TitleText = this.add.text(160, 570, '', {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '13px',
-            color: '#AAAACC',
-        }).setOrigin(0.5).setDepth(7);
-
-        this.p1Label = this.add.text(160, 100, 'PLAYER 1', {
-            fontFamily: 'Arial Black, sans-serif',
-            fontSize: '18px',
+            fontSize: '28px',
             color: '#4488FF',
             stroke: '#000000',
-            strokeThickness: 3,
+            strokeThickness: 5,
+        }).setOrigin(0.5).setDepth(7);
+
+        this.add.text(300, GAME_HEIGHT / 2 - 60, 'PLAYER 1', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '16px',
+            color: '#AACCFF',
         }).setOrigin(0.5).setDepth(6);
 
-        // ── Player 2 Portrait Area (Right) ──
-        this.p2FrameGraphics = this.add.graphics().setDepth(6);
-        this.p2PortraitImg = null;
-
-        this.p2NameText = this.add.text(GAME_WIDTH - 160, 540, '', {
+        this.p2NameText = this.add.text(GAME_WIDTH - 300, GAME_HEIGHT / 2 - 20, '', {
             fontFamily: 'Arial Black, Impact, sans-serif',
-            fontSize: '26px',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5).setDepth(7);
-
-        this.p2TitleText = this.add.text(GAME_WIDTH - 160, 570, '', {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '13px',
-            color: '#AAAACC',
-        }).setOrigin(0.5).setDepth(7);
-
-        this.p2Label = this.add.text(GAME_WIDTH - 160, 100, 'PLAYER 2', {
-            fontFamily: 'Arial Black, sans-serif',
-            fontSize: '18px',
+            fontSize: '28px',
             color: '#FF4444',
             stroke: '#000000',
-            strokeThickness: 3,
+            strokeThickness: 5,
+        }).setOrigin(0.5).setDepth(7);
+        
+        this.add.text(GAME_WIDTH - 300, GAME_HEIGHT / 2 - 60, 'PLAYER 2', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '16px',
+            color: '#FFAACC',
         }).setOrigin(0.5).setDepth(6);
 
         // ── Instructions ──
@@ -226,18 +203,14 @@ export default class CharSelectScene extends Phaser.Scene {
             }
         }
 
-        // ── Update Portrait Images (only when selection changes) ──
+        // ── Update Display Texts ──
         if (this.p1Selection !== this._lastP1) {
             this._lastP1 = this.p1Selection;
-            this._setPortraitImage('p1', this.p1Selection, 160, 320);
             this.p1NameText.setText(CHARACTERS[this.p1Selection].name);
-            this.p1TitleText.setText(CHARACTERS[this.p1Selection].title);
         }
         if (this.p2Selection !== this._lastP2) {
             this._lastP2 = this.p2Selection;
-            this._setPortraitImage('p2', this.p2Selection, GAME_WIDTH - 160, 320);
             this.p2NameText.setText(CHARACTERS[this.p2Selection].name);
-            this.p2TitleText.setText(CHARACTERS[this.p2Selection].title);
         }
 
         // ── Draw Grid ──
@@ -279,10 +252,6 @@ export default class CharSelectScene extends Phaser.Scene {
             }
         }
 
-        // ── Draw portrait frames (static elements) ──
-        this._drawPortraitFrame(this.p1FrameGraphics, 160, 320, CHARACTERS[this.p1Selection], this.p1Confirmed, 0x4488FF);
-        this._drawPortraitFrame(this.p2FrameGraphics, GAME_WIDTH - 160, 320, CHARACTERS[this.p2Selection], this.p2Confirmed, 0xFF4444);
-
         // ── Both Confirmed → Start Fight ──
         if (this.p1Confirmed && this.p2Confirmed && !this.transitioning) {
             this.transitioning = true;
@@ -305,67 +274,6 @@ export default class CharSelectScene extends Phaser.Scene {
                     });
                 });
             });
-        }
-    }
-
-    /** Set or swap the portrait image for a player */
-    _setPortraitImage(player, charKey, cx, cy) {
-        const texKey = PORTRAIT_KEY[charKey];
-        const imgProp = player === 'p1' ? 'p1PortraitImg' : 'p2PortraitImg';
-        const W = 200;
-        const H = 280;
-
-        // Destroy old image
-        if (this[imgProp]) {
-            this[imgProp].destroy();
-            this[imgProp] = null;
-        }
-
-        if (texKey && this.textures.exists(texKey)) {
-            // Use real portrait image, clipped to portrait frame size
-            this[imgProp] = this.add.image(cx, cy - 10, texKey)
-                .setDisplaySize(W - 8, H - 8)
-                .setDepth(6.5)
-                .setAlpha(1);
-        }
-    }
-
-    /** Draw the decorative frame (border, glow, confirmed stamp) */
-    _drawPortraitFrame(g, cx, cy, charData, confirmed, accentColor) {
-        g.clear();
-        const W = 200;
-        const H = 280;
-        const colors = charData.colors;
-
-        // Outer glow
-        const pulse = 0.15 + Math.sin(this.timer * 0.003) * 0.08;
-        g.fillStyle(colors.energy, pulse);
-        g.fillRoundedRect(cx - W / 2 - 8, cy - H / 2 - 8, W + 16, H + 16, 14);
-
-        // Frame background
-        g.fillStyle(0x06060F, 0.92);
-        g.fillRoundedRect(cx - W / 2, cy - H / 2, W, H, 10);
-
-        // Border
-        if (confirmed) {
-            g.lineStyle(4, 0xFFD700, 1);
-        } else {
-            g.lineStyle(2, accentColor, 0.8);
-        }
-        g.strokeRoundedRect(cx - W / 2, cy - H / 2, W, H, 10);
-
-        // Inner accent lines
-        g.lineStyle(1, colors.energy, 0.3);
-        g.strokeRoundedRect(cx - W / 2 + 4, cy - H / 2 + 4, W - 8, H - 8, 8);
-
-        // Confirmed stamp overlay
-        if (confirmed) {
-            g.fillStyle(0xFFD700, 0.15);
-            g.fillRoundedRect(cx - W / 2, cy - H / 2, W, H, 10);
-            g.fillStyle(0x000000, 0.55);
-            g.fillRoundedRect(cx - 55, cy + H / 2 - 42, 110, 34, 6);
-            g.lineStyle(1, 0xFFD700, 0.9);
-            g.strokeRoundedRect(cx - 55, cy + H / 2 - 42, 110, 34, 6);
         }
     }
 }

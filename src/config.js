@@ -82,10 +82,10 @@ export const CE_COSTS = {
 
 // ── Domain Expansion ─────────────────────────────────────
 export const DOMAIN = {
-    DURATION: 12000,            // ms domain lasts
-    CE_DRAIN_RATE: 18,          // CE per second while domain active
-    SURE_HIT_DPS: 40,          // Damage per second from Sure-Hit
-    SURE_HIT_INTERVAL: 500,    // ms between Sure-Hit ticks
+    DURATION: 15000,            // default baseline
+    CE_DRAIN_RATE: 13.33,       // replaced with dynamic calculated drain rate per character
+    SURE_HIT_DPS: 50,          // Damage per tick
+    SURE_HIT_INTERVAL: 1000,   // ms between Sure-Hit ticks
     CLASH_WINDOW: 1500,        // ms window to counter-domain
     FATIGUE_DURATION: 10000,   // ms of no CE regen after domain ends
     CAST_INVULN_TIME: 1500,    // ms of invulnerability while casting
@@ -151,18 +151,20 @@ export const CHARACTERS = {
             hair: 0xF5F5FF,
         },
         stats: {
+            maxHp: 2000,
             speed: 340,
             power: 0.9,
             defense: 1.2,
             ceRegen: 3.5,
             weight: 95,
             jumpForce: -640,
+            domainDuration: 15000,
         },
         skills: {
             skill1: { name: 'Ao — Blue', cost: 30, damage: 50, type: 'projectile' },
             skill2: { name: 'Aka — Red', cost: 60, damage: 80, type: 'projectile_heavy' },
             domain: { name: 'Unlimited Void', cost: 100, sureHitType: 'paralysis' },
-            maximum: { name: 'Hollow Purple', cost: 150, damage: 200, type: 'beam' },
+            maximum: { name: 'Hollow Purple', cost: 150, damage: 500, type: 'beam' },
         },
         domainBg: 'gojo_void',
     },
@@ -179,18 +181,20 @@ export const CHARACTERS = {
             hair: 0xFF8899,
         },
         stats: {
+            maxHp: 1500,
             speed: 310,
             power: 1.3,
             defense: 0.9,
             ceRegen: 2.8,
             weight: 110,
             jumpForce: -600,
+            domainDuration: 20000,
         },
         skills: {
             skill1: { name: 'Dismantle', cost: 30, damage: 45, type: 'slash_ranged' },
             skill2: { name: 'Cleave', cost: 60, damage: 90, type: 'slash_aoe' },
             domain: { name: 'Malevolent Shrine', cost: 100, sureHitType: 'dps' },
-            maximum: { name: 'Divine Flame', cost: 150, damage: 220, type: 'fire' },
+            maximum: { name: 'Divine Flame', cost: 150, damage: 500, type: 'fire' },
         },
         domainBg: 'sukuna_shrine',
     },

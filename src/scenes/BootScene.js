@@ -71,11 +71,21 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('gojo_void', 'assets/domains/gojo_void.jpg');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
         // Character Portraits
-        this.load.image('portrait_gojo', 'assets/portraits/gojo_portrait.png');
-        this.load.image('portrait_sukuna', 'assets/portraits/sukuna_portrait.png');
+        this.load.image('portrait_gojo', 'assets/portraits/gojo_portrait.jpg');
+        this.load.image('portrait_sukuna', 'assets/portraits/sukuna_portrait.jpg');
+        // Character Menu Avatars
+        this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
+        this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.mp3');
         this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.mp3');
+        // SFX Hooks
+        this.load.audio('sfx_blue', 'assets/audio/blue.mp3');
+        this.load.audio('sfx_red', 'assets/audio/red.mp3');
+        this.load.audio('sfx_purple', 'assets/audio/purple.mp3');
+        this.load.audio('sfx_slash', 'assets/audio/slash.mp3');
+        this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3');
+        this.load.audio('sfx_fire', 'assets/audio/fire.mp3');
     }
 
     create() {

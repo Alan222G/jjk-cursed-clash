@@ -116,6 +116,10 @@ export default class Sukuna extends Fighter {
             this.scene.projectiles.push(proj);
         }
         
+        if (this.scene.sound.get('sfx_slash')) {
+            this.scene.sound.play('sfx_slash', { volume: (window.gameSettings?.sfx || 50) / 100 });
+        }
+        
         // Slash visual
         this.spawnSlashEffect(this.sprite.x + 30 * this.facing, this.sprite.y, 0xAAAAAA, 40);
     }
@@ -126,6 +130,10 @@ export default class Sukuna extends Fighter {
 
         // AOE slash around Sukuna
         this.spawnCleaveEffect();
+        
+        if (this.scene.sound.get('sfx_cleave')) {
+            this.scene.sound.play('sfx_cleave', { volume: (window.gameSettings?.sfx || 50) / 100 });
+        }
 
         if (this.opponent) {
             const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
@@ -260,6 +268,10 @@ export default class Sukuna extends Fighter {
                     this.scene.projectiles.push(proj);
                 }
                 
+                if (this.scene.sound.get('sfx_fire')) {
+                    this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx || 50) / 100 });
+                }
+                
                 if (this.scene.screenEffects) {
                     this.scene.screenEffects.shake(0.015, 400);
                 }
@@ -273,21 +285,30 @@ export default class Sukuna extends Fighter {
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
         this.domainActive = true;
+        this.ceSystem.startDomain(); // trigger CE drain
+
         this.stateMachine.setState('casting_domain');
+        
+        // Recover from casting after 1 second to move freely
+        this.scene.time.delayedCall(1000, () => {
+            if (this.stateMachine.is('casting_domain')) {
+                this.stateMachine.setState('idle');
+            }
+        });
 
         if (this.scene.onDomainActivated) {
-            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings ? window.gameSettings.sfx : 50) / 100 });
+            if (this.scene.sound.get('sukuna_domain_voice')) {
+                this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            }
             this.scene.onDomainActivated(this, 'malevolent_shrine');
         }
     }
 
-    /** Sure-Hit: Malevolent Shrine — constant DPS slashes */
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
 
-        // Auto-slash damage
-        const dmg = Math.floor(DOMAIN.SURE_HIT_DPS * (DOMAIN.SURE_HIT_INTERVAL / 1000) * this.power);
-        opponent.takeDamage(dmg, 50 * this.facing, 0, 100);
+        // Auto-slash damage exactly 50 per tick as requested
+        opponent.takeDamage(50, 50 * this.facing, 0, 100);
 
         // Visual: random slashes appear on opponent
         const ox = opponent.sprite.x;

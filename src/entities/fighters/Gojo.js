@@ -60,6 +60,10 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
+        if (this.scene.sound.get('sfx_blue')) {
+            this.scene.sound.play('sfx_blue', { volume: (window.gameSettings?.sfx || 50) / 100 });
+        }
+
         // Blue attraction visual (spiral)
         this.spawnBlueEffect();
     }
@@ -84,6 +88,10 @@ export default class Gojo extends Fighter {
 
         if (this.scene.projectiles) {
             this.scene.projectiles.push(proj);
+        }
+
+        if (this.scene.sound.get('sfx_red')) {
+            this.scene.sound.play('sfx_red', { volume: (window.gameSettings?.sfx || 50) / 100 });
         }
 
         this.spawnRedEffect();
@@ -169,12 +177,16 @@ export default class Gojo extends Fighter {
                 });
                 
                 if (this.scene.projectiles) {
-                    this.scene.projectiles.push(proj);
-                }
-                
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.02, 500);
-                }
+            this.scene.projectiles.push(proj);
+        }
+        
+        if (this.scene.sound.get('sfx_purple')) {
+            this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx || 50) / 100 });
+        }
+        
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.shake(0.02, 500);
+        }
             }
         });
     }
@@ -185,11 +197,22 @@ export default class Gojo extends Fighter {
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
         this.domainActive = true;
+        this.ceSystem.startDomain(); // trigger CE drain
+
         this.stateMachine.setState('casting_domain');
+        
+        // Recover from casting after 1 second to move freely
+        this.scene.time.delayedCall(1000, () => {
+            if (this.stateMachine.is('casting_domain')) {
+                this.stateMachine.setState('idle');
+            }
+        });
 
         // Notify scene to handle domain activation
         if (this.scene.onDomainActivated) {
-            this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings ? window.gameSettings.sfx : 50) / 100 });
+            if (this.scene.sound.get('gojo_domain_voice')) {
+                this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            }
             this.scene.onDomainActivated(this, 'unlimited_void');
         }
     }

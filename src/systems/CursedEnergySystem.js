@@ -13,6 +13,10 @@ export default class CursedEnergySystem {
         this.isFatigued = false;
         this.fatigueTimer = 0;
         this.isDomainActive = false;
+        
+        // Calculate drain rate based on max duration
+        const domainDurMs = fighter.charData?.stats?.domainDuration || DOMAIN.DURATION;
+        this.domainDrainRate = this.maxCe / (domainDurMs / 1000);
     }
 
     update(dt) {
@@ -30,7 +34,7 @@ export default class CursedEnergySystem {
 
         // Domain CE drain
         if (this.isDomainActive) {
-            this.ce -= DOMAIN.CE_DRAIN_RATE * dtSec;
+            this.ce -= this.domainDrainRate * dtSec;
             if (this.ce <= 0) {
                 this.ce = 0;
                 this.endDomain();

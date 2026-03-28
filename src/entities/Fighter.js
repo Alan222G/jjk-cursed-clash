@@ -18,7 +18,7 @@ export default class Fighter {
         this.fighterId = charData.id;
 
         // ── Stats ──
-        this.maxHp = FIGHTER_DEFAULTS.MAX_HP;
+        this.maxHp = charData.stats.maxHp || FIGHTER_DEFAULTS.MAX_HP;
         this.hp = this.maxHp;
         this.speed = charData.stats.speed || FIGHTER_DEFAULTS.SPEED;
         this.jumpForce = charData.stats.jumpForce || FIGHTER_DEFAULTS.JUMP_FORCE;
