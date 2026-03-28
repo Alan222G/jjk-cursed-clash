@@ -23,7 +23,9 @@ export default class GameScene extends Phaser.Scene {
 
     create() {
         // ── Background & Environment ──
-        this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x111118).setOrigin(0).setDepth(-10);
+        this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya')
+            .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+            .setDepth(-10);
         
         // Floor
         const floorY = GAME_HEIGHT - 60;
