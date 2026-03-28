@@ -89,6 +89,9 @@ export default class Projectile {
         // Apply damage
         if (target && target.takeDamage) {
             target.takeDamage(this.damage, this.knockbackX * this.direction, this.knockbackY, this.stunDuration);
+            if (this.type === 'burn' && target.applyBurn) {
+                target.applyBurn(5000); // 5 seconds burn
+            }
         }
         this.spawnHitEffect();
         this.destroy();

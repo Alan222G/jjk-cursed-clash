@@ -8,6 +8,7 @@ import Sukuna from '../entities/fighters/Sukuna.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
+import AIManager from '../systems/AIManager.js';
 import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -21,9 +22,13 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
-        // ── Background ──
-        this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya').setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
-
+        // ── Background & Environment ──
+        this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x111118).setOrigin(0).setDepth(-10);
+        
+        // Floor
+        const floorY = GAME_HEIGHT - 60;
+        this.add.rectangle(0, floorY, GAME_WIDTH, 60, 0x2A2A35).setOrigin(0).setDepth(0);
+        
         // ── Groups ──
         this.projectiles = [];
         
@@ -33,6 +38,13 @@ export default class GameScene extends Phaser.Scene {
         
         this.p1.opponent = this.p2;
         this.p2.opponent = this.p1;
+
+        // ── Single Player AI ──
+        if (window.gameSettings && window.gameSettings.p2Control === 'humano') {
+            this.aiManager = null; // PvP Local
+        } else {
+            this.aiManager = new AIManager(this.p2, this.p1); // PvCPU
+        }
 
         // ── Systems ──
         this.hud = new HUD(this);
@@ -54,6 +66,13 @@ export default class GameScene extends Phaser.Scene {
         this.domainActive = false;
         this.domainOwner = null;
         this.domainBg = null;
+
+        // ── Pause Menu ──
+        this.input.keyboard.on('keydown-ESC', () => {
+            this.physics.pause();
+            this.scene.pause();
+            this.scene.launch('PauseScene');
+        });
     }
 
     createFighter(key, x, y, index) {
@@ -91,7 +110,7 @@ export default class GameScene extends Phaser.Scene {
         if (this.domainBg) this.domainBg.destroy();
         this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
             .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-            .setDepth(-1);
+            .setDepth(-5);
     }
 
     onDomainEnd(owner) {
@@ -100,11 +119,80 @@ export default class GameScene extends Phaser.Scene {
         this.domainBg = null;
     }
 
+    onKnockout(winner, loser) {
+        if (this.matchEnded) return;
+        this.matchEnded = true;
+
+        if (this.screenEffects) {
+            this.screenEffects.slowMotion(0.2, 2000);
+        }
+
+        this.time.delayedCall(2000, () => {
+            this.physics.pause();
+            this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setDepth(200);
+
+            this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50, 'K.O.', {
+                fontFamily: 'Arial Black',
+                fontSize: '100px',
+                color: '#FF0000',
+                stroke: '#000000',
+                strokeThickness: 8
+            }).setOrigin(0.5).setDepth(201);
+
+            this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50, `${winner.charData.name.toUpperCase()} WINS!`, {
+                fontFamily: 'Arial Black',
+                fontSize: '50px',
+                color: '#D4A843',
+                stroke: '#000000',
+                strokeThickness: 6
+            }).setOrigin(0.5).setDepth(201);
+
+            const retryText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 80, 'PRESA [ENTER] PARA REVANCHA', {
+                fontFamily: 'Arial',
+                fontSize: '24px',
+                color: '#FFFFFF'
+            }).setOrigin(0.5).setDepth(201);
+
+            this.tweens.add({
+                targets: retryText,
+                alpha: 0,
+                yoyo: true,
+                repeat: -1,
+                duration: 800
+            });
+
+            this.input.keyboard.once('keydown-ENTER', () => {
+                this.scene.restart();
+            });
+            this.input.keyboard.once('keydown-ESC', () => {
+                this.scene.start('MenuScene');
+            });
+        });
+    }
+
+    onTimeUp() {
+        this.physics.pause();
+        this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'TIME OVER', {
+            fontFamily: 'Arial Black',
+            fontSize: '80px',
+            color: '#FF0000',
+            stroke: '#000000',
+            strokeThickness: 8
+        }).setOrigin(0.5).setDepth(200);
+        
+        // Reload scene after delay
+        this.time.delayedCall(3000, () => {
+            this.scene.restart();
+        });
+    }
+
     spawnDamageNumber(x, y, amount) {
         this.damageNumbers.spawn(x, y, amount);
     }
 
     update(time, delta) {
+        if (this.aiManager) this.aiManager.update(time, delta);
+        
         this.p1.update(time, delta);
         this.p2.update(time, delta);
 
@@ -114,6 +202,8 @@ export default class GameScene extends Phaser.Scene {
         this.projectiles = this.projectiles.filter(p => {
             p.update(delta);
             
+            if (!p.isAlive()) return false;
+            
             // Collision check
             const target = p.owner === this.p1 ? this.p2 : this.p1;
             if (this.physics.overlap(p.getBody(), target.sprite)) {
@@ -121,12 +211,19 @@ export default class GameScene extends Phaser.Scene {
                 return false;
             }
             
-            return p.isAlive();
+            return true;
         });
 
         // Sure-Hit Ticks
-        if (this.domainActive && this.time.now % 500 < 20) {
-            this.domainOwner.applySureHitTick(this.domainOwner === this.p1 ? this.p2 : this.p1);
+        if (this.domainActive && this.domainOwner) {
+            if (this.sureHitTimer === undefined) this.sureHitTimer = 0;
+            this.sureHitTimer += delta;
+            
+            // Check if accumulated lag caused multiple ticks to pass
+            while (this.sureHitTimer >= 500 && this.domainActive) {
+                this.sureHitTimer -= 500;
+                this.domainOwner.applySureHitTick(this.domainOwner === this.p1 ? this.p2 : this.p1);
+            }
         }
     }
 }

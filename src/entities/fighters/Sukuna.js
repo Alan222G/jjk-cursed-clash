@@ -48,37 +48,76 @@ export default class Sukuna extends Fighter {
     trySpecialAttack() {
         const tier = this.ceSystem.getTier();
 
-        if (tier >= 2 && this.input.isDown('DOWN')) {
+        if (tier >= 4 && this.input.isDown('DOWN')) {
+            this.castDivineFlame();
+        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             // Cleave (AOE slash)
             this.castCleave();
+        } else if (tier >= 1 && this.input.isDown('UP')) {
+            // Rush / Physical attack initiator
+            this.castRush();
         } else if (tier >= 1) {
             // Dismantle (ranged cut)
             this.castDismantle();
         }
     }
 
+    castRush() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        
+        this.stateMachine.setState('attack');
+        this.attackPhase = 'active'; // force active immediately
+        this.hitConnected = false;
+        
+        // Rush forward
+        this.sprite.body.setVelocityX(800 * this.facing);
+        
+        const skill = this.charData.skills.skill1;
+        this.currentAttack = { 
+            damage: Math.floor(skill.damage * this.power), 
+            knockbackX: 100, 
+            knockbackY: -50, 
+            stunDuration: 1000, // paralyzes 1s
+            type: 'SPECIAL' 
+        };
+        
+        this.enableHitbox({ range: 45, hitboxW: 70, hitboxH: 50 });
+        
+        // Recover
+        this.scene.time.delayedCall(250, () => {
+            this.disableHitbox();
+            this.sprite.body.setVelocityX(0);
+            this.attackPhase = 'none';
+            this.currentAttack = null;
+            if (this.stateMachine.is('attack')) {
+                this.stateMachine.setState('idle');
+            }
+        });
+    }
+
     castDismantle() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
         const skill = this.charData.skills.skill1;
 
-        // Invisible ranged slash — appears at target location
-        const targetX = this.opponent ?
-            this.opponent.sprite.x :
-            this.sprite.x + 200 * this.facing;
+        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
+            owner: this,
+            damage: Math.floor(skill.damage * this.power),
+            knockbackX: 150,
+            knockbackY: -50,
+            stunDuration: 250,
+            speed: 800,
+            direction: this.facing,
+            color: 0xAAAAAA,
+            size: { w: 40, h: 10 },
+            lifetime: 1000,
+        });
 
-        // Visual: slash line appears at target
-        this.spawnSlashEffect(targetX, this.sprite.y - 20, 0xFF4444, 60);
-
-        // Damage check — if opponent is within range
-        if (this.opponent) {
-            const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-            if (dist < 300) {
-                const dmg = Math.floor(skill.damage * this.power);
-                this.opponent.takeDamage(dmg, 150 * this.facing, -50, 250);
-                this.ceSystem.gain(8);
-                this.comboSystem.registerHit('SPECIAL');
-            }
+        if (this.scene.projectiles) {
+            this.scene.projectiles.push(proj);
         }
+        
+        // Slash visual
+        this.spawnSlashEffect(this.sprite.x + 30 * this.facing, this.sprite.y, 0xAAAAAA, 40);
     }
 
     castCleave() {
@@ -172,6 +211,62 @@ export default class Sukuna extends Fighter {
         });
     }
 
+    castDivineFlame() {
+        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        const skill = this.charData.skills.maximum;
+
+        this.stateMachine.lock(600);
+        this.sprite.body.setVelocityX(0);
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.slowMotion(0.2, 500);
+            this.scene.screenEffects.flash(0xFF5500, 500, 0.5);
+        }
+
+        // Fire arrow visual cue
+        const bow = this.scene.add.graphics();
+        bow.setDepth(16);
+        bow.lineStyle(4, 0xFF8800, 1);
+        bow.beginPath();
+        bow.moveTo(this.sprite.x, this.sprite.y - 40);
+        bow.lineTo(this.sprite.x + 40 * this.facing, this.sprite.y - 15);
+        bow.lineTo(this.sprite.x, this.sprite.y + 10);
+        bow.strokePath();
+
+        this.scene.tweens.add({
+            targets: bow,
+            scaleX: 1.2,
+            duration: 400,
+            ease: 'Power1',
+            onComplete: () => {
+                bow.destroy();
+                
+                // Fire massive fiery projectile
+                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
+                    owner: this,
+                    damage: Math.floor(skill.damage * this.power),
+                    knockbackX: 1000,
+                    knockbackY: -300,
+                    stunDuration: 700,
+                    speed: 900,
+                    direction: this.facing,
+                    color: 0xFF3300,
+                    size: { w: 120, h: 40 },
+                    lifetime: 2500,
+                    type: 'burn', // applies burn effect
+                });
+                
+                if (this.scene.projectiles) {
+                    this.scene.projectiles.push(proj);
+                }
+                
+                if (this.scene.screenEffects) {
+                    this.scene.screenEffects.shake(0.015, 400);
+                }
+            }
+        });
+    }
+
     tryActivateDomain() {
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
         if (this.domainActive) return;
@@ -181,6 +276,7 @@ export default class Sukuna extends Fighter {
         this.stateMachine.setState('casting_domain');
 
         if (this.scene.onDomainActivated) {
+            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings ? window.gameSettings.sfx : 50) / 100 });
             this.scene.onDomainActivated(this, 'malevolent_shrine');
         }
     }

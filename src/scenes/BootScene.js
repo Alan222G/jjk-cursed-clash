@@ -68,8 +68,11 @@ export default class BootScene extends Phaser.Scene {
         // Backgrounds
         this.load.image('bg_shibuya', 'assets/backgrounds/shibuya.png');
         // Domains
-        this.load.image('gojo_void', 'assets/domains/gojo_void.png');
-        this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
+        this.load.image('gojo_void', 'assets/domains/gojo_void_official.png');
+        this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine_official.png');
+        // Audio
+        this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.mp3');
+        this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.mp3');
     }
 
     create() {

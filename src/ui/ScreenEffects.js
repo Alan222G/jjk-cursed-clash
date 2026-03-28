@@ -15,6 +15,10 @@ export default class ScreenEffects {
 
     /** Camera shake */
     shake(intensity = 0.005, duration = 150) {
+        if (window.gameSettings && window.gameSettings.graphics === 'low') {
+            intensity *= 0.5;
+            duration *= 0.5;
+        }
         this.scene.cameras.main.shake(duration, intensity);
     }
 
@@ -35,6 +39,8 @@ export default class ScreenEffects {
 
     /** Hit freeze (hitstop) — brief pause for impact feel */
     hitFreeze(duration = 50) {
+        if (window.gameSettings && window.gameSettings.graphics === 'low') return;
+
         if (this.isFrozen) return;
         this.isFrozen = true;
         this.scene.physics.pause();

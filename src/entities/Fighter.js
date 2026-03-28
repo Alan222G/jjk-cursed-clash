@@ -40,6 +40,8 @@ export default class Fighter {
         this.stunTimer = 0;
         this.domainActive = false;
         this.flashTimer = 0;
+        this.burnTimer = 0;
+        this.burnTickTimer = 0;
 
         // ── Colors ──
         this.colors = charData.colors;
@@ -324,9 +326,12 @@ export default class Fighter {
 
     enableHitbox(atkData) {
         const offsetX = atkData.range * this.facing;
-        this.hitbox.setPosition(this.sprite.x + offsetX, this.sprite.y - 10);
+        const newX = this.sprite.x + offsetX;
+        const newY = this.sprite.y - 10;
+        this.hitbox.setPosition(newX, newY);
         this.hitbox.setSize(atkData.hitboxW, atkData.hitboxH);
         this.hitbox.body.setSize(atkData.hitboxW, atkData.hitboxH);
+        this.hitbox.body.reset(newX, newY);
         this.hitbox.body.enable = true;
     }
 
@@ -428,6 +433,11 @@ export default class Fighter {
         }
     }
 
+    applyBurn(duration) {
+        this.burnTimer = duration;
+        this.burnTickTimer = 500;
+    }
+
     // ── Update ───────────────────────────────────────────
 
     update(time, dt) {
@@ -449,6 +459,25 @@ export default class Fighter {
         this.stateMachine.update(dt);
         this.ceSystem.update(dt);
         this.comboSystem.update(dt);
+
+        // Burn DoT
+        if (this.burnTimer > 0) {
+            this.burnTimer -= dt;
+            this.burnTickTimer -= dt;
+            if (this.burnTickTimer <= 0) {
+                this.burnTickTimer = 500;
+                this.hp -= 20; // tick damage
+                
+                if (this.scene.spawnDamageNumber) {
+                    this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, 20);
+                }
+                
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    this.stateMachine.setState('dead');
+                }
+            }
+        }
 
         // Invulnerability flash
         if (this.hitFlash > 0) this.hitFlash -= 0.3;
@@ -641,6 +670,13 @@ export default class Fighter {
             const flicker = Math.random() * 0.3;
             ag.fillStyle(0x444444, flicker);
             ag.fillEllipse(x, y - 10, 40, 55);
+        }
+
+        // Burn visual
+        if (this.burnTimer > 0) {
+            ag.fillStyle(0xFF5500, 0.5);
+            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*15+5);
+            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*10+5);
         }
     }
 

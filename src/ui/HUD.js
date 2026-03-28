@@ -69,17 +69,12 @@ export default class HUD {
     }
 
     startTimer() {
-        this.timer = 99;
-        this.timerEvent = this.scene.time.addEvent({
-            delay: 1000,
-            callback: () => {
-                this.timer--;
-                if (this.timer <= 0) {
-                    this.timer = 0;
-                    if (this.scene.onTimeUp) this.scene.onTimeUp();
-                }
-            },
-            loop: true,
+        this.timerText.setText('FIGHT!');
+        this.scene.tweens.add({
+            targets: this.timerText,
+            alpha: 0,
+            delay: 1500,
+            duration: 1000
         });
     }
 
@@ -127,16 +122,8 @@ export default class HUD {
         this.drawAvatar(g, GAME_WIDTH - s.MARGIN - s.AVATAR_RADIUS, 45, p2.colors, true);
         this.drawRoundPips(g, p2x + s.BAR_WIDTH, p2y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p2Rounds, true);
 
-        // ── Timer ──
-        this.timerText.setText(String(this.timer).padStart(2, '0'));
-        if (this.timer <= 10) {
-            this.timerText.setColor('#FF4444');
-        } else {
-            this.timerText.setColor('#FFD700');
-        }
-
         // ── Round display ──
-        this.roundText.setText(`ROUND ${this.roundNum}`);
+        this.roundText.setText(`DEATHMATCH`);
 
         // ── Combo counters ──
         if (p1.comboSystem.getCount() > 1) {

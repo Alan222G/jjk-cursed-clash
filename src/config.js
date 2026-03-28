@@ -17,11 +17,11 @@ export const PHYSICS = {
 
 // ── Fighter Defaults ─────────────────────────────────────
 export const FIGHTER_DEFAULTS = {
-    MAX_HP: 1000,
+    MAX_HP: 2500,
     MAX_CE: 200,
-    CE_REGEN_RATE: 3,          // CE per second (passive)
-    CE_REGEN_ON_HIT: 8,       // CE gained when landing a hit
-    CE_REGEN_ON_DAMAGE: 5,    // CE gained when taking damage
+    CE_REGEN_RATE: 10,         // CE per second (passive) - increased for faster gameplay
+    CE_REGEN_ON_HIT: 12,      // CE gained when landing a hit
+    CE_REGEN_ON_DAMAGE: 8,    // CE gained when taking damage
     SPEED: 320,
     JUMP_FORCE: -620,
     WEIGHT: 100,

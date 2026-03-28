@@ -28,7 +28,9 @@ export default class Gojo extends Fighter {
     trySpecialAttack() {
         const tier = this.ceSystem.getTier();
 
-        if (tier >= 2 && this.input.isDown('DOWN')) {
+        if (tier >= 4 && this.input.isDown('DOWN')) {
+            this.firePurple();
+        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             // Aka — Red (Repulsion)
             this.fireRed();
         } else if (tier >= 1) {
@@ -44,13 +46,13 @@ export default class Gojo extends Fighter {
         const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
             owner: this,
             damage: Math.floor(skill.damage * this.power),
-            knockbackX: 250,
+            knockbackX: -300, // Attract
             knockbackY: -80,
             stunDuration: 300,
             speed: 550,
             direction: this.facing,
             color: 0x2244FF,
-            size: { w: 25, h: 25 },
+            size: { w: 50, h: 50 }, // Bigger
             lifetime: 1500,
         });
 
@@ -123,6 +125,60 @@ export default class Gojo extends Fighter {
         });
     }
 
+    firePurple() {
+        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        const skill = this.charData.skills.maximum;
+
+        this.stateMachine.lock(800);
+        this.sprite.body.setVelocityX(0);
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.domainFlash(0xAA00FF);
+            this.scene.screenEffects.slowMotion(0.2, 800);
+        }
+
+        const x = this.sprite.x + 30 * this.facing;
+        const y = this.sprite.y - 15;
+
+        // Combine Red and Blue visual
+        const redC = this.scene.add.circle(x, y - 20, 20, 0xFF2222, 0.9).setDepth(15);
+        const blueC = this.scene.add.circle(x, y + 20, 20, 0x2244FF, 0.9).setDepth(15);
+        
+        this.scene.tweens.add({
+            targets: [redC, blueC],
+            y: y,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => {
+                redC.destroy();
+                blueC.destroy();
+
+                // Fire the massive purple beam
+                const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
+                    owner: this,
+                    damage: Math.floor(skill.damage * this.power),
+                    knockbackX: 1200,
+                    knockbackY: -400,
+                    stunDuration: 800,
+                    speed: 1200,
+                    direction: this.facing,
+                    color: 0x9922FF,
+                    size: { w: 100, h: 100 },
+                    lifetime: 3000,
+                    type: 'heavy',
+                });
+                
+                if (this.scene.projectiles) {
+                    this.scene.projectiles.push(proj);
+                }
+                
+                if (this.scene.screenEffects) {
+                    this.scene.screenEffects.shake(0.02, 500);
+                }
+            }
+        });
+    }
+
     tryActivateDomain() {
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
         if (this.domainActive) return;
@@ -133,6 +189,7 @@ export default class Gojo extends Fighter {
 
         // Notify scene to handle domain activation
         if (this.scene.onDomainActivated) {
+            this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings ? window.gameSettings.sfx : 50) / 100 });
             this.scene.onDomainActivated(this, 'unlimited_void');
         }
     }

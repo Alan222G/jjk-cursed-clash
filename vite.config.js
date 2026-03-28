@@ -1,20 +1,11 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',
+  // Reemplaza esto con el nombre de tu repositorio de github EXACTO.
+  base: '/jjk-cursed-clash/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          phaser: ['phaser']
-        }
-      }
-    }
-  },
-  server: {
-    port: 3000,
-    open: true
+    sourcemap: false
   }
 });

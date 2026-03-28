@@ -11,6 +11,11 @@ export default class DamageNumbers {
     }
 
     spawn(x, y, amount, type = 'normal') {
+        // [SAFE MODE]: Desactivado para evitar el desbordamiento de la Tarjeta Gráfica
+        // o CPU en laptops de gama baja. Cada llamada repetida a la API de CanvasText
+        // en Phaser puede congelar la pestaña.
+        return;
+        
         let color = '#FF4444';
         let fontSize = '22px';
 
@@ -29,9 +34,7 @@ export default class DamageNumbers {
             fontFamily: 'Arial Black, Impact, sans-serif',
             fontSize,
             color,
-            stroke: '#000000',
-            strokeThickness: 4,
-            shadow: { offsetX: 2, offsetY: 2, color: '#000', blur: 4, fill: true },
+            // Removed stroke and shadow as they create huge canvases per number and freeze low-RAM PCs
         }).setDepth(120).setOrigin(0.5);
 
         // Float up and fade

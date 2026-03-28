@@ -67,8 +67,8 @@ export default class MenuScene extends Phaser.Scene {
         // ── Menu Options ──
         const menuItems = [
             { text: 'FIGHT', action: () => this.startFight() },
-            { text: 'OPTIONS', action: () => {} },
-            { text: 'CREDITS', action: () => {} },
+            { text: 'OPCIONES', action: () => { this.scene.start('OptionsScene'); } },
+            { text: 'CRÉDITOS', action: () => {} },
         ];
 
         this.menuButtons = [];
@@ -98,11 +98,11 @@ export default class MenuScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-SPACE', () => this.startFight());
 
         // ── Version text ──
-        this.add.text(10, GAME_HEIGHT - 25, 'v1.0 — JJK Ultimate Fighter', {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '11px',
-            color: '#444455',
-        }).setDepth(5);
+        this.add.text(GAME_WIDTH - 10, GAME_HEIGHT - 25, 'Versión 1.5.5 - Refresca el navegador si ves una versión anterior', {
+            fontFamily: 'Arial',
+            fontSize: '12px',
+            color: '#555555',
+        }).setOrigin(1, 0.5).setDepth(5); // Adjusted origin to bottom-right
     }
 
     createMenuButton(x, y, label, callback) {

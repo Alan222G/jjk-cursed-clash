@@ -8,7 +8,16 @@ import MenuScene from './scenes/MenuScene.js';
 import CharSelectScene from './scenes/CharSelectScene.js';
 import GameScene from './scenes/GameScene.js';
 import DomainClashScene from './scenes/DomainClashScene.js';
+import OptionsScene from './scenes/OptionsScene.js';
+import PauseScene from './scenes/PauseScene.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
+
+// Inicializar configuración global desde localStorage
+window.gameSettings = JSON.parse(localStorage.getItem('jjk_settings')) || {
+    graphics: 'low',
+    music: 50,
+    sfx: 50
+};
 
 const config = {
     type: Phaser.AUTO,
@@ -27,7 +36,7 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, MenuScene, CharSelectScene, GameScene, DomainClashScene]
+    scene: [BootScene, MenuScene, OptionsScene, CharSelectScene, GameScene, PauseScene, DomainClashScene]
 };
 
 const game = new Phaser.Game(config);
