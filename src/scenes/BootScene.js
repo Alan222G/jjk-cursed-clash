@@ -70,6 +70,9 @@ export default class BootScene extends Phaser.Scene {
         // Domains (original working images)
         this.load.image('gojo_void', 'assets/domains/gojo_void.png');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
+        // Character Portraits
+        this.load.image('portrait_gojo', 'assets/portraits/gojo_portrait.png');
+        this.load.image('portrait_sukuna', 'assets/portraits/sukuna_portrait.png');
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.mp3');
         this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.mp3');

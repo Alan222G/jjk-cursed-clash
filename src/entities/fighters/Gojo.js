@@ -60,8 +60,7 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        // Blue attraction visual (spiral)
-        this.spawnBlueEffect();
+        // Visual effects removed for performance
     }
 
     fireRed() {
@@ -86,44 +85,14 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        this.spawnRedEffect();
+        // Visual effects removed for performance
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.shake(0.004, 200);
         }
     }
 
-    spawnBlueEffect() {
-        const x = this.sprite.x + 20 * this.facing;
-        const y = this.sprite.y - 15;
-        const circle = this.scene.add.circle(x, y, 15, 0x2244FF, 0.7);
-        circle.setDepth(12);
-        this.scene.tweens.add({
-            targets: circle,
-            scaleX: 2.5,
-            scaleY: 2.5,
-            alpha: 0,
-            duration: 400,
-            ease: 'Power2',
-            onComplete: () => circle.destroy(),
-        });
-    }
-
-    spawnRedEffect() {
-        const x = this.sprite.x + 20 * this.facing;
-        const y = this.sprite.y - 15;
-        const circle = this.scene.add.circle(x, y, 20, 0xFF2222, 0.8);
-        circle.setDepth(12);
-        this.scene.tweens.add({
-            targets: circle,
-            scaleX: 3,
-            scaleY: 3,
-            alpha: 0,
-            duration: 500,
-            ease: 'Power3',
-            onComplete: () => circle.destroy(),
-        });
-    }
+    // spawnBlueEffect and spawnRedEffect removed for performance
 
     firePurple() {
         if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
@@ -132,51 +101,29 @@ export default class Gojo extends Fighter {
         this.stateMachine.lock(800);
         this.sprite.body.setVelocityX(0);
 
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.domainFlash(0xAA00FF);
-            this.scene.screenEffects.slowMotion(0.2, 800);
-        }
+        // Screen effects removed for performance
 
         const x = this.sprite.x + 30 * this.facing;
         const y = this.sprite.y - 15;
 
-        // Combine Red and Blue visual
-        const redC = this.scene.add.circle(x, y - 20, 20, 0xFF2222, 0.9).setDepth(15);
-        const blueC = this.scene.add.circle(x, y + 20, 20, 0x2244FF, 0.9).setDepth(15);
-        
-        this.scene.tweens.add({
-            targets: [redC, blueC],
-            y: y,
-            duration: 600,
-            ease: 'Power2',
-            onComplete: () => {
-                redC.destroy();
-                blueC.destroy();
-
-                // Fire the massive purple beam
-                const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
-                    owner: this,
-                    damage: Math.floor(skill.damage * this.power),
-                    knockbackX: 1200,
-                    knockbackY: -400,
-                    stunDuration: 800,
-                    speed: 1200,
-                    direction: this.facing,
-                    color: 0x9922FF,
-                    size: { w: 100, h: 100 },
-                    lifetime: 3000,
-                    type: 'heavy',
-                });
-                
-                if (this.scene.projectiles) {
-                    this.scene.projectiles.push(proj);
-                }
-                
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.02, 500);
-                }
-            }
+        // Fire the massive purple beam directly (no visual merge animation)
+        const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
+            owner: this,
+            damage: Math.floor(skill.damage * this.power),
+            knockbackX: 1200,
+            knockbackY: -400,
+            stunDuration: 800,
+            speed: 1200,
+            direction: this.facing,
+            color: 0x9922FF,
+            size: { w: 100, h: 100 },
+            lifetime: 3000,
+            type: 'heavy',
         });
+        
+        if (this.scene.projectiles) {
+            this.scene.projectiles.push(proj);
+        }
     }
 
     tryActivateDomain() {

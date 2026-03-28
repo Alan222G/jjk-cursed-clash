@@ -116,16 +116,14 @@ export default class Sukuna extends Fighter {
             this.scene.projectiles.push(proj);
         }
         
-        // Slash visual
-        this.spawnSlashEffect(this.sprite.x + 30 * this.facing, this.sprite.y, 0xAAAAAA, 40);
+        // Slash visual removed for performance
     }
 
     castCleave() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
         const skill = this.charData.skills.skill2;
 
-        // AOE slash around Sukuna
-        this.spawnCleaveEffect();
+        // AOE cleave (visual removed for performance)
 
         if (this.opponent) {
             const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
@@ -140,10 +138,7 @@ export default class Sukuna extends Fighter {
                 this.ceSystem.gain(12);
                 this.comboSystem.registerHit('SPECIAL');
 
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.006, 300);
-                    this.scene.screenEffects.hitFreeze(120);
-                }
+                // Screen effects removed for performance
             }
         }
     }
@@ -218,53 +213,24 @@ export default class Sukuna extends Fighter {
         this.stateMachine.lock(600);
         this.sprite.body.setVelocityX(0);
 
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.slowMotion(0.2, 500);
-            this.scene.screenEffects.flash(0xFF5500, 500, 0.5);
-        }
-
-        // Fire arrow visual cue
-        const bow = this.scene.add.graphics();
-        bow.setDepth(16);
-        bow.lineStyle(4, 0xFF8800, 1);
-        bow.beginPath();
-        bow.moveTo(this.sprite.x, this.sprite.y - 40);
-        bow.lineTo(this.sprite.x + 40 * this.facing, this.sprite.y - 15);
-        bow.lineTo(this.sprite.x, this.sprite.y + 10);
-        bow.strokePath();
-
-        this.scene.tweens.add({
-            targets: bow,
-            scaleX: 1.2,
-            duration: 400,
-            ease: 'Power1',
-            onComplete: () => {
-                bow.destroy();
-                
-                // Fire massive fiery projectile
-                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
-                    owner: this,
-                    damage: Math.floor(skill.damage * this.power),
-                    knockbackX: 1000,
-                    knockbackY: -300,
-                    stunDuration: 700,
-                    speed: 900,
-                    direction: this.facing,
-                    color: 0xFF3300,
-                    size: { w: 120, h: 40 },
-                    lifetime: 2500,
-                    type: 'burn', // applies burn effect
-                });
-                
-                if (this.scene.projectiles) {
-                    this.scene.projectiles.push(proj);
-                }
-                
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.015, 400);
-                }
-            }
+        // Fire massive fiery projectile directly (no bow graphics)
+        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
+            owner: this,
+            damage: Math.floor(skill.damage * this.power),
+            knockbackX: 1000,
+            knockbackY: -300,
+            stunDuration: 700,
+            speed: 900,
+            direction: this.facing,
+            color: 0xFF3300,
+            size: { w: 120, h: 40 },
+            lifetime: 2500,
+            type: 'burn',
         });
+        
+        if (this.scene.projectiles) {
+            this.scene.projectiles.push(proj);
+        }
     }
 
     tryActivateDomain() {

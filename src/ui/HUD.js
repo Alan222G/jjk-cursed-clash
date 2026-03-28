@@ -66,6 +66,39 @@ export default class HUD {
             fontSize: '13px',
             color: '#CCCCDD',
         }).setDepth(101).setScrollFactor(0).setOrigin(1, 0);
+
+        // ── Character Portrait Images ──
+        const ar = HUD_STYLE.AVATAR_RADIUS;
+        const p1cx = HUD_STYLE.MARGIN + ar;
+        const p2cx = GAME_WIDTH - HUD_STYLE.MARGIN - ar;
+        const acy = 45;
+
+        // Create circular masks for portraits
+        this.p1PortraitMask = scene.add.graphics();
+        this.p1PortraitMask.fillStyle(0xffffff);
+        this.p1PortraitMask.fillCircle(p1cx, acy, ar - 4);
+        
+        this.p2PortraitMask = scene.add.graphics();
+        this.p2PortraitMask.fillStyle(0xffffff);
+        this.p2PortraitMask.fillCircle(p2cx, acy, ar - 4);
+
+        // P1 portrait (defaults to Gojo)
+        if (scene.textures.exists('portrait_gojo')) {
+            this.p1Portrait = scene.add.image(p1cx, acy, 'portrait_gojo')
+                .setDisplaySize(ar * 2 - 8, ar * 2 - 8)
+                .setDepth(100.5)
+                .setScrollFactor(0);
+            this.p1Portrait.setMask(this.p1PortraitMask.createGeometryMask());
+        }
+
+        // P2 portrait (defaults to Sukuna)
+        if (scene.textures.exists('portrait_sukuna')) {
+            this.p2Portrait = scene.add.image(p2cx, acy, 'portrait_sukuna')
+                .setDisplaySize(ar * 2 - 8, ar * 2 - 8)
+                .setDepth(100.5)
+                .setScrollFactor(0);
+            this.p2Portrait.setMask(this.p2PortraitMask.createGeometryMask());
+        }
     }
 
     startTimer() {
@@ -221,21 +254,13 @@ export default class HUD {
         g.lineStyle(s.AVATAR_BORDER + 2, s.BORDER_COLOR, 1);
         g.strokeCircle(cx, cy, r + 4);
 
-        // Dark fill
+        // Dark fill (behind portrait)
         g.fillStyle(0x0A0A1E, 1);
         g.fillCircle(cx, cy, r);
-
-        // Character color fill
-        g.fillStyle(colors.primary, 0.6);
-        g.fillCircle(cx, cy, r - 4);
 
         // Energy glow ring
         g.lineStyle(2, colors.energy, 0.5);
         g.strokeCircle(cx, cy, r - 2);
-
-        // Inner accent
-        g.fillStyle(colors.secondary, 0.3);
-        g.fillCircle(cx, cy - 5, r / 2);
     }
 
     drawRoundPips(g, x, y, wins, mirrored) {
@@ -268,5 +293,9 @@ export default class HUD {
         this.roundText.destroy();
         this.p1NameText.destroy();
         this.p2NameText.destroy();
+        if (this.p1Portrait) this.p1Portrait.destroy();
+        if (this.p2Portrait) this.p2Portrait.destroy();
+        if (this.p1PortraitMask) this.p1PortraitMask.destroy();
+        if (this.p2PortraitMask) this.p2PortraitMask.destroy();
     }
 }

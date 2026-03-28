@@ -400,15 +400,7 @@ export default class Fighter {
         this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
         this.comboSystem.registerHit(atk.type);
 
-        // Screen effects
-        if (this.scene.screenEffects) {
-            if (atk.type === 'HEAVY') {
-                this.scene.screenEffects.shake(0.005, 200);
-                this.scene.screenEffects.hitFreeze(80);
-            } else {
-                this.scene.screenEffects.shake(0.002, 100);
-            }
-        }
+        // Screen effects removed for performance
     }
 
     autoFace() {
@@ -672,12 +664,7 @@ export default class Fighter {
             ag.fillEllipse(x, y - 10, 40, 55);
         }
 
-        // Burn visual
-        if (this.burnTimer > 0) {
-            ag.fillStyle(0xFF5500, 0.5);
-            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*15+5);
-            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*10+5);
-        }
+        // Burn visual removed for performance
     }
 
     // ── Getters ──────────────────────────────────────────
