@@ -60,7 +60,8 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        // Visual effects removed for performance
+        // Blue attraction visual (spiral)
+        this.spawnBlueEffect();
     }
 
     fireRed() {
@@ -85,14 +86,44 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        // Visual effects removed for performance
+        this.spawnRedEffect();
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.shake(0.004, 200);
         }
     }
 
-    // spawnBlueEffect and spawnRedEffect removed for performance
+    spawnBlueEffect() {
+        const x = this.sprite.x + 20 * this.facing;
+        const y = this.sprite.y - 15;
+        const circle = this.scene.add.circle(x, y, 15, 0x2244FF, 0.7);
+        circle.setDepth(12);
+        this.scene.tweens.add({
+            targets: circle,
+            scaleX: 2.5,
+            scaleY: 2.5,
+            alpha: 0,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => circle.destroy(),
+        });
+    }
+
+    spawnRedEffect() {
+        const x = this.sprite.x + 20 * this.facing;
+        const y = this.sprite.y - 15;
+        const circle = this.scene.add.circle(x, y, 20, 0xFF2222, 0.8);
+        circle.setDepth(12);
+        this.scene.tweens.add({
+            targets: circle,
+            scaleX: 3,
+            scaleY: 3,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power3',
+            onComplete: () => circle.destroy(),
+        });
+    }
 
     firePurple() {
         if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
@@ -101,29 +132,51 @@ export default class Gojo extends Fighter {
         this.stateMachine.lock(800);
         this.sprite.body.setVelocityX(0);
 
-        // Screen effects removed for performance
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.domainFlash(0xAA00FF);
+            this.scene.screenEffects.slowMotion(0.2, 800);
+        }
 
         const x = this.sprite.x + 30 * this.facing;
         const y = this.sprite.y - 15;
 
-        // Fire the massive purple beam directly (no visual merge animation)
-        const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
-            owner: this,
-            damage: Math.floor(skill.damage * this.power),
-            knockbackX: 1200,
-            knockbackY: -400,
-            stunDuration: 800,
-            speed: 1200,
-            direction: this.facing,
-            color: 0x9922FF,
-            size: { w: 100, h: 100 },
-            lifetime: 3000,
-            type: 'heavy',
-        });
+        // Combine Red and Blue visual
+        const redC = this.scene.add.circle(x, y - 20, 20, 0xFF2222, 0.9).setDepth(15);
+        const blueC = this.scene.add.circle(x, y + 20, 20, 0x2244FF, 0.9).setDepth(15);
         
-        if (this.scene.projectiles) {
-            this.scene.projectiles.push(proj);
-        }
+        this.scene.tweens.add({
+            targets: [redC, blueC],
+            y: y,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => {
+                redC.destroy();
+                blueC.destroy();
+
+                // Fire the massive purple beam
+                const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
+                    owner: this,
+                    damage: Math.floor(skill.damage * this.power),
+                    knockbackX: 1200,
+                    knockbackY: -400,
+                    stunDuration: 800,
+                    speed: 1200,
+                    direction: this.facing,
+                    color: 0x9922FF,
+                    size: { w: 100, h: 100 },
+                    lifetime: 3000,
+                    type: 'heavy',
+                });
+                
+                if (this.scene.projectiles) {
+                    this.scene.projectiles.push(proj);
+                }
+                
+                if (this.scene.screenEffects) {
+                    this.scene.screenEffects.shake(0.02, 500);
+                }
+            }
+        });
     }
 
     tryActivateDomain() {
@@ -149,6 +202,24 @@ export default class Gojo extends Fighter {
             opponent.stateMachine.setState('domain_stunned');
         }
         opponent.sprite.body.setVelocity(0, 0);
-        // No visual effects — prevents VRAM saturation on integrated GPUs
+
+        // Visual: information overload particles around opponent
+        const ox = opponent.sprite.x;
+        const oy = opponent.sprite.y;
+        for (let i = 0; i < 2; i++) {
+            const px = ox + (Math.random() - 0.5) * 60;
+            const py = oy + (Math.random() - 0.5) * 80 - 20;
+            const info = this.scene.add.text(px, py, '∞', {
+                fontSize: '12px',
+                color: '#44CCFF',
+            }).setDepth(15).setAlpha(0.8);
+            this.scene.tweens.add({
+                targets: info,
+                y: py - 30,
+                alpha: 0,
+                duration: 800,
+                onComplete: () => info.destroy(),
+            });
+        }
     }
 }

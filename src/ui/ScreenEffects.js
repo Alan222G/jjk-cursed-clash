@@ -37,10 +37,17 @@ export default class ScreenEffects {
         });
     }
 
-    /** Hit freeze (hitstop) — DISABLED to prevent physics deadlocks */
+    /** Hit freeze (hitstop) — brief pause for impact feel */
     hitFreeze(duration = 50) {
-        // Intentionally disabled — physics.pause/resume stacking causes hard freezes
-        return;
+        if (window.gameSettings && window.gameSettings.graphics === 'low') return;
+
+        if (this.isFrozen) return;
+        this.isFrozen = true;
+        this.scene.physics.pause();
+        this.scene.time.delayedCall(duration, () => {
+            this.scene.physics.resume();
+            this.isFrozen = false;
+        });
     }
 
     /** Slow motion effect */

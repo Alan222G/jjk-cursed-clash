@@ -400,7 +400,15 @@ export default class Fighter {
         this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
         this.comboSystem.registerHit(atk.type);
 
-        // Screen effects removed for performance
+        // Screen effects
+        if (this.scene.screenEffects) {
+            if (atk.type === 'HEAVY') {
+                this.scene.screenEffects.shake(0.005, 200);
+                this.scene.screenEffects.hitFreeze(80);
+            } else {
+                this.scene.screenEffects.shake(0.002, 100);
+            }
+        }
     }
 
     autoFace() {
@@ -605,7 +613,7 @@ export default class Fighter {
                 const sx = x + Math.cos(angle) * 22;
                 const sy = y - 55 + Math.sin(angle) * 8;
                 g.fillStyle(0xFFFF00, 0.8);
-                g.fillStar(sx, sy, 4, 2, 4);
+                g.fillCircle(sx, sy, 4);
             }
         }
     }
@@ -664,7 +672,12 @@ export default class Fighter {
             ag.fillEllipse(x, y - 10, 40, 55);
         }
 
-        // Burn visual removed for performance
+        // Burn visual
+        if (this.burnTimer > 0) {
+            ag.fillStyle(0xFF5500, 0.5);
+            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*15+5);
+            ag.fillCircle(x + (Math.random()-0.5)*50, y + (Math.random()-0.5)*90, Math.random()*10+5);
+        }
     }
 
     // ── Getters ──────────────────────────────────────────
