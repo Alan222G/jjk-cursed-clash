@@ -10,12 +10,12 @@ export default class PauseScene extends Phaser.Scene {
         this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0);
         
         // Pause all ongoing BGM (like DEATHMATCH combat bgm)
-        this.sound.pauseAll();
+        try { this.sound.pauseAll(); } catch(e) {}
         
         // Play Pause Music
-        if (this.sound.get('musica_pausa')) {
+        try {
             this.sound.play('musica_pausa', { volume: 0.6, loop: true });
-        }
+        } catch(e) { console.warn('Pause music error', e); }
 
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;

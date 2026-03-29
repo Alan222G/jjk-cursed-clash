@@ -52,7 +52,7 @@ export default class Gojo extends Fighter {
             speed: 550,
             direction: this.facing,
             color: 0x2244FF,
-            size: { w: 50, h: 50 }, // Bigger
+            size: { w: 50, h: 50 },
             lifetime: 1500,
         });
 
@@ -60,11 +60,12 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        if (this.scene.sound.get('sfx_blue')) {
-            this.scene.sound.play('sfx_blue', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        }
+        try {
+            if (this.scene.sound.get('sfx_blue')) {
+                this.scene.sound.play('sfx_blue', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            }
+        } catch(e) {}
 
-        // Blue attraction visual (spiral)
         this.spawnBlueEffect();
     }
 
@@ -90,9 +91,11 @@ export default class Gojo extends Fighter {
             this.scene.projectiles.push(proj);
         }
 
-        if (this.scene.sound.get('sfx_red')) {
-            this.scene.sound.play('sfx_red', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        }
+        try {
+            if (this.scene.sound.get('sfx_red')) {
+                this.scene.sound.play('sfx_red', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            }
+        } catch(e) {}
 
         this.spawnRedEffect();
 
@@ -177,16 +180,18 @@ export default class Gojo extends Fighter {
                 });
                 
                 if (this.scene.projectiles) {
-            this.scene.projectiles.push(proj);
-        }
-        
-        if (this.scene.sound.get('sfx_purple')) {
-            this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        }
-        
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.shake(0.02, 500);
-        }
+                    this.scene.projectiles.push(proj);
+                }
+                
+                try {
+                    if (this.scene.sound.get('sfx_purple')) {
+                        this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx || 50) / 100 });
+                    }
+                } catch(e) {}
+                
+                if (this.scene.screenEffects) {
+                    this.scene.screenEffects.shake(0.02, 500);
+                }
             }
         });
     }
@@ -197,17 +202,21 @@ export default class Gojo extends Fighter {
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
         this.domainActive = true;
-        this.ceSystem.startDomain(); // trigger CE drain
+        this.ceSystem.startDomain();
 
+        // Force-unlock so the state transition always succeeds
+        this.stateMachine.unlock();
         this.stateMachine.setState('casting_domain');
-        
-        // El manejador GameScene controlará la inmovilización de Fase 1.
 
-        // Notify scene to handle domain activation
-        if (this.scene.onDomainActivated) {
+        // Play domain voice
+        try {
             if (this.scene.sound.get('gojo_domain_voice')) {
                 this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
             }
+        } catch(e) { console.warn('Gojo domain voice error', e); }
+
+        // Notify GameScene to handle cinematic phase
+        if (this.scene.onDomainActivated) {
             this.scene.onDomainActivated(this, 'unlimited_void');
         }
     }
@@ -216,6 +225,7 @@ export default class Gojo extends Fighter {
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
         // Paralysis — force opponent into stunned state
+        opponent.stateMachine.unlock();
         if (!opponent.stateMachine.is('domain_stunned')) {
             opponent.stateMachine.setState('domain_stunned');
         }

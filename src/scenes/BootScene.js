@@ -84,16 +84,13 @@ export default class BootScene extends Phaser.Scene {
         this.load.audio('sfx_red', 'assets/audio/gojo_red.mp3');
         this.load.audio('sfx_purple', 'assets/audio/hollow_purple.m4a');
         this.load.audio('sfx_slash', 'assets/audio/sukuna_dismantle.mp3');
-        this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3'); // Fallback o mantener si no hay cleave especifico
+        this.load.audio('sfx_cleave', 'assets/audio/sukuna_dismantle.mp3'); // Fallback to dismantle
         this.load.audio('sfx_fire', 'assets/audio/sukuna_fuga.mp3');
 
         // Slash Array for Sukuna Domain
         for(let i=1; i<=11; i++){
             this.load.audio(`slash_${i}`, `assets/audio/Slash.${i}.m4a`);
         }
-        this.load.audio('sfx_slash', 'assets/audio/slash.mp3');
-        this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3');
-        this.load.audio('sfx_fire', 'assets/audio/fire.mp3');
 
         // BGM Tracks (Con espacios corregidos para evitar 404 en navegadores)
         this.load.audio('bgm_menu', 'assets/audio/bgm_menu.mp3');
