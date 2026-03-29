@@ -201,12 +201,7 @@ export default class Gojo extends Fighter {
 
         this.stateMachine.setState('casting_domain');
         
-        // Recover from casting after 1 second to move freely
-        this.scene.time.delayedCall(1000, () => {
-            if (this.stateMachine.is('casting_domain')) {
-                this.stateMachine.setState('idle');
-            }
-        });
+        // El manejador GameScene controlará la inmovilización de Fase 1.
 
         // Notify scene to handle domain activation
         if (this.scene.onDomainActivated) {

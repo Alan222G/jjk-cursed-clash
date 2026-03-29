@@ -289,12 +289,7 @@ export default class Sukuna extends Fighter {
 
         this.stateMachine.setState('casting_domain');
         
-        // Recover from casting after 1 second to move freely
-        this.scene.time.delayedCall(1000, () => {
-            if (this.stateMachine.is('casting_domain')) {
-                this.stateMachine.setState('idle');
-            }
-        });
+        // El manejador GameScene controlará la inmovilización de Fase 1.
 
         if (this.scene.onDomainActivated) {
             if (this.scene.sound.get('sukuna_domain_voice')) {
@@ -319,5 +314,12 @@ export default class Sukuna extends Fighter {
             0xFF4444,
             40 + Math.random() * 30
         );
+        
+        // Random slash audio
+        const slashIdx = Phaser.Math.Between(1, 11);
+        const slashKey = `slash_${slashIdx}`;
+        if (this.scene.sound.get(slashKey)) {
+            this.scene.sound.play(slashKey, { volume: 0.6 });
+        }
     }
 }

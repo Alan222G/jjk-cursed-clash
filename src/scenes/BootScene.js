@@ -77,12 +77,20 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
         // Audio
-        this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.mp3');
-        this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.mp3');
+        this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
+        this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
         // SFX Hooks
-        this.load.audio('sfx_blue', 'assets/audio/blue.mp3');
-        this.load.audio('sfx_red', 'assets/audio/red.mp3');
-        this.load.audio('sfx_purple', 'assets/audio/purple.mp3');
+        this.load.audio('sfx_blue', 'assets/audio/gojo_blue.m4a');
+        this.load.audio('sfx_red', 'assets/audio/gojo_red.mp3');
+        this.load.audio('sfx_purple', 'assets/audio/hollow_purple.m4a');
+        this.load.audio('sfx_slash', 'assets/audio/sukuna_dismantle.mp3');
+        this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3'); // Fallback o mantener si no hay cleave especifico
+        this.load.audio('sfx_fire', 'assets/audio/sukuna_fuga.mp3');
+
+        // Slash Array for Sukuna Domain
+        for(let i=1; i<=11; i++){
+            this.load.audio(`slash_${i}`, `assets/audio/Slash.${i}.m4a`);
+        }
         this.load.audio('sfx_slash', 'assets/audio/slash.mp3');
         this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3');
         this.load.audio('sfx_fire', 'assets/audio/fire.mp3');

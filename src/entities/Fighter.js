@@ -153,6 +153,37 @@ export default class Fighter {
             },
         });
 
+        // ── Cinematic Phase 1 States (Domain Expansion) ──
+        sm.addState('casting_domain', {
+            onEnter: function () {
+                this.sprite.body.setVelocity(0, 0); // Completely stop
+                if (this.sprite.anims && this.sprite.anims.currentAnim) {
+                    this.sprite.anims.pause();
+                }
+            },
+            onExit: function () {
+                if (this.sprite.anims && this.sprite.anims.currentAnim) {
+                    this.sprite.anims.resume();
+                }
+            },
+            onUpdate: function (dt) {} // Freeze
+        });
+
+        sm.addState('domain_stunned', {
+            onEnter: function () {
+                this.sprite.body.setVelocity(0, 0);
+                if (this.sprite.anims && this.sprite.anims.currentAnim) {
+                    this.sprite.anims.pause();
+                }
+            },
+            onExit: function () {
+                if (this.sprite.anims && this.sprite.anims.currentAnim) {
+                    this.sprite.anims.resume();
+                }
+            },
+            onUpdate: function (dt) {} // Freeze
+        });
+
         sm.addState('attack', {
             onEnter: function () {
                 this.attackTimer = 0;
@@ -615,6 +646,13 @@ export default class Fighter {
                 g.fillStyle(0xFFFF00, 0.8);
                 g.fillCircle(sx, sy, 4);
             }
+        }
+    }
+
+    onDomainEnd() {
+        this.domainActive = false;
+        if (this.scene.onDomainEnd) {
+            this.scene.onDomainEnd(this);
         }
     }
 

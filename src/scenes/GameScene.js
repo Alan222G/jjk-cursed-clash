@@ -94,41 +94,85 @@ export default class GameScene extends Phaser.Scene {
     }
 
     onDomainActivated(owner, domainType) {
-        if (this.domainActive) {
-            // Initiate Domain Clash
-            this.scene.pause();
-            this.scene.launch('DomainClashScene', {
-                p1: this.p1,
-                p2: this.p2,
-                callback: (winner) => {
-                    this.scene.resume();
-                    const winObj = winner === 'P1' ? this.p1 : this.p2;
-                    const loseObj = winner === 'P1' ? this.p2 : this.p1;
-                    this.handleDomainWin(winObj, domainType);
-                }
-            });
+        if (this.domainActive || this.domainPhase1) return;
+        
+        // ── Phase 1: Cinematic Immobilization ──
+        this.domainPhase1 = true;
+        this.domainOwner = owner;
+        const opp = owner === this.p1 ? this.p2 : this.p1;
+        
+        // Pause combat mechanics but keep update loop running
+        owner.stateMachine.setState('casting_domain');
+        opp.stateMachine.setState('domain_stunned');
+        opp.sprite.body.setVelocity(0, 0);
+
+        // Stop BGM to let Domain Voice shine
+        if(this.sound.get('bgm_combat')) this.sound.get('bgm_combat').pause();
+
+        const p1Dur = owner.charData.stats.domainPhase1 || 10000;
+        
+        // Elevate owner above flash
+        owner.sprite.setDepth(51);
+        
+        if (owner.fighterId === 'GOJO') {
+            // White Flashbang
+            this.domainFlash = this.add.rectangle(GAME_WIDTH/2, GAME_HEIGHT/2, GAME_WIDTH*2, GAME_HEIGHT*2, 0xffffff, 0);
+            this.domainFlash.setDepth(50);
+            this.tweens.add({ targets: this.domainFlash, alpha: 1, duration: p1Dur, ease: 'Quad.easeIn' });
+            
+            // Gojo blue glow
+            owner.sprite.setTint(0x88ccff);
         } else {
-            this.handleDomainWin(owner, domainType);
+            // Black Expanding Circle
+            this.domainFlash = this.add.circle(owner.sprite.x, owner.sprite.y, 10, 0x000000, 1);
+            this.domainFlash.setDepth(50);
+            this.tweens.add({ targets: this.domainFlash, scale: 200, duration: p1Dur, ease: 'Quad.easeIn' });
+            
+            // Sukuna red glow
+            owner.sprite.setTint(0xff4444);
         }
+
+        // Wait for Phase 1 to end -> Enter Phase 2
+        this.time.delayedCall(p1Dur, () => {
+            this.enterDomainPhase2(owner, domainType);
+        });
     }
 
-    handleDomainWin(owner, domainType) {
+    enterDomainPhase2(owner, domainType) {
+        this.domainPhase1 = false;
         this.domainActive = true;
-        this.domainOwner = owner;
-        this.screenEffects.domainFlash();
-        
-        // Change background
+        const opp = owner === this.p1 ? this.p2 : this.p1;
+
+        // Restore mobility
+        owner.sprite.clearTint();
+        owner.sprite.setDepth(10); // Normal depth
+        if(owner.stateMachine.is('casting_domain')) owner.stateMachine.setState('idle');
+        if(opp.stateMachine.is('domain_stunned')) opp.stateMachine.setState('idle');
+
+        // Reveal Domain Background
+        if (this.domainFlash) {
+            this.domainFlash.destroy();
+            this.domainFlash = null;
+        }
+
         const bgKey = owner.charData.domainBg;
         if (this.domainBg) this.domainBg.destroy();
         this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
             .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
             .setDepth(-5);
+            
+        this.screenEffects.shake(0.04, 800);
     }
 
     onDomainEnd(owner) {
         this.domainActive = false;
         if (this.domainBg) this.domainBg.destroy();
         this.domainBg = null;
+        
+        // Resume combat BGM if domain ended
+        if(this.sound.get('bgm_combat') && !this.sound.get('bgm_combat').isPlaying) {
+            this.sound.get('bgm_combat').resume();
+        }
     }
 
     onKnockout(winner, loser) {

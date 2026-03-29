@@ -158,7 +158,8 @@ export const CHARACTERS = {
             ceRegen: 3.5,
             weight: 95,
             jumpForce: -640,
-            domainDuration: 15000,
+            domainDuration: 46000,
+            domainPhase1: 20000,
         },
         skills: {
             skill1: { name: 'Ao — Blue', cost: 30, damage: 50, type: 'projectile' },
@@ -188,7 +189,8 @@ export const CHARACTERS = {
             ceRegen: 2.8,
             weight: 110,
             jumpForce: -600,
-            domainDuration: 20000,
+            domainDuration: 35000,
+            domainPhase1: 10000,
         },
         skills: {
             skill1: { name: 'Dismantle', cost: 30, damage: 45, type: 'slash_ranged' },
