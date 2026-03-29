@@ -46,17 +46,19 @@ export default class HUD {
         }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0);
 
         // Pause Button (Replaces Timer)
-        this.pauseBtn = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y, '⏸️ PAUSE', {
-            fontFamily: 'Arial Black, sans-serif',
+        this.pauseBtn = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y, 'PAUSA', {
+            fontFamily: 'Arial Black, Impact, sans-serif',
             fontSize: '20px',
-            color: '#FFFFFF',
+            color: '#D4A843',
             stroke: '#000000',
-            strokeThickness: 3,
-            backgroundColor: '#AA2222',
-            padding: { x: 6, y: 3 }
+            strokeThickness: 5,
+            letterSpacing: 2
         }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0)
           .setInteractive({ useHandCursor: true });
           
+        this.pauseBtn.on('pointerover', () => this.pauseBtn.setColor('#FFFFFF'));
+        this.pauseBtn.on('pointerout', () => this.pauseBtn.setColor('#D4A843'));
+        
         this.pauseBtn.on('pointerdown', () => {
             if (scene.sound.get('musica_pausa')) {
                 scene.sound.play('musica_pausa', { volume: 0.6, loop: true });

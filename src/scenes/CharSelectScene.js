@@ -215,10 +215,12 @@ export default class CharSelectScene extends Phaser.Scene {
         if (this.p1Selection !== this._lastP1) {
             this._lastP1 = this.p1Selection;
             this.p1NameText.setText(CHARACTERS[this.p1Selection].name);
+            this.p1NameText.setColor(this.p1Selection === 'GOJO' ? '#4488FF' : '#FF4444');
         }
         if (this.p2Selection !== this._lastP2) {
             this._lastP2 = this.p2Selection;
             this.p2NameText.setText(CHARACTERS[this.p2Selection].name);
+            this.p2NameText.setColor(this.p2Selection === 'GOJO' ? '#4488FF' : '#FF4444');
         }
 
         // ── Draw Grid ──

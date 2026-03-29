@@ -87,12 +87,12 @@ export default class BootScene extends Phaser.Scene {
         this.load.audio('sfx_cleave', 'assets/audio/cleave.mp3');
         this.load.audio('sfx_fire', 'assets/audio/fire.mp3');
 
-        // BGM Tracks (Copied from Game_Music folder)
-        this.load.audio('bgm_menu', 'assets/audio/Music_ Menu.mp3');
-        this.load.audio('bgm_select', 'assets/audio/Music_Selctcahracter.mp3');
-        this.load.audio('bgm_combat', 'assets/audio/DEATHMATCH.mp4');
-        this.load.audio('bgm_gameover', 'assets/audio/GAME OVER.mp4');
-        this.load.audio('musica_pausa', 'assets/audio/Musica de pausa.mp3');
+        // BGM Tracks (Con espacios corregidos para evitar 404 en navegadores)
+        this.load.audio('bgm_menu', 'assets/audio/bgm_menu.mp3');
+        this.load.audio('bgm_select', 'assets/audio/bgm_select.mp3');
+        this.load.audio('bgm_combat', 'assets/audio/bgm_combat.mp4');
+        this.load.audio('bgm_gameover', 'assets/audio/bgm_gameover.mp4');
+        this.load.audio('musica_pausa', 'assets/audio/bgm_pausa.mp3');
     }
 
     create() {
