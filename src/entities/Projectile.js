@@ -17,22 +17,33 @@ export default class Projectile {
         this.lifetime = config.lifetime || 2000;
         this.color = config.color || 0x4488FF;
         this.size = config.size || { w: 30, h: 20 };
-        this.type = config.type || 'normal'; // normal, heavy, beam
+        this.type = config.type || 'normal'; // normal, heavy, beam, circle, slash, fire_arrow
         this.alive = true;
         this.timer = 0;
 
-        // Physics sprite
-        this.sprite = scene.add.rectangle(x, y, this.size.w, this.size.h, this.color, 0.9);
+        // Custom visuals
+        this.customGraphics = scene.add.graphics().setDepth(6);
+
+        // Determine shape based on type
+        const isCircle = this.type === 'circle' || this.type === 'heavy';
+        
+        if (isCircle) {
+            this.sprite = scene.add.circle(x, y, this.size.w / 2, this.color, 0.9);
+            this.glow = scene.add.circle(x, y, this.size.w / 2 + 12, this.color, 0.3);
+        } else {
+            // Invisible physics body for custom drawn types
+            const alpha = (this.type === 'slash' || this.type === 'fire_arrow') ? 0 : 0.9;
+            this.sprite = scene.add.rectangle(x, y, this.size.w, this.size.h, this.color, alpha);
+            this.glow = scene.add.rectangle(x, y, this.size.w + 12, this.size.h + 12, this.color, alpha === 0 ? 0 : 0.3);
+        }
+
         scene.physics.add.existing(this.sprite);
         this.sprite.body.setVelocityX(this.speed * this.direction);
         this.sprite.body.setAllowGravity(false);
         this.sprite.setDepth(5);
-
-        // Glow effect
-        this.glow = scene.add.rectangle(x, y, this.size.w + 12, this.size.h + 12, this.color, 0.3);
         this.glow.setDepth(4);
 
-        // Trail particles (simulated with graphics)
+        // Trail particles
         this.trail = scene.add.graphics();
         this.trail.setDepth(3);
         this.trailPoints = [];
@@ -75,7 +86,61 @@ export default class Projectile {
 
         // Pulsating glow
         const pulse = 0.2 + Math.sin(this.timer * 0.01) * 0.15;
-        this.glow.setAlpha(pulse);
+        this.glow.setAlpha(this.type === 'slash' || this.type === 'fire_arrow' ? 0 : pulse);
+
+        // Custom rendering
+        this.customGraphics.clear();
+        const px = this.sprite.x;
+        const py = this.sprite.y;
+        const dir = this.direction;
+
+        if (this.type === 'slash') {
+            // Black slash anime style
+            this.customGraphics.lineStyle(4, 0x000000, 1); // Black core
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - 15 * dir, py - 40);
+            this.customGraphics.lineTo(px + 20 * dir, py);
+            this.customGraphics.lineTo(px - 15 * dir, py + 40);
+            this.customGraphics.strokePath();
+
+            // Red/Dark red outer aura
+            this.customGraphics.lineStyle(2, 0xFF0000, pulse + 0.3);
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - 18 * dir, py - 45);
+            this.customGraphics.lineTo(px + 25 * dir, py);
+            this.customGraphics.lineTo(px - 18 * dir, py + 45);
+            this.customGraphics.strokePath();
+        } 
+        else if (this.type === 'fire_arrow') {
+            // Fuga Arrow (Flaming)
+            const fColor = (Math.floor(this.timer) % 4 < 2) ? 0xFF5500 : 0xFFDD00;
+            // Arrow shaft
+            this.customGraphics.lineStyle(6, 0x000000, 0.9);
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - 60 * dir, py);
+            this.customGraphics.lineTo(px + 10 * dir, py);
+            this.customGraphics.strokePath();
+            // Fire Aura
+            this.customGraphics.lineStyle(10, fColor, 0.6);
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - 70 * dir, py);
+            this.customGraphics.lineTo(px + 5 * dir, py);
+            this.customGraphics.strokePath();
+            // Arrow head
+            this.customGraphics.fillStyle(0x000000, 1);
+            this.customGraphics.fillTriangle(
+                px + 30 * dir, py,
+                px + 10 * dir, py - 15,
+                px + 10 * dir, py + 15
+            );
+            // Fire head aura
+            this.customGraphics.fillStyle(fColor, 0.5);
+            this.customGraphics.fillTriangle(
+                px + 45 * dir, py,
+                px + 5 * dir, py - 25,
+                px + 5 * dir, py + 25
+            );
+        }
     }
 
     /** Get the physics body for collision checks */
@@ -119,6 +184,7 @@ export default class Projectile {
         this.sprite.destroy();
         this.glow.destroy();
         this.trail.destroy();
+        if (this.customGraphics) this.customGraphics.destroy();
     }
 
     isAlive() {

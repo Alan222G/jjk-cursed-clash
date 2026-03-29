@@ -101,9 +101,10 @@ export default class Sukuna extends Fighter {
             stunDuration: 250,
             speed: 800,
             direction: this.facing,
-            color: 0xAAAAAA,
-            size: { w: 40, h: 10 },
+            color: 0x000000,
+            size: { w: 40, h: 40 },
             lifetime: 1000,
+            type: 'slash',
         });
 
         if (this.scene.projectiles) {
@@ -178,7 +179,12 @@ export default class Sukuna extends Fighter {
             const len = 80 + i * 10;
             const ex = x + Math.cos(angle) * len;
             const ey = y + Math.sin(angle) * len;
-            g.lineStyle(2 + (i === 2 ? 2 : 0), 0xFF2222, 0.8);
+            g.lineStyle(4 + (i === 2 ? 4 : 0), 0x000000, 1); // Black core
+            g.beginPath();
+            g.moveTo(x, y);
+            g.lineTo(ex, ey);
+            g.strokePath();
+            g.lineStyle(2 + (i === 2 ? 2 : 0), 0xFF0000, 0.8); // Red outline
             g.beginPath();
             g.moveTo(x, y);
             g.lineTo(ex, ey);
@@ -235,7 +241,7 @@ export default class Sukuna extends Fighter {
                     color: 0xFF3300,
                     size: { w: 120, h: 40 },
                     lifetime: 2500,
-                    type: 'burn',
+                    type: 'fire_arrow',
                 });
                 
                 if (this.scene.projectiles) {

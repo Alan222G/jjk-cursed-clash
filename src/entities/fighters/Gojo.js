@@ -54,6 +54,7 @@ export default class Gojo extends Fighter {
             color: 0x2244FF,
             size: { w: 50, h: 50 },
             lifetime: 1500,
+            type: 'circle',
         });
 
         if (this.scene.projectiles) {
@@ -84,7 +85,7 @@ export default class Gojo extends Fighter {
             color: 0xFF2222,
             size: { w: 35, h: 35 },
             lifetime: 1800,
-            type: 'heavy',
+            type: 'circle',
         });
 
         if (this.scene.projectiles) {
@@ -176,7 +177,7 @@ export default class Gojo extends Fighter {
                     color: 0x9922FF,
                     size: { w: 100, h: 100 },
                     lifetime: 3000,
-                    type: 'heavy',
+                    type: 'circle',
                 });
                 
                 if (this.scene.projectiles) {

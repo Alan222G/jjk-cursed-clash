@@ -246,8 +246,9 @@ export default class Fighter {
                     this.stateMachine.setState('idle');
                     return;
                 }
-                // Release when keys released
-                if (!this.input.isDown('BLOCK') || !this.input.isDown('DOMAIN')) {
+                
+                // Toggle OFF if they press I again or let go of shift
+                if (this.input.justPressed('DOMAIN')) {
                     this.infinityActive = false;
                     this.stateMachine.setState('idle');
                 }
@@ -359,6 +360,10 @@ export default class Fighter {
         if (!attackAction) return;
 
         if (attackAction === 'DOMAIN') {
+            // Ignore Domain cast if they are trying to toggle Infinity (holding BLOCK)
+            if (this.input.isDown('BLOCK') && this.fighterId === 'gojo') {
+                return; 
+            }
             this.tryActivateDomain();
             return;
         }
@@ -380,8 +385,8 @@ export default class Fighter {
 
     handleBlockInput() {
         if (this.stateMachine.isAny('idle', 'walk')) {
-            // Check for Infinity (Gojo only: SHIFT + I/DOMAIN)
-            if (this.input.isDown('BLOCK') && this.input.isDown('DOMAIN') && this.fighterId === 'gojo') {
+            // Check for Infinity Toggle (Gojo only: SHIFT + I/DOMAIN)
+            if (this.input.isDown('BLOCK') && this.input.justPressed('DOMAIN') && this.fighterId === 'gojo') {
                 if (this.ceSystem.ce > 0) {
                     this.stateMachine.setState('infinity');
                     return;
@@ -641,9 +646,37 @@ export default class Fighter {
         // ── Character-specific face details (overridden) ──
         this.drawFace(g, x, y - 46 + bobY, f);
 
-        // ── TORSO ──
-        g.fillStyle(bodyColor, 0.95);
-        g.fillRect(x - 13, y - 28 + bobY, 26, 36);
+        // ── TORSO / CLOTHING ──
+        if (this.fighterId === 'gojo') {
+            // Gojo Jacket (Dark Blue/Black)
+            g.fillStyle(0x1a1a24, 0.95);
+            g.fillRect(x - 13, y - 28 + bobY, 26, 36);
+            // Jacket collar & zipper line
+            g.lineStyle(2, 0x111111, 0.8);
+            g.beginPath();
+            g.moveTo(x, y - 28 + bobY);
+            g.lineTo(x, y + 8 + bobY);
+            g.strokePath();
+        } else if (this.fighterId === 'sukuna') {
+            // Sukuna Kimono (White with black trim)
+            g.fillStyle(0xf0f0f5, 0.95);
+            g.fillRect(x - 14, y - 28 + bobY, 28, 38); 
+            // Black neck trim (V-neck)
+            g.fillStyle(0x111111, 1);
+            g.beginPath();
+            g.moveTo(x - 8, y - 28 + bobY);
+            g.lineTo(x, y - 10 + bobY);
+            g.lineTo(x + 8, y - 28 + bobY);
+            g.closePath();
+            g.fillPath();
+            // Dark Sash/Belt
+            g.fillStyle(0x111111, 1);
+            g.fillRect(x - 16, y + bobY - 2, 32, 8);
+        } else {
+            // Default generic body
+            g.fillStyle(bodyColor, 0.95);
+            g.fillRect(x - 13, y - 28 + bobY, 26, 36);
+        }
 
         // ── ARMS ──
         const armY = y - 20 + bobY;
