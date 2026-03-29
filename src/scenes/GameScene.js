@@ -96,7 +96,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // ════════════════════════════════════════════════════════
-    // DOMAIN EXPANSION — 2-Phase Cinematic System
+    // DOMAIN EXPANSION — Audio-Driven Portrait Cinematic
     // ════════════════════════════════════════════════════════
 
     onDomainActivated(owner, domainType) {
@@ -107,7 +107,7 @@ export default class GameScene extends Phaser.Scene {
         this.domainOwner = owner;
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         
-        // CRITICAL: Force-unlock state machines to guarantee transitions
+        // Force-unlock state machines
         owner.stateMachine.unlock();
         opp.stateMachine.unlock();
         
@@ -117,72 +117,140 @@ export default class GameScene extends Phaser.Scene {
         owner.sprite.body.setVelocity(0, 0);
         opp.sprite.body.setVelocity(0, 0);
 
-        // Pause CE drain during Phase 1 (only drain during Phase 2 combat)
+        // Pause CE drain during Phase 1
         owner.ceSystem.isDomainActive = false;
 
         // Stop BGM to let Domain Voice shine
         try {
-            const bgm = this.sound.get('bgm_combat');
-            if (bgm && bgm.isPlaying) bgm.pause();
-        } catch(e) { console.warn('Audio pause error', e); }
+            this.sound.stopAll();
+        } catch(e) {}
 
-        // Phase 1 duration from character config
-        const p1Dur = owner.charData.stats.domainPhase1 || 10000;
-        
-        // Elevate owner sprite above the flash overlay
-        owner.sprite.setDepth(51);
-        if (owner.graphics) owner.graphics.setDepth(51);
-        if (owner.auraGraphics) owner.auraGraphics.setDepth(51);
-        
-        // Use the charKey stored on the fighter (uppercase: 'GOJO' or 'SUKUNA')
         const charKey = (owner === this.p1) ? this.p1Key : this.p2Key;
-        
-        if (charKey === 'GOJO') {
-            // ── WHITE FLASHBANG (progressive) ──
-            this.domainFlash = this.add.rectangle(
-                GAME_WIDTH / 2, GAME_HEIGHT / 2, 
-                GAME_WIDTH * 2, GAME_HEIGHT * 2, 
-                0xffffff, 0
-            );
-            this.domainFlash.setDepth(50);
-            this.tweens.add({ 
-                targets: this.domainFlash, 
-                alpha: 1, 
-                duration: p1Dur, 
-                ease: 'Quad.easeIn' 
-            });
-            // Gojo blue energy glow
-            owner.sprite.setTint(0x88ccff);
-        } else {
-            // ── BLACK EXPANDING DARKNESS ──
-            this.domainFlash = this.add.circle(
-                owner.sprite.x, owner.sprite.y, 
-                10, 0x000000, 1
-            );
-            this.domainFlash.setDepth(50);
-            this.tweens.add({ 
-                targets: this.domainFlash, 
-                scale: 200, 
-                duration: p1Dur, 
-                ease: 'Quad.easeIn' 
-            });
-            // Sukuna red energy glow
-            owner.sprite.setTint(0xff4444);
-        }
+        const voiceKey = (charKey === 'GOJO') ? 'gojo_domain_voice' : 'sukuna_domain_voice';
+        const portraitKey = (charKey === 'GOJO') ? 'portrait_gojo' : 'portrait_sukuna';
+        const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
 
-        // Schedule Phase 2 transition
-        this.time.delayedCall(p1Dur, () => {
-            this.enterDomainPhase2(owner, domainType);
+        // ── LIGHTWEIGHT CINEMATIC ──
+        // 1. Black overlay (immediate, no heavy calculations)
+        this.domainOverlay = this.add.rectangle(
+            GAME_WIDTH / 2, GAME_HEIGHT / 2, 
+            GAME_WIDTH, GAME_HEIGHT, 
+            0x000000, 0
+        ).setDepth(50).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: this.domainOverlay,
+            alpha: 0.95,
+            duration: 800,
+            ease: 'Power2',
         });
+
+        // 2. Cinematic bars (top and bottom)
+        this.cinemaBarTop = this.add.rectangle(
+            GAME_WIDTH / 2, 0, GAME_WIDTH, 80, 0x000000, 1
+        ).setDepth(52).setOrigin(0.5, 0).setAlpha(0);
+
+        this.cinemaBarBottom = this.add.rectangle(
+            GAME_WIDTH / 2, GAME_HEIGHT, GAME_WIDTH, 80, 0x000000, 1
+        ).setDepth(52).setOrigin(0.5, 1).setAlpha(0);
+
+        this.tweens.add({
+            targets: [this.cinemaBarTop, this.cinemaBarBottom],
+            alpha: 1,
+            duration: 600,
+        });
+
+        // 3. HD Portrait sweeping across the screen
+        this.domainPortrait = this.add.image(
+            -300, GAME_HEIGHT / 2, portraitKey
+        ).setDepth(51).setOrigin(0.5);
+
+        // Scale portrait to fill screen height
+        const scaleY = (GAME_HEIGHT - 160) / this.domainPortrait.height;
+        this.domainPortrait.setScale(scaleY);
+        this.domainPortrait.setTint(tintColor);
+
+        // Sweep portrait from left to center with subtle pulsing
+        this.tweens.add({
+            targets: this.domainPortrait,
+            x: GAME_WIDTH / 2,
+            duration: 1500,
+            ease: 'Power2',
+        });
+
+        // Subtle zoom pulse on portrait
+        this.tweens.add({
+            targets: this.domainPortrait,
+            scaleX: scaleY * 1.05,
+            scaleY: scaleY * 1.05,
+            yoyo: true,
+            repeat: -1,
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+        });
+
+        // 4. Domain name text
+        const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI\nMURYŌKŪSHŌ' : 'RYŌIKI TENKAI\nFUKUMA MIZUSHI';
+        this.domainText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 120, domainName, {
+            fontFamily: 'Arial Black',
+            fontSize: '36px',
+            color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
+            stroke: '#000000',
+            strokeThickness: 6,
+            align: 'center',
+        }).setDepth(53).setOrigin(0.5).setAlpha(0);
+
+        this.tweens.add({
+            targets: this.domainText,
+            alpha: 1,
+            duration: 1200,
+            delay: 500,
+        });
+
+        // 5. AUDIO-DRIVEN: Listen for voice line completion
+        try {
+            const domainVoice = this.sound.add(voiceKey, {
+                volume: (window.gameSettings?.sfx || 50) / 100
+            });
+
+            domainVoice.once('complete', () => {
+                this.transitionToPhase2(owner, domainType);
+            });
+
+            domainVoice.play();
+
+            // Safety fallback: if audio never fires 'complete', use config duration
+            const maxWait = (owner.charData.stats.domainPhase1 || 20000) + 3000;
+            this.time.delayedCall(maxWait, () => {
+                if (this.domainPhase1) {
+                    this.transitionToPhase2(owner, domainType);
+                }
+            });
+
+        } catch (e) {
+            // Audio failed — use timer fallback 
+            const fallback = owner.charData.stats.domainPhase1 || 10000;
+            this.time.delayedCall(fallback, () => {
+                this.transitionToPhase2(owner, domainType);
+            });
+        }
     }
 
-    enterDomainPhase2(owner, domainType) {
+    transitionToPhase2(owner, domainType) {
+        if (!this.domainPhase1) return; // Already transitioned
         this.domainPhase1 = false;
         this.domainActive = true;
         const opp = (owner === this.p1) ? this.p2 : this.p1;
 
-        // Re-enable CE drain now for the combat phase
+        // Re-enable CE drain for combat phase
         owner.ceSystem.isDomainActive = true;
+
+        // Clean up ALL cinematic elements
+        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+        if (this.cinemaBarTop) { this.cinemaBarTop.destroy(); this.cinemaBarTop = null; }
+        if (this.cinemaBarBottom) { this.cinemaBarBottom.destroy(); this.cinemaBarBottom = null; }
 
         // Restore visual layers
         owner.sprite.clearTint();
@@ -190,7 +258,7 @@ export default class GameScene extends Phaser.Scene {
         if (owner.graphics) owner.graphics.setDepth(10);
         if (owner.auraGraphics) owner.auraGraphics.setDepth(9);
 
-        // Force-unlock and restore mobility for both
+        // Force-unlock and restore mobility
         owner.stateMachine.unlock();
         opp.stateMachine.unlock();
         if (owner.stateMachine.is('casting_domain')) {
@@ -198,12 +266,6 @@ export default class GameScene extends Phaser.Scene {
         }
         if (opp.stateMachine.is('domain_stunned')) {
             opp.stateMachine.setState('idle');
-        }
-
-        // Destroy the flash overlay
-        if (this.domainFlash) {
-            this.domainFlash.destroy();
-            this.domainFlash = null;
         }
 
         // Reveal Domain Background image
@@ -219,35 +281,32 @@ export default class GameScene extends Phaser.Scene {
 
         // Reset sure-hit timer for Phase 2
         this.sureHitTimer = 0;
+
+        // Resume combat BGM
+        try {
+            this.sound.play('bgm_combat', { volume: 0.3, loop: true });
+        } catch(e) {}
     }
 
     onDomainEnd(owner) {
         this.domainActive = false;
         this.domainPhase1 = false;
         
-        if (this.domainFlash) {
-            this.domainFlash.destroy();
-            this.domainFlash = null;
-        }
+        // Clean up all cinematic elements
+        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+        if (this.cinemaBarTop) { this.cinemaBarTop.destroy(); this.cinemaBarTop = null; }
+        if (this.cinemaBarBottom) { this.cinemaBarBottom.destroy(); this.cinemaBarBottom = null; }
         if (this.domainBg) {
             this.domainBg.destroy();
             this.domainBg = null;
         }
         
-        // Stop domain voice audio
+        // Stop all audio and resume combat BGM
         try {
-            const gojoVoice = this.sound.get('gojo_domain_voice');
-            if (gojoVoice && gojoVoice.isPlaying) gojoVoice.stop();
-            const sukunaVoice = this.sound.get('sukuna_domain_voice');
-            if (sukunaVoice && sukunaVoice.isPlaying) sukunaVoice.stop();
-        } catch(e) {}
-        
-        // Resume combat BGM
-        try {
-            const bgm = this.sound.get('bgm_combat');
-            if (bgm && !bgm.isPlaying) {
-                bgm.resume();
-            }
+            this.sound.stopAll();
+            this.sound.play('bgm_combat', { volume: 0.4, loop: true });
         } catch(e) { console.warn('Audio resume error', e); }
     }
 

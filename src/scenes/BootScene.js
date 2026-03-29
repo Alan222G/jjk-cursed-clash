@@ -86,6 +86,7 @@ export default class BootScene extends Phaser.Scene {
         this.load.audio('sfx_slash', 'assets/audio/sukuna_dismantle.mp3');
         this.load.audio('sfx_cleave', 'assets/audio/sukuna_dismantle.mp3'); // Fallback to dismantle
         this.load.audio('sfx_fire', 'assets/audio/sukuna_fuga.mp3');
+        this.load.audio('sfx_dash', 'assets/audio/dbz_dash.mp3');
 
         // Slash Array for Sukuna Domain
         for(let i=1; i<=11; i++){

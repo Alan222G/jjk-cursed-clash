@@ -1,5 +1,6 @@
 // ========================================================
 // Ryomen Sukuna — King of Curses
+// Audio-Driven Casting System (Anime Pacing)
 // ========================================================
 
 import Phaser from 'phaser';
@@ -11,40 +12,29 @@ export default class Sukuna extends Fighter {
     constructor(scene, x, y, playerIndex) {
         super(scene, x, y, playerIndex, CHARACTERS.SUKUNA);
         this.slashEffects = [];
+        this.isCasting = false;
     }
 
     /** Facial markings + menacing eyes */
     drawFace(g, x, y, facing) {
-        // Menacing eyes
         g.fillStyle(0xFF2200, 1);
         g.fillCircle(x - 5 * facing, y - 2, 3);
         g.fillCircle(x + 5 * facing, y - 2, 3);
 
-        // Cursed facial markings
         g.lineStyle(2, 0x330000, 0.9);
-        g.beginPath();
-        g.moveTo(x - 5, y + 2);
-        g.lineTo(x - 5, y + 10);
-        g.strokePath();
-        g.beginPath();
-        g.moveTo(x + 5, y + 2);
-        g.lineTo(x + 5, y + 10);
-        g.strokePath();
-        g.beginPath();
-        g.moveTo(x - 8, y - 5);
-        g.lineTo(x + 8, y - 5);
-        g.strokePath();
+        g.beginPath(); g.moveTo(x - 5, y + 2); g.lineTo(x - 5, y + 10); g.strokePath();
+        g.beginPath(); g.moveTo(x + 5, y + 2); g.lineTo(x + 5, y + 10); g.strokePath();
+        g.beginPath(); g.moveTo(x - 8, y - 5); g.lineTo(x + 8, y - 5); g.strokePath();
 
-        // Smirk
         g.lineStyle(1, 0x330000, 0.8);
         g.beginPath();
-        g.moveTo(x - 6, y + 5);
-        g.lineTo(x, y + 7);
-        g.lineTo(x + 6, y + 5);
+        g.moveTo(x - 6, y + 5); g.lineTo(x, y + 7); g.lineTo(x + 6, y + 5);
         g.strokePath();
     }
 
     trySpecialAttack() {
+        if (this.isCasting) return;
+
         const tier = this.ceSystem.getTier();
 
         if (tier >= 4 && this.input.isDown('DOWN')) {
@@ -58,92 +48,145 @@ export default class Sukuna extends Fighter {
         }
     }
 
-    castRush() {
-        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
-        
-        this.stateMachine.setState('attack');
-        this.attackPhase = 'active';
-        this.hitConnected = false;
-        
-        this.sprite.body.setVelocityX(800 * this.facing);
-        
-        const skill = this.charData.skills.skill1;
-        this.currentAttack = { 
-            damage: Math.floor(skill.damage * this.power), 
-            knockbackX: 100, 
-            knockbackY: -50, 
-            stunDuration: 1000,
-            type: 'SPECIAL' 
-        };
-        
-        this.enableHitbox({ range: 45, hitboxW: 70, hitboxH: 50 });
-        
-        this.scene.time.delayedCall(250, () => {
-            this.disableHitbox();
-            this.sprite.body.setVelocityX(0);
-            this.attackPhase = 'none';
-            this.currentAttack = null;
-            if (this.stateMachine.is('attack')) {
-                this.stateMachine.setState('idle');
-            }
-        });
+    // ── Helper: Play audio then execute callback when done ──
+    castWithAudio(sfxKey, callback, fallbackMs) {
+        this.isCasting = true;
+        this.stateMachine.lock(99999);
+        this.sprite.body.setVelocityX(0);
+
+        try {
+            const snd = this.scene.sound.add(sfxKey, {
+                volume: (window.gameSettings?.sfx || 50) / 100
+            });
+            snd.once('complete', () => {
+                this.isCasting = false;
+                this.stateMachine.unlock();
+                callback();
+            });
+            snd.play();
+
+            this.scene.time.delayedCall(fallbackMs || 5000, () => {
+                if (this.isCasting) {
+                    this.isCasting = false;
+                    this.stateMachine.unlock();
+                    callback();
+                }
+            });
+        } catch (e) {
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            callback();
+        }
     }
 
+    // ════════════════════════════════════════════
+    // RUSH — DBZ-Style Dash (sfx_dash → then hit)
+    // ════════════════════════════════════════════
+    castRush() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+
+        this.castWithAudio('sfx_dash', () => {
+            // Audio finished → execute the rush dash
+            this.stateMachine.unlock();
+            this.stateMachine.setState('attack');
+            this.attackPhase = 'active';
+            this.hitConnected = false;
+
+            this.sprite.body.setVelocityX(800 * this.facing);
+
+            const skill = this.charData.skills.skill1;
+            this.currentAttack = {
+                damage: Math.floor(skill.damage * this.power),
+                knockbackX: 100,
+                knockbackY: -50,
+                stunDuration: 1000,
+                type: 'SPECIAL'
+            };
+
+            this.enableHitbox({ range: 45, hitboxW: 70, hitboxH: 50 });
+
+            this.scene.time.delayedCall(250, () => {
+                this.disableHitbox();
+                this.sprite.body.setVelocityX(0);
+                this.attackPhase = 'none';
+                this.currentAttack = null;
+                if (this.stateMachine.is('attack')) {
+                    this.stateMachine.setState('idle');
+                }
+            });
+        }, 3000);
+    }
+
+    // ════════════════════════════════════════════
+    // DISMANTLE — Ranged Slash
+    // ════════════════════════════════════════════
     castDismantle() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
         const skill = this.charData.skills.skill1;
 
-        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
-            owner: this,
-            damage: Math.floor(skill.damage * this.power),
-            knockbackX: 150,
-            knockbackY: -50,
-            stunDuration: 250,
-            speed: 800,
-            direction: this.facing,
-            color: 0x000000,
-            size: { w: 40, h: 40 },
-            lifetime: 1000,
-            type: 'slash',
-        });
-
-        if (this.scene.projectiles) {
-            this.scene.projectiles.push(proj);
-        }
-        
-        try {
-            this.scene.sound.play('sfx_slash', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        } catch(e) {}
-        
         this.spawnSlashEffect(this.sprite.x + 30 * this.facing, this.sprite.y, 0xAAAAAA, 40);
+
+        this.castWithAudio('sfx_slash', () => {
+            // Audio finished → fire the slash projectile
+            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
+                owner: this,
+                damage: Math.floor(skill.damage * this.power),
+                knockbackX: 150,
+                knockbackY: -50,
+                stunDuration: 250,
+                speed: 800,
+                direction: this.facing,
+                color: 0x000000,
+                size: { w: 40, h: 40 },
+                lifetime: 1000,
+                type: 'slash',
+            });
+
+            if (this.scene.projectiles) {
+                this.scene.projectiles.push(proj);
+            }
+
+            if (this.stateMachine.is('attack')) {
+                this.stateMachine.setState('idle');
+            }
+        }, 4000);
     }
 
+    // ════════════════════════════════════════════
+    // CLEAVE — AOE Slash
+    // ════════════════════════════════════════════
     castCleave() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
         const skill = this.charData.skills.skill2;
 
-        this.spawnCleaveEffect();
-        
-        try {
-            this.scene.sound.play('sfx_cleave', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        } catch(e) {}
+        this.castWithAudio('sfx_cleave', () => {
+            // Audio finished → execute the cleave
+            this.spawnCleaveEffect();
 
-        if (this.opponent) {
-            const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-            if (dist < 180) {
-                const dmg = Math.floor(skill.damage * this.power);
-                this.opponent.takeDamage(dmg, 400 * this.facing, -250, 500);
-                this.ceSystem.gain(12);
-                this.comboSystem.registerHit('SPECIAL');
+            if (this.opponent) {
+                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                if (dist < 180) {
+                    const dmg = Math.floor(skill.damage * this.power);
+                    this.opponent.takeDamage(dmg, 400 * this.facing, -250, 500);
+                    this.ceSystem.gain(12);
+                    this.comboSystem.registerHit('SPECIAL');
 
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.006, 300);
-                    this.scene.screenEffects.hitFreeze(120);
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.shake(0.006, 300);
+                        this.scene.screenEffects.hitFreeze(120);
+                    }
                 }
             }
-        }
+
+            if (this.stateMachine.is('attack')) {
+                this.stateMachine.setState('idle');
+            }
+        }, 4000);
     }
 
+    // ════════════════════════════════════════════
+    // VFX Helpers
+    // ════════════════════════════════════════════
     spawnSlashEffect(x, y, color, size) {
         const g = this.scene.add.graphics();
         g.setDepth(15);
@@ -175,16 +218,10 @@ export default class Sukuna extends Fighter {
             const len = 80 + i * 10;
             const ex = x + Math.cos(angle) * len;
             const ey = y + Math.sin(angle) * len;
-            g.lineStyle(4 + (i === 2 ? 4 : 0), 0x000000, 1); // Black core
-            g.beginPath();
-            g.moveTo(x, y);
-            g.lineTo(ex, ey);
-            g.strokePath();
-            g.lineStyle(2 + (i === 2 ? 2 : 0), 0xFF0000, 0.8); // Red outline
-            g.beginPath();
-            g.moveTo(x, y);
-            g.lineTo(ex, ey);
-            g.strokePath();
+            g.lineStyle(4 + (i === 2 ? 4 : 0), 0x000000, 1);
+            g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
+            g.lineStyle(2 + (i === 2 ? 2 : 0), 0xFF0000, 0.8);
+            g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
         }
         const flash = this.scene.add.circle(x, y, 50, 0xFF2222, 0.4);
         flash.setDepth(14);
@@ -197,11 +234,13 @@ export default class Sukuna extends Fighter {
         });
     }
 
+    // ════════════════════════════════════════════
+    // DIVINE FLAME (Fuga) — Ultimate Fire Arrow
+    // ════════════════════════════════════════════
     castDivineFlame() {
         if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
         const skill = this.charData.skills.maximum;
 
-        this.stateMachine.lock(600);
         this.sprite.body.setVelocityX(0);
 
         if (this.scene.screenEffects) {
@@ -209,6 +248,7 @@ export default class Sukuna extends Fighter {
             this.scene.screenEffects.flash(0xFF5500, 500, 0.5);
         }
 
+        // Show bow charging visual
         const bow = this.scene.add.graphics();
         bow.setDepth(16);
         bow.lineStyle(4, 0xFF8800, 1);
@@ -223,39 +263,42 @@ export default class Sukuna extends Fighter {
             scaleX: 1.2,
             duration: 400,
             ease: 'Power1',
-            onComplete: () => {
-                bow.destroy();
-                
-                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
-                    owner: this,
-                    damage: Math.floor(skill.damage * this.power),
-                    knockbackX: 1000,
-                    knockbackY: -300,
-                    stunDuration: 700,
-                    speed: 900,
-                    direction: this.facing,
-                    color: 0xFF3300,
-                    size: { w: 120, h: 40 },
-                    lifetime: 2500,
-                    type: 'fire_arrow',
-                });
-                
-                if (this.scene.projectiles) {
-                    this.scene.projectiles.push(proj);
-                }
-                
-                try {
-                    this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx || 50) / 100 });
-                } catch(e) {}
-                
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.015, 400);
-                }
-            }
+            onComplete: () => bow.destroy(),
         });
+
+        this.castWithAudio('sfx_fire', () => {
+            // Audio finished → fire the Fuga arrow
+            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
+                owner: this,
+                damage: Math.floor(skill.damage * this.power),
+                knockbackX: 1000,
+                knockbackY: -300,
+                stunDuration: 700,
+                speed: 900,
+                direction: this.facing,
+                color: 0xFF3300,
+                size: { w: 120, h: 40 },
+                lifetime: 2500,
+                type: 'fire_arrow',
+            });
+
+            if (this.scene.projectiles) {
+                this.scene.projectiles.push(proj);
+            }
+
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.015, 400);
+            }
+
+            this.stateMachine.setState('idle');
+        }, 6000);
     }
 
+    // ════════════════════════════════════════════
+    // DOMAIN EXPANSION — Malevolent Shrine
+    // ════════════════════════════════════════════
     tryActivateDomain() {
+        if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
         if (this.domainActive) return;
 
@@ -263,16 +306,13 @@ export default class Sukuna extends Fighter {
         this.domainActive = true;
         this.ceSystem.startDomain();
 
-        // Force-unlock so the state transition always succeeds
         this.stateMachine.unlock();
         this.stateMachine.setState('casting_domain');
 
-        // Play domain voice
         try {
             this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
-        } catch(e) { console.warn('Sukuna domain voice error', e); }
+        } catch (e) { console.warn('Sukuna domain voice error', e); }
 
-        // Notify GameScene to handle cinematic phase
         if (this.scene.onDomainActivated) {
             this.scene.onDomainActivated(this, 'malevolent_shrine');
         }
@@ -281,10 +321,8 @@ export default class Sukuna extends Fighter {
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
 
-        // Auto-slash damage: 50 per tick
         opponent.takeDamage(50, 50 * this.facing, 0, 100);
 
-        // Visual: random slashes appear on opponent
         const ox = opponent.sprite.x;
         const oy = opponent.sprite.y;
         this.spawnSlashEffect(
@@ -293,12 +331,11 @@ export default class Sukuna extends Fighter {
             0xFF4444,
             40 + Math.random() * 30
         );
-        
-        // Random slash audio from 11 variants
+
         try {
             const slashIdx = Phaser.Math.Between(1, 11);
             const slashKey = `slash_${slashIdx}`;
             this.scene.sound.play(slashKey, { volume: 0.6 });
-        } catch(e) {}
+        } catch (e) {}
     }
 }
