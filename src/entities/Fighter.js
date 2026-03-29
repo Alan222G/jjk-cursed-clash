@@ -230,6 +230,34 @@ export default class Fighter {
             },
         });
 
+        // Gojo Infinity — special shield that costs CE
+        sm.addState('infinity', {
+            onEnter: function () {
+                this.sprite.body.setVelocityX(0);
+                this.infinityActive = true;
+            },
+            onUpdate: function (dt) {
+                // Drain CE while active (5 CE per second)
+                const drain = 5 * (dt / 1000);
+                this.ceSystem.ce -= drain;
+                if (this.ceSystem.ce <= 0) {
+                    this.ceSystem.ce = 0;
+                    this.infinityActive = false;
+                    this.stateMachine.setState('idle');
+                    return;
+                }
+                
+                // Toggle OFF if they press I again or let go of shift
+                if (this.input.justPressed('DOMAIN')) {
+                    this.infinityActive = false;
+                    this.stateMachine.setState('idle');
+                }
+            },
+            onExit: function () {
+                this.infinityActive = false;
+            },
+        });
+
         sm.addState('hitstun', {
             onEnter: function () {
                 this.hitFlash = 6;
@@ -332,7 +360,7 @@ export default class Fighter {
         if (!attackAction) return;
 
         if (attackAction === 'DOMAIN') {
-            // Ignore Domain cast if they are holding BLOCK (trying to toggle Infinity)
+            // Ignore Domain cast if they are trying to toggle Infinity (holding BLOCK)
             if (this.input.isDown('BLOCK') && this.fighterId === 'gojo') {
                 return; 
             }
@@ -356,19 +384,16 @@ export default class Fighter {
     }
 
     handleBlockInput() {
-        // Toggle Infinity (Gojo only: SHIFT + I/DOMAIN) anywhere
-        if (this.input.isDown('BLOCK') && this.input.justPressed('DOMAIN') && this.fighterId === 'gojo') {
-            if (!this.infinityActive && this.ceSystem.ce > 0) {
-                this.infinityActive = true;
-            } else if (this.infinityActive) {
-                this.infinityActive = false; // Toggle off
-            }
-            return;
-        }
-
-        // Normal block (Only if not in infinity or walking/idle)
         if (this.stateMachine.isAny('idle', 'walk')) {
-            if (this.input.isDown('BLOCK') && !this.infinityActive) {
+            // Check for Infinity Toggle (Gojo only: SHIFT + I/DOMAIN)
+            if (this.input.isDown('BLOCK') && this.input.justPressed('DOMAIN') && this.fighterId === 'gojo') {
+                if (this.ceSystem.ce > 0) {
+                    this.stateMachine.setState('infinity');
+                    return;
+                }
+            }
+            // Normal block
+            if (this.input.isDown('BLOCK')) {
                 this.stateMachine.setState('block');
             }
         }
@@ -540,16 +565,6 @@ export default class Fighter {
         this.stateMachine.update(dt);
         this.ceSystem.update(dt);
         this.comboSystem.update(dt);
-
-        // Infinity Drain System
-        if (this.infinityActive) {
-            const drain = 5 * (dt / 1000);
-            this.ceSystem.ce -= drain;
-            if (this.ceSystem.ce <= 0) {
-                this.ceSystem.ce = 0;
-                this.infinityActive = false; // Out of juice
-            }
-        }
 
         // Burn DoT
         if (this.burnTimer > 0) {
@@ -734,7 +749,7 @@ export default class Fighter {
         }
 
         // ── INFINITY VISUAL — Full body shield sphere ──
-        if (this.infinityActive) {
+        if (this.stateMachine.is('infinity')) {
             const pulse = 0.4 + Math.sin(this.animTimer * 0.008) * 0.2;
             // Outer shield circle
             g.lineStyle(3, 0x44CCFF, pulse + 0.3);
