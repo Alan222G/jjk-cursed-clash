@@ -26,6 +26,15 @@ export default class GameScene extends Phaser.Scene {
         this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya')
             .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
             .setDepth(-10);
+            
+        // BGM Deathmatch Mapeado a Loop
+        if (this.sound.get('bgm_combat')) {
+            if (!this.sound.get('bgm_combat').isPlaying) {
+                this.sound.stopAll();
+                this.sound.play('bgm_combat', { volume: 0.4, loop: true });
+            }
+        }
+        
         
         // Floor
         const floorY = GAME_HEIGHT - 60;
@@ -51,6 +60,7 @@ export default class GameScene extends Phaser.Scene {
         // ── Systems ──
         this.hud = new HUD(this);
         this.hud.setNames(this.p1.fighterName, this.p2.fighterName);
+        this.hud.setPortraits(this.p1Key, this.p2Key);
         this.hud.startTimer();
         
         this.damageNumbers = new DamageNumbers(this);
@@ -193,6 +203,23 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
+        if (!this.p1 || !this.p2) return;
+        
+        // Game Over Condition Check
+        if (this.p1.hp <= 0 || this.p2.hp <= 0) {
+            if (this.p1.hp <= 0 && this.p1.stateMachine.state !== 'dead') {
+                this.p1.hp = 0;
+                this.p1.stateMachine.setState('dead');
+                this.onKnockout(this.p2, this.p1);
+            }
+            if (this.p2.hp <= 0 && this.p2.stateMachine.state !== 'dead') {
+                this.p2.hp = 0;
+                this.p2.stateMachine.setState('dead');
+                this.onKnockout(this.p1, this.p2);
+            }
+            return;
+        }
+
         if (this.aiManager) this.aiManager.update(time, delta);
         
         this.p1.update(time, delta);

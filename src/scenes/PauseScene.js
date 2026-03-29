@@ -8,6 +8,14 @@ export default class PauseScene extends Phaser.Scene {
 
     create() {
         this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0);
+        
+        // Pause all ongoing BGM (like DEATHMATCH combat bgm)
+        this.sound.pauseAll();
+        
+        // Play Pause Music
+        if (this.sound.get('musica_pausa')) {
+            this.sound.play('musica_pausa', { volume: 0.6, loop: true });
+        }
 
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;
@@ -19,18 +27,34 @@ export default class PauseScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         this.createButton(cx, cy, 'REANUDAR', () => {
-            this.scene.resume('GameScene');
+            this.sound.stopByKey('musica_pausa');
+            this.sound.resumeAll();
+            
+            // Reanudar la escena principal y sus dinámicas
+            const mainScene = this.scene.get('GameScene');
+            if(mainScene) {
+                mainScene.scene.resume();
+                mainScene.physics.resume();
+            }
             this.scene.stop();
         });
 
         this.createButton(cx, cy + 80, 'ABANDONAR PARTIDA', () => {
+            this.sound.stopAll();
             this.scene.stop('GameScene');
             this.scene.start('MenuScene');
         });
         
         // Listen for ESC to resume
         this.input.keyboard.on('keydown-ESC', () => {
-            this.scene.resume('GameScene');
+            this.sound.stopByKey('musica_pausa');
+            this.sound.resumeAll();
+            
+            const mainScene = this.scene.get('GameScene');
+            if(mainScene) {
+                mainScene.scene.resume();
+                mainScene.physics.resume();
+            }
             this.scene.stop();
         });
     }

@@ -18,6 +18,14 @@ export default class MenuScene extends Phaser.Scene {
         this.bg = this.add.graphics();
         this.drawBackground();
 
+        // ── BGM Loop ──
+        if (this.sound.get('bgm_menu')) {
+            if (!this.sound.get('bgm_menu').isPlaying) {
+                this.sound.stopAll();
+                this.sound.play('bgm_menu', { volume: 0.5, loop: true });
+            }
+        }
+
         // ── Floating Particles ──
         for (let i = 0; i < 40; i++) {
             this.particles.push({

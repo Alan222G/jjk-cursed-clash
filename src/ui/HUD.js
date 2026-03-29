@@ -36,14 +36,41 @@ export default class HUD {
             strokeThickness: 4,
         }).setDepth(101).setScrollFactor(0).setAlpha(0).setOrigin(1, 0);
 
-        // Timer text
-        this.timerText = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y, '99', {
+        // Fight Text (Start of round)
+        this.fightText = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y + 40, '', {
             fontFamily: 'Arial Black, Impact, sans-serif',
-            fontSize: '42px',
+            fontSize: '56px',
             color: '#FFD700',
             stroke: '#000000',
-            strokeThickness: 5,
+            strokeThickness: 6,
         }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0);
+
+        // Pause Button (Replaces Timer)
+        this.pauseBtn = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y, '⏸️ PAUSE', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '20px',
+            color: '#FFFFFF',
+            stroke: '#000000',
+            strokeThickness: 3,
+            backgroundColor: '#AA2222',
+            padding: { x: 6, y: 3 }
+        }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0)
+          .setInteractive({ useHandCursor: true });
+          
+        this.pauseBtn.on('pointerdown', () => {
+            if (scene.sound.get('musica_pausa')) {
+                scene.sound.play('musica_pausa', { volume: 0.6, loop: true });
+            }
+            scene.physics.pause();
+            scene.scene.pause();
+            // Try to launch pause scene if exists
+            if (scene.scene.manager.keys['PauseScene']) {
+                scene.scene.launch('PauseScene');
+            } else {
+                console.log("PauseScene not found, creating a simple overlay...");
+                // Just as a fallback if PauseScene isn't fully created
+            }
+        });
 
         // Round text
         this.roundText = scene.add.text(GAME_WIDTH / 2, 68, '', {
@@ -77,38 +104,49 @@ export default class HUD {
         this.p1PortraitMask = scene.add.graphics();
         this.p1PortraitMask.fillStyle(0xffffff);
         this.p1PortraitMask.fillCircle(p1cx, acy, ar - 4);
-        
         this.p2PortraitMask = scene.add.graphics();
         this.p2PortraitMask.fillStyle(0xffffff);
         this.p2PortraitMask.fillCircle(p2cx, acy, ar - 4);
+    }
 
-        // P1 portrait (defaults to Gojo)
-        if (scene.textures.exists('portrait_gojo')) {
-            this.p1Portrait = scene.add.image(p1cx, acy, 'portrait_gojo')
+    setPortraits(p1Key, p2Key) {
+        const ar = HUD_STYLE.AVATAR_RADIUS;
+        const p1cx = HUD_STYLE.MARGIN + ar;
+        const p2cx = GAME_WIDTH - HUD_STYLE.MARGIN - ar;
+        const acy = 45;
+        
+        const p1Tex = p1Key === 'GOJO' ? 'portrait_gojo' : 'portrait_sukuna';
+        const p2Tex = p2Key === 'GOJO' ? 'portrait_gojo' : 'portrait_sukuna';
+
+        if (this.scene.textures.exists(p1Tex)) {
+            this.p1Portrait = this.scene.add.image(p1cx, acy, p1Tex)
                 .setDisplaySize(ar * 2 - 8, ar * 2 - 8)
                 .setDepth(100.5)
                 .setScrollFactor(0);
             this.p1Portrait.setMask(this.p1PortraitMask.createGeometryMask());
         }
 
-        // P2 portrait (defaults to Sukuna)
-        if (scene.textures.exists('portrait_sukuna')) {
-            this.p2Portrait = scene.add.image(p2cx, acy, 'portrait_sukuna')
+        if (this.scene.textures.exists(p2Tex)) {
+            this.p2Portrait = this.scene.add.image(p2cx, acy, p2Tex)
                 .setDisplaySize(ar * 2 - 8, ar * 2 - 8)
                 .setDepth(100.5)
                 .setScrollFactor(0);
             this.p2Portrait.setMask(this.p2PortraitMask.createGeometryMask());
+            this.p2Portrait.setFlipX(true); // Always face center for P2
         }
     }
 
     startTimer() {
-        this.timerText.setText('FIGHT!');
-        this.scene.tweens.add({
-            targets: this.timerText,
-            alpha: 0,
-            delay: 1500,
-            duration: 1000
-        });
+        if(this.fightText) {
+            this.fightText.setText('FIGHT!');
+            this.scene.tweens.add({
+                targets: this.fightText,
+                alpha: 0,
+                delay: 1500,
+                duration: 1000,
+                onComplete: () => this.fightText.destroy()
+            });
+        }
     }
 
     stopTimer() {

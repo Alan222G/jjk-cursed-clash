@@ -25,6 +25,14 @@ export default class CharSelectScene extends Phaser.Scene {
 
         const roster = Object.keys(CHARACTERS);
 
+        // ── BGM Loop ──
+        if (this.sound.get('bgm_select')) {
+            if (!this.sound.get('bgm_select').isPlaying) {
+                this.sound.stopAll();
+                this.sound.play('bgm_select', { volume: 0.5, loop: true });
+            }
+        }
+
         // ── Background ──
         const bg = this.add.graphics();
         for (let y = 0; y < GAME_HEIGHT; y += 4) {
