@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite';
 
+// Use '/jjk-cursed-clash/' for GitHub Pages, '/' for Vercel
+const isVercel = process.env.VERCEL === '1';
+
 export default defineConfig({
-  base: '/jjk-cursed-clash/',
+  base: isVercel ? '/' : '/jjk-cursed-clash/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
