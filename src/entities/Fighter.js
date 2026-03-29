@@ -230,6 +230,33 @@ export default class Fighter {
             },
         });
 
+        // Gojo Infinity — special shield that costs CE
+        sm.addState('infinity', {
+            onEnter: function () {
+                this.sprite.body.setVelocityX(0);
+                this.infinityActive = true;
+            },
+            onUpdate: function (dt) {
+                // Drain CE while active (5 CE per second)
+                const drain = 5 * (dt / 1000);
+                this.ceSystem.ce -= drain;
+                if (this.ceSystem.ce <= 0) {
+                    this.ceSystem.ce = 0;
+                    this.infinityActive = false;
+                    this.stateMachine.setState('idle');
+                    return;
+                }
+                // Release when keys released
+                if (!this.input.isDown('BLOCK') || !this.input.isDown('DOMAIN')) {
+                    this.infinityActive = false;
+                    this.stateMachine.setState('idle');
+                }
+            },
+            onExit: function () {
+                this.infinityActive = false;
+            },
+        });
+
         sm.addState('hitstun', {
             onEnter: function () {
                 this.hitFlash = 6;
@@ -289,6 +316,10 @@ export default class Fighter {
                 this.sprite.body.setVelocity(0, 0);
             },
             onUpdate: function () {},
+            onExit: function () {
+                // Ensure cleanup when leaving domain_stunned
+                this.sprite.body.setAllowGravity(true);
+            },
         });
 
         sm.addState('dead', {
@@ -348,8 +379,18 @@ export default class Fighter {
     }
 
     handleBlockInput() {
-        if (this.input.isDown('BLOCK') && this.stateMachine.isAny('idle', 'walk')) {
-            this.stateMachine.setState('block');
+        if (this.stateMachine.isAny('idle', 'walk')) {
+            // Check for Infinity (Gojo only: SHIFT + I/DOMAIN)
+            if (this.input.isDown('BLOCK') && this.input.isDown('DOMAIN') && this.fighterId === 'gojo') {
+                if (this.ceSystem.ce > 0) {
+                    this.stateMachine.setState('infinity');
+                    return;
+                }
+            }
+            // Normal block
+            if (this.input.isDown('BLOCK')) {
+                this.stateMachine.setState('block');
+            }
         }
     }
 
@@ -374,16 +415,40 @@ export default class Fighter {
         if (this.isInvulnerable) return;
         if (this.isDead) return;
 
-        // Block reduces damage by 80%
+        // Gojo Infinity — blocks ALL damage and repels attacker
+        if (this.infinityActive) {
+            // Visual repel effect
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.003, 100);
+            }
+            return; // No damage at all
+        }
+
+        const atk = this.scene?.lastHitAttack; // Set by onHitOpponent
+
+        // Block mechanics
         if (this.stateMachine.is('block')) {
-            damage = Math.floor(damage * 0.2);
-            kbX *= 0.3;
-            kbY *= 0.3;
-            stunDuration *= 0.3;
+            const breaksBlock = atk?.breaksBlock || false;
+            const blockKnockMult = atk?.blockKnockMult ?? 0.3;
+
+            if (breaksBlock) {
+                // Heavy breaks block — reduced damage but full knockback
+                damage = Math.floor(damage * 0.4);
+                // Force out of block into hitstun
+                this.stateMachine.setState('hitstun');
+                this.stunTimer = stunDuration;
+            } else {
+                // Normal block — 40% damage reduction
+                damage = Math.floor(damage * 0.6);
+                kbX *= blockKnockMult;
+                kbY *= blockKnockMult;
+                stunDuration = 0; // No stun when blocking normally
+            }
         }
 
         // Apply defense stat
         damage = Math.floor(damage / this.defense);
+        if (damage < 1) damage = 1;
 
         this.hp -= damage;
         this.hitFlash = 6;
@@ -394,9 +459,11 @@ export default class Fighter {
             this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, damage);
         }
 
-        // Check death
+        // Check death — FORCE isDead and unlock BEFORE setState
         if (this.hp <= 0) {
             this.hp = 0;
+            this.isDead = true;
+            this.stateMachine.unlock();
             this.sprite.body.setVelocity(kbX, kbY * 1.5);
             this.stateMachine.setState('dead');
             return;
@@ -405,12 +472,12 @@ export default class Fighter {
         // Apply knockback
         this.sprite.body.setVelocity(kbX, kbY);
 
-        // Stun
+        // Stun (only if not blocking)
         if (!this.stateMachine.is('block')) {
             this.stunTimer = stunDuration;
-            if (damage >= 80) {
+            if (damage >= 40) {
                 this.stateMachine.setState('knockdown');
-            } else {
+            } else if (stunDuration > 0) {
                 this.stateMachine.setState('hitstun');
             }
         }
@@ -426,6 +493,9 @@ export default class Fighter {
         const atk = this.currentAttack;
         const dmg = Math.floor(atk.damage * this.power);
         const kbX = atk.knockbackX * this.facing;
+
+        // Pass attack data to scene for block mechanics
+        this.scene.lastHitAttack = atk;
 
         opponent.takeDamage(dmg, kbX, atk.knockbackY, atk.stunDuration);
         this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
@@ -505,6 +575,8 @@ export default class Fighter {
                 
                 if (this.hp <= 0) {
                     this.hp = 0;
+                    this.isDead = true;
+                    this.stateMachine.unlock();
                     this.stateMachine.setState('dead');
                 }
             }
@@ -627,12 +699,39 @@ export default class Fighter {
         g.lineTo(x + rightLegX + 3, legY + rightKnee);
         g.strokePath();
 
-        // ── BLOCK SHIELD ──
+        // ── BLOCK VISUAL — Crouch + Arms Crossed (no shield) ──
         if (this.stateMachine.is('block')) {
-            g.lineStyle(3, colors.energy, 0.7);
-            g.strokeCircle(x + 15 * f, y - 10, 30);
-            g.fillStyle(colors.energy, 0.15);
-            g.fillCircle(x + 15 * f, y - 10, 30);
+            // Draw crossed arms in front of body
+            g.lineStyle(8, bodyColor, 1);
+            // Left arm crossed over
+            g.beginPath();
+            g.moveTo(x - 12, armY);
+            g.lineTo(x + 8 * f, armY - 15);
+            g.strokePath();
+            // Right arm crossed over
+            g.beginPath();
+            g.moveTo(x + 12, armY);
+            g.lineTo(x - 8 * f, armY - 10);
+            g.strokePath();
+        }
+
+        // ── INFINITY VISUAL — Full body shield sphere ──
+        if (this.stateMachine.is('infinity')) {
+            const pulse = 0.4 + Math.sin(this.animTimer * 0.008) * 0.2;
+            // Outer shield circle
+            g.lineStyle(3, 0x44CCFF, pulse + 0.3);
+            g.strokeCircle(x, y - 15, 55);
+            // Inner glow
+            g.fillStyle(0x44CCFF, pulse * 0.2);
+            g.fillCircle(x, y - 15, 55);
+            // Hexagonal pattern
+            for (let i = 0; i < 6; i++) {
+                const a = (i * Math.PI / 3) + this.animTimer * 0.002;
+                const hx = x + Math.cos(a) * 40;
+                const hy = y - 15 + Math.sin(a) * 40;
+                g.fillStyle(0x88EEFF, 0.3);
+                g.fillCircle(hx, hy, 8);
+            }
         }
 
         // ── HITSTUN EFFECT ──

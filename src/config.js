@@ -17,7 +17,7 @@ export const PHYSICS = {
 
 // ── Fighter Defaults ─────────────────────────────────────
 export const FIGHTER_DEFAULTS = {
-    MAX_HP: 2500,
+    MAX_HP: 3000,
     MAX_CE: 200,
     CE_REGEN_RATE: 10,         // CE per second (passive) - increased for faster gameplay
     CE_REGEN_ON_HIT: 12,      // CE gained when landing a hit
@@ -32,43 +32,49 @@ export const FIGHTER_DEFAULTS = {
 // ── Attack Data ──────────────────────────────────────────
 export const ATTACKS = {
     LIGHT: {
-        damage: 30,
-        knockbackX: 200,
-        knockbackY: -50,
-        stunDuration: 200,
+        damage: 15,
+        knockbackX: 80,
+        knockbackY: -20,
+        stunDuration: 150,
         range: 65,
         hitboxW: 55,
         hitboxH: 40,
-        startup: 60,        // ms before hitbox activates
-        active: 100,        // ms hitbox stays active
-        recovery: 150,      // ms after hitbox deactivates (can't act)
-        ceGain: 5,
+        startup: 60,
+        active: 80,
+        recovery: 300,       // 300ms cooldown to prevent spam
+        ceGain: 3,
+        breaksBlock: false,
+        blockKnockMult: 0.1,  // Barely pushes if blocked
     },
     MEDIUM: {
-        damage: 55,
-        knockbackX: 350,
-        knockbackY: -100,
-        stunDuration: 350,
+        damage: 30,
+        knockbackX: 250,
+        knockbackY: -80,
+        stunDuration: 300,
         range: 80,
         hitboxW: 65,
         hitboxH: 50,
         startup: 120,
         active: 120,
         recovery: 250,
-        ceGain: 10,
+        ceGain: 8,
+        breaksBlock: false,
+        blockKnockMult: 0.3,  // Reduced push if blocked
     },
     HEAVY: {
-        damage: 90,
-        knockbackX: 550,
-        knockbackY: -200,
-        stunDuration: 500,
+        damage: 50,
+        knockbackX: 650,
+        knockbackY: -300,
+        stunDuration: 600,
         range: 95,
         hitboxW: 80,
         hitboxH: 60,
-        startup: 220,
+        startup: 250,
         active: 150,
-        recovery: 400,
-        ceGain: 15,
+        recovery: 450,
+        ceGain: 12,
+        breaksBlock: true,     // Breaks normal block
+        blockKnockMult: 1.0,   // Full launch even through block
     },
 };
 
@@ -151,7 +157,7 @@ export const CHARACTERS = {
             hair: 0xF5F5FF,
         },
         stats: {
-            maxHp: 2000,
+            maxHp: 3000,
             speed: 340,
             power: 0.9,
             defense: 1.2,
@@ -182,7 +188,7 @@ export const CHARACTERS = {
             hair: 0xFF8899,
         },
         stats: {
-            maxHp: 1500,
+            maxHp: 2500,
             speed: 310,
             power: 1.3,
             defense: 0.9,

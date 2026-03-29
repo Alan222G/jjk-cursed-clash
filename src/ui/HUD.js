@@ -45,33 +45,50 @@ export default class HUD {
             strokeThickness: 6,
         }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0);
 
-        // Pause Button (Replaces Timer)
-        this.pauseBtn = scene.add.text(GAME_WIDTH / 2, HUD_STYLE.TIMER_Y, 'PAUSA', {
+        // Pause Button — styled like menu buttons
+        const btnX = GAME_WIDTH / 2;
+        const btnY = HUD_STYLE.TIMER_Y;
+        const btnW = 100;
+        const btnH = 32;
+        
+        // Button background (drawn in update for hover effect)
+        this.pauseBtnGraphics = scene.add.graphics().setDepth(101).setScrollFactor(0);
+        this.pauseBtnHover = false;
+        
+        // Draw initial button
+        this._drawPauseButton(false);
+        
+        // ‖ symbol + text
+        this.pauseBtn = scene.add.text(btnX, btnY + btnH / 2, '❚❚ PAUSA', {
             fontFamily: 'Arial Black, Impact, sans-serif',
-            fontSize: '20px',
+            fontSize: '14px',
             color: '#D4A843',
             stroke: '#000000',
-            strokeThickness: 5,
+            strokeThickness: 3,
             letterSpacing: 2
-        }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0)
-          .setInteractive({ useHandCursor: true });
-          
-        this.pauseBtn.on('pointerover', () => this.pauseBtn.setColor('#FFFFFF'));
-        this.pauseBtn.on('pointerout', () => this.pauseBtn.setColor('#D4A843'));
+        }).setDepth(102).setScrollFactor(0).setOrigin(0.5, 0.5);
         
-        this.pauseBtn.on('pointerdown', () => {
-            if (scene.sound.get('musica_pausa')) {
-                scene.sound.play('musica_pausa', { volume: 0.6, loop: true });
-            }
+        // Interactive zone on top
+        this.pauseZone = scene.add.zone(btnX, btnY + btnH / 2, btnW, btnH)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(103).setScrollFactor(0);
+            
+        this.pauseZone.on('pointerover', () => {
+            this.pauseBtnHover = true;
+            this.pauseBtn.setColor('#FFFFFF');
+            this._drawPauseButton(true);
+        });
+        this.pauseZone.on('pointerout', () => {
+            this.pauseBtnHover = false;
+            this.pauseBtn.setColor('#D4A843');
+            this._drawPauseButton(false);
+        });
+        
+        this.pauseZone.on('pointerdown', () => {
+            if (scene.matchEnded) return;
             scene.physics.pause();
             scene.scene.pause();
-            // Try to launch pause scene if exists
-            if (scene.scene.manager.keys['PauseScene']) {
-                scene.scene.launch('PauseScene');
-            } else {
-                console.log("PauseScene not found, creating a simple overlay...");
-                // Just as a fallback if PauseScene isn't fully created
-            }
+            scene.scene.launch('PauseScene');
         });
 
         // Round text
@@ -324,15 +341,35 @@ export default class HUD {
         }
     }
 
+    _drawPauseButton(isHover) {
+        const g = this.pauseBtnGraphics;
+        g.clear();
+        const btnX = GAME_WIDTH / 2;
+        const btnY = HUD_STYLE.TIMER_Y;
+        const btnW = 100;
+        const btnH = 32;
+        const x = btnX - btnW / 2;
+        const y = btnY;
+        
+        // Background
+        g.fillStyle(isHover ? 0x2A2A4E : 0x0A0A18, 0.85);
+        g.fillRoundedRect(x, y, btnW, btnH, 6);
+        // Border
+        g.lineStyle(2, isHover ? 0xFFD700 : 0xD4A843, isHover ? 1 : 0.7);
+        g.strokeRoundedRect(x, y, btnW, btnH, 6);
+    }
+
     destroy() {
         this.stopTimer();
         this.graphics.destroy();
         this.p1ComboText.destroy();
         this.p2ComboText.destroy();
-        this.timerText.destroy();
         this.roundText.destroy();
         this.p1NameText.destroy();
         this.p2NameText.destroy();
+        if (this.pauseBtn) this.pauseBtn.destroy();
+        if (this.pauseZone) this.pauseZone.destroy();
+        if (this.pauseBtnGraphics) this.pauseBtnGraphics.destroy();
         if (this.p1Portrait) this.p1Portrait.destroy();
         if (this.p2Portrait) this.p2Portrait.destroy();
         if (this.p1PortraitMask) this.p1PortraitMask.destroy();
