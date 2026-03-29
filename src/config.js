@@ -165,7 +165,7 @@ export const CHARACTERS = {
             weight: 95,
             jumpForce: -640,
             domainDuration: 46000,
-            domainPhase1: 3000, // Reduced from 20000ms so it doesn't feel frozen
+            domainPhase1: 20000, // Reverted to 20s as user requested
         },
         skills: {
             skill1: { name: 'Ao — Blue', cost: 30, damage: 50, type: 'projectile' },
@@ -196,7 +196,7 @@ export const CHARACTERS = {
             weight: 110,
             jumpForce: -600,
             domainDuration: 35000,
-            domainPhase1: 3000, // Reduced from 10000ms to not feel frozen
+            domainPhase1: 10000, // Reverted to 10s as user requested
         },
         skills: {
             skill1: { name: 'Dismantle', cost: 30, damage: 45, type: 'slash_ranged' },
