@@ -112,9 +112,7 @@ export default class Sukuna extends Fighter {
         }
         
         try {
-            if (this.scene.sound.get('sfx_slash')) {
-                this.scene.sound.play('sfx_slash', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('sfx_slash', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) {}
         
         this.spawnSlashEffect(this.sprite.x + 30 * this.facing, this.sprite.y, 0xAAAAAA, 40);
@@ -127,9 +125,7 @@ export default class Sukuna extends Fighter {
         this.spawnCleaveEffect();
         
         try {
-            if (this.scene.sound.get('sfx_cleave')) {
-                this.scene.sound.play('sfx_cleave', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('sfx_cleave', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) {}
 
         if (this.opponent) {
@@ -249,9 +245,7 @@ export default class Sukuna extends Fighter {
                 }
                 
                 try {
-                    if (this.scene.sound.get('sfx_fire')) {
-                        this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx || 50) / 100 });
-                    }
+                    this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx || 50) / 100 });
                 } catch(e) {}
                 
                 if (this.scene.screenEffects) {
@@ -275,9 +269,7 @@ export default class Sukuna extends Fighter {
 
         // Play domain voice
         try {
-            if (this.scene.sound.get('sukuna_domain_voice')) {
-                this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) { console.warn('Sukuna domain voice error', e); }
 
         // Notify GameScene to handle cinematic phase
@@ -306,9 +298,7 @@ export default class Sukuna extends Fighter {
         try {
             const slashIdx = Phaser.Math.Between(1, 11);
             const slashKey = `slash_${slashIdx}`;
-            if (this.scene.sound.get(slashKey)) {
-                this.scene.sound.play(slashKey, { volume: 0.6 });
-            }
+            this.scene.sound.play(slashKey, { volume: 0.6 });
         } catch(e) {}
     }
 }

@@ -41,30 +41,14 @@ export default class Gojo extends Fighter {
 
     fireBlue() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
-        const skill = this.charData.skills.skill1;
-
-        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
-            owner: this,
-            damage: Math.floor(skill.damage * this.power),
-            knockbackX: -300, // Attract
-            knockbackY: -80,
-            stunDuration: 300,
-            speed: 550,
-            direction: this.facing,
-            color: 0x2244FF,
-            size: { w: 50, h: 50 },
-            lifetime: 1500,
-            type: 'circle',
-        });
-
-        if (this.scene.projectiles) {
-            this.scene.projectiles.push(proj);
-        }
-
+        
+        // Activate Gravitational Anomaly (Ao)
+        this.blueAuraActive = true;
+        this.blueAuraTimer = 3500; // Lasts 3.5 seconds on the field
+        this.blueTickTimer = 0;
+        
         try {
-            if (this.scene.sound.get('sfx_blue')) {
-                this.scene.sound.play('sfx_blue', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('sfx_blue', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) {}
 
         this.spawnBlueEffect();
@@ -93,9 +77,7 @@ export default class Gojo extends Fighter {
         }
 
         try {
-            if (this.scene.sound.get('sfx_red')) {
-                this.scene.sound.play('sfx_red', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('sfx_red', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) {}
 
         this.spawnRedEffect();
@@ -175,7 +157,7 @@ export default class Gojo extends Fighter {
                     speed: 1200,
                     direction: this.facing,
                     color: 0x9922FF,
-                    size: { w: 100, h: 100 },
+                    size: { w: 150, h: 150 }, // Scaled to 150px (1.5x Blue)
                     lifetime: 3000,
                     type: 'circle',
                 });
@@ -185,9 +167,7 @@ export default class Gojo extends Fighter {
                 }
                 
                 try {
-                    if (this.scene.sound.get('sfx_purple')) {
-                        this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx || 50) / 100 });
-                    }
+                    this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx || 50) / 100 });
                 } catch(e) {}
                 
                 if (this.scene.screenEffects) {
@@ -211,9 +191,7 @@ export default class Gojo extends Fighter {
 
         // Play domain voice
         try {
-            if (this.scene.sound.get('gojo_domain_voice')) {
-                this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
-            }
+            this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
         } catch(e) { console.warn('Gojo domain voice error', e); }
 
         // Notify GameScene to handle cinematic phase
@@ -249,6 +227,77 @@ export default class Gojo extends Fighter {
                 duration: 800,
                 onComplete: () => info.destroy(),
             });
+        }
+    }
+
+    // ── Update Override ──
+    update(time, dt) {
+        super.update(time, dt);
+
+        if (this.blueAuraActive) {
+            this.blueAuraTimer -= dt;
+            
+            // Draw Giant Blue Sphere tethered to Gojo's front
+            const bx = this.sprite.x + 100 * this.facing;
+            const by = this.sprite.y - 15;
+            
+            this.scene.graphics = this.scene.graphics || this.scene.add.graphics();
+            this.scene.graphics.setDepth(15);
+            // We use tweens and visual objects per frame or just graphics?
+            // Safer to use GameScene's persistent graphics or manage our own.
+            if (!this.blueGraphics) {
+                this.blueGraphics = this.scene.add.graphics();
+                this.blueGraphics.setDepth(15);
+            }
+            this.blueGraphics.clear();
+            
+            if (this.blueAuraTimer <= 0) {
+                this.blueAuraActive = false;
+                this.blueGraphics.clear();
+                return;
+            }
+
+            const pulse = 0.8 + Math.sin(time * 0.01) * 0.2;
+            
+            // Blue Core
+            this.blueGraphics.fillStyle(0x2244FF, pulse);
+            this.blueGraphics.fillCircle(bx, by, 50); // 100px diameter
+            
+            // White center inner glow
+            this.blueGraphics.fillStyle(0xFFFFFF, pulse * 0.6);
+            this.blueGraphics.fillCircle(bx, by, 25);
+            
+            // Outer attraction rings
+            this.blueGraphics.lineStyle(4, 0x00D4FF, pulse * 0.5);
+            this.blueGraphics.strokeCircle(bx, by, 50 + (time % 500) / 10);
+            
+            // ── Gravitational Suction Logic ──
+            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            if (target && !target.isDead) {
+                const dist = Math.abs(bx - target.sprite.x);
+                if (dist < 300) { // Attraction range
+                    // Pull target towards the sphere
+                    const pullForce = (target.sprite.x > bx) ? -200 : 200;
+                    // Apply smooth pull overcoming their movement
+                    target.sprite.body.velocity.x += pullForce * (dt/1000);
+                    
+                    // Tick Damage if they are sucked in close enough!
+                    if (dist < 80) {
+                        this.blueTickTimer -= dt;
+                        if (this.blueTickTimer <= 0) {
+                            this.blueTickTimer = 500; // Damage every half second
+                            target.takeDamage(15, (target.sprite.x > bx ? -50 : 50), -50, 200);
+                            this.scene.screenEffects.shake(0.005, 100);
+                            
+                            try {
+                                this.scene.sound.play('sfx_blue', { volume: ((window.gameSettings?.sfx || 50) / 100) * 0.5 });
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }
+        } else if (this.blueGraphics) {
+            this.blueGraphics.clear();
         }
     }
 }
