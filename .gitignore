@@ -12,3 +12,6 @@ yarn-error.log*
 brain/
 *.png
 !public/assets/**/*.png
+ffmpeg.zip  
+*.zip  
+convert_audio.cjs  
