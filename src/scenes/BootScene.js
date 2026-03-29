@@ -90,8 +90,8 @@ export default class BootScene extends Phaser.Scene {
         // BGM Tracks (Con espacios corregidos para evitar 404 en navegadores)
         this.load.audio('bgm_menu', 'assets/audio/bgm_menu.mp3');
         this.load.audio('bgm_select', 'assets/audio/bgm_select.mp3');
-        this.load.audio('bgm_combat', 'assets/audio/bgm_combat.mp4');
-        this.load.audio('bgm_gameover', 'assets/audio/bgm_gameover.mp4');
+        this.load.audio('bgm_combat', 'assets/audio/bgm_combat.m4a');
+        this.load.audio('bgm_gameover', 'assets/audio/bgm_gameover.m4a');
         this.load.audio('musica_pausa', 'assets/audio/bgm_pausa.mp3');
     }
 
