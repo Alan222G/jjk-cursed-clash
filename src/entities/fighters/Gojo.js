@@ -86,15 +86,32 @@ export default class Gojo extends Fighter {
 
         this.spawnBlueEffect();
 
-        this.castWithAudio('sfx_blue', () => {
-            // Audio finished → activate the gravitational field
+        // Lock the character, play audio. Blue deploys at 5 seconds.
+        this.isCasting = true;
+        this.stateMachine.lock(99999);
+        this.sprite.body.setVelocityX(0);
+
+        try {
+            const snd = this.scene.sound.add('sfx_blue', {
+                volume: (window.gameSettings?.sfx || 50) / 100
+            });
+            snd.play();
+        } catch(e) {}
+
+        // Deploy the anomaly at 5 seconds into the audio
+        this.scene.time.delayedCall(5000, () => {
+            // Record fixed world position — Blue stays HERE, does NOT follow Gojo
             this.blueAuraActive = true;
-            this.blueAuraTimer = 3500;
+            this.blueAuraTimer = 4000; // Floats for 4 seconds
             this.blueTickTimer = 0;
+            this.blueFixedX = this.sprite.x + 250 * this.facing; // Spawns 250px ahead
+            this.blueFixedY = this.sprite.y - 15;
+            this.isCasting = false;
+            this.stateMachine.unlock();
             if (this.stateMachine.is('attack')) {
                 this.stateMachine.setState('idle');
             }
-        }, 8000);
+        });
     }
 
     // ════════════════════════════════════════════
@@ -107,13 +124,13 @@ export default class Gojo extends Fighter {
         this.spawnRedEffect();
 
         this.castWithAudio('sfx_red', () => {
-            // Audio finished → fire the projectile
+            // Audio finished → fire the projectile with MASSIVE repulsion
             const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
-                knockbackX: 600,
-                knockbackY: -200,
-                stunDuration: 500,
+                knockbackX: 1800,  // Triple original (600 → 1800)
+                knockbackY: -500,  // Strong upward launch
+                stunDuration: 700,
                 speed: 450,
                 direction: this.facing,
                 color: 0xFF2222,
@@ -127,7 +144,7 @@ export default class Gojo extends Fighter {
             }
 
             if (this.scene.screenEffects) {
-                this.scene.screenEffects.shake(0.004, 200);
+                this.scene.screenEffects.shake(0.01, 400);
             }
 
             if (this.stateMachine.is('attack')) {
@@ -147,27 +164,52 @@ export default class Gojo extends Fighter {
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.domainFlash(0xAA00FF);
-            this.scene.screenEffects.slowMotion(0.2, 800);
+            this.scene.screenEffects.slowMotion(0.3, 2000);
         }
 
-        // Show Red+Blue converging visual
-        const x = this.sprite.x + 30 * this.facing;
-        const y = this.sprite.y - 15;
-        const redC = this.scene.add.circle(x, y - 20, 20, 0xFF2222, 0.9).setDepth(15);
-        const blueC = this.scene.add.circle(x, y + 20, 20, 0x2244FF, 0.9).setDepth(15);
+        // Extended dramatic convergence animation (orbiting spheres)
+        const cx = this.sprite.x + 30 * this.facing;
+        const cy = this.sprite.y - 15;
+        const redC = this.scene.add.circle(cx, cy - 60, 25, 0xFF2222, 0.9).setDepth(15);
+        const blueC = this.scene.add.circle(cx, cy + 60, 25, 0x2244FF, 0.9).setDepth(15);
+
+        // Phase 1: Orbiting around the convergence point
         this.scene.tweens.add({
-            targets: [redC, blueC],
-            y: y,
-            duration: 600,
-            ease: 'Power2',
-            onComplete: () => {
-                redC.destroy();
-                blueC.destroy();
-            }
+            targets: redC,
+            x: cx + 40,
+            y: cy - 30,
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 2,
+        });
+        this.scene.tweens.add({
+            targets: blueC,
+            x: cx - 40,
+            y: cy + 30,
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 2,
+        });
+
+        // Growing purple glow at center
+        const purpleGlow = this.scene.add.circle(cx, cy, 5, 0x9922FF, 0.3).setDepth(14);
+        this.scene.tweens.add({
+            targets: purpleGlow,
+            scaleX: 8,
+            scaleY: 8,
+            alpha: 0.7,
+            duration: 8000,
+            ease: 'Quad.easeIn',
         });
 
         this.castWithAudio('sfx_purple', () => {
-            // Audio finished → fire the massive purple beam
+            // Audio finished → clean up visuals and fire
+            redC.destroy();
+            blueC.destroy();
+            purpleGlow.destroy();
+
             const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
@@ -187,11 +229,11 @@ export default class Gojo extends Fighter {
             }
 
             if (this.scene.screenEffects) {
-                this.scene.screenEffects.shake(0.02, 500);
+                this.scene.screenEffects.shake(0.03, 600);
             }
 
             this.stateMachine.setState('idle');
-        }, 12000);
+        }, 15000);
     }
 
     // ════════════════════════════════════════════
@@ -291,8 +333,9 @@ export default class Gojo extends Fighter {
         if (this.blueAuraActive) {
             this.blueAuraTimer -= dt;
 
-            const bx = this.sprite.x + 100 * this.facing;
-            const by = this.sprite.y - 15;
+            // Blue floats at its FIXED spawn position, NOT following Gojo
+            const bx = this.blueFixedX;
+            const by = this.blueFixedY;
 
             if (!this.blueGraphics) {
                 this.blueGraphics = this.scene.add.graphics();
@@ -316,25 +359,39 @@ export default class Gojo extends Fighter {
             this.blueGraphics.fillStyle(0xFFFFFF, pulse * 0.6);
             this.blueGraphics.fillCircle(bx, by, 25);
 
-            // Outer attraction rings
+            // Outer attraction rings (spinning)
             this.blueGraphics.lineStyle(4, 0x00D4FF, pulse * 0.5);
             this.blueGraphics.strokeCircle(bx, by, 50 + (time % 500) / 10);
+            this.blueGraphics.lineStyle(2, 0x88EEFF, pulse * 0.3);
+            this.blueGraphics.strokeCircle(bx, by, 70 + (time % 800) / 15);
 
-            // ── Gravitational Suction Logic ──
+            // ── MASSIVE Gravitational Suction Logic (all directions) ──
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
             if (target && !target.isDead) {
-                const dist = Math.abs(bx - target.sprite.x);
-                if (dist < 300) {
-                    const pullForce = (target.sprite.x > bx) ? -200 : 200;
-                    target.sprite.body.velocity.x += pullForce * (dt / 1000);
+                const dx = bx - target.sprite.x;
+                const dy = by - target.sprite.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < 80) {
+                if (dist < 400 && dist > 5) { // Pull range 400px
+                    // Normalized direction vector toward blue center
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+
+                    // Force scales inversely: closer = stronger pull
+                    const forceMagnitude = 600 * (1 - dist / 400);
+
+                    // Pull in ALL directions (X and Y)
+                    target.sprite.body.velocity.x += nx * forceMagnitude * (dt / 1000) * 8;
+                    target.sprite.body.velocity.y += ny * forceMagnitude * (dt / 1000) * 5;
+
+                    // Tick Damage if sucked in close
+                    if (dist < 90) {
                         this.blueTickTimer -= dt;
                         if (this.blueTickTimer <= 0) {
-                            this.blueTickTimer = 500;
-                            target.takeDamage(15, (target.sprite.x > bx ? -50 : 50), -50, 200);
+                            this.blueTickTimer = 400;
+                            target.takeDamage(20, (target.sprite.x > bx ? -100 : 100), -80, 250);
                             if (this.scene.screenEffects) {
-                                this.scene.screenEffects.shake(0.005, 100);
+                                this.scene.screenEffects.shake(0.008, 150);
                             }
                         }
                     }
