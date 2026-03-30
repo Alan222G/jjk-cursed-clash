@@ -77,6 +77,18 @@ export default class Fighter {
         this.graphics = scene.add.graphics();
         this.graphics.setDepth(10);
 
+        // ── Pixel Art Sprite Image (if available) ──
+        this.charSprite = null;
+        if (charData.id === 'gojo' && scene.textures.exists('sprite_gojo_idle')) {
+            this.charSprite = scene.add.image(x, y, 'sprite_gojo_idle');
+            this.charSprite.setDepth(10);
+            // Scale sprite to match the character body height (~110px)
+            const targetHeight = FIGHTER_DEFAULTS.BODY_HEIGHT + 30; // Slightly taller for visual
+            const scale = targetHeight / this.charSprite.height;
+            this.charSprite.setScale(scale);
+            this.charSprite.setOrigin(0.5, 0.75); // Anchor at feet area
+        }
+
         // ── Energy Aura Graphics ──
         this.auraGraphics = scene.add.graphics();
         this.auraGraphics.setDepth(9);
@@ -652,201 +664,149 @@ export default class Fighter {
         g.strokeRect(x - 14, y - 28 + bobY, 28, 38);
 
         // ── HEAD & HAIR ──
-        if (this.fighterId === 'gojo' && !this.isDead) { // Custom Gojo Head (Pixel-art style)
-            // High collar that covers chin/neck
-            g.fillStyle(bodyColor, 1);
-            g.fillRect(x - 12, y - 48 + bobY, 24, 18);
-            g.lineStyle(2, 0x05050A, 0.5);
-            g.strokeRect(x - 12, y - 48 + bobY, 24, 18);
+        // If using a pixel art sprite, skip ALL procedural body drawing
+        if (this.charSprite) {
+            // Position the sprite image to track the physics body
+            this.charSprite.setPosition(x, y + 5);
+            this.charSprite.setFlipX(f < 0); // Flip based on facing direction
+            this.charSprite.setVisible(!this.isDead);
 
-            // Skin (only upper face visible above collar)
-            g.fillStyle(colors.skin, 1);
-            g.beginPath();
-            g.arc(x, y - 48 + bobY, 15, Math.PI, 0); // Semicircle
-            g.fillPath();
+            // Hit flash tint
+            if (isFlashing) {
+                this.charSprite.setTint(0xFFFFFF);
+                this.charSprite.setAlpha(0.7);
+            } else {
+                this.charSprite.clearTint();
+                this.charSprite.setAlpha(1);
+            }
 
-            // Custom face details (Blindfold)
-            this.drawFace(g, x, y - 48 + bobY, f);
+            // Still draw attack effects on top of the sprite
+            if (this.attackSwing > 0 && this.fighterId === 'gojo') {
+                const armY = y - 24 + bobY;
+                const armExtend = this.attackSwing * 35;
+                g.fillStyle(colors.energy, 0.8);
+                g.fillCircle(x + (28 + armExtend) * f, armY - 5, 10);
+            }
+        } else {  // Fallback: procedural drawing for characters without sprites
 
-            // Spiky Hair (White/Silver)
-            g.fillStyle(colors.hair, 1);
-            g.beginPath();
-            g.moveTo(x - 16, y - 50 + bobY);
-            // Left to right spikes
-            g.lineTo(x - 20, y - 62 + bobY);
-            g.lineTo(x - 10, y - 58 + bobY);
-            g.lineTo(x - 5, y - 72 + bobY);
-            g.lineTo(x + 2, y - 60 + bobY);
-            g.lineTo(x + 12, y - 68 + bobY);
-            g.lineTo(x + 15, y - 55 + bobY);
-            g.lineTo(x + 22, y - 60 + bobY);
-            g.lineTo(x + 16, y - 50 + bobY);
-            g.fillPath();
-            // Inner hair details (shadows/depth)
-            g.lineStyle(2, 0xDDDDEE, 0.8);
-            g.beginPath();
-            g.moveTo(x - 5, y - 72 + bobY); g.lineTo(x - 2, y - 55 + bobY);
-            g.moveTo(x + 12, y - 68 + bobY); g.lineTo(x + 8, y - 58 + bobY);
-            g.strokePath();
-        } else {
-            // Default Head
+            // ── HEAD ──
             g.fillStyle(colors.skin, 1);
             g.fillCircle(x, y - 46 + bobY, 16);
-            // Default Hair
+            // Hair
             g.fillStyle(colors.hair, 1);
             g.fillEllipse(x, y - 55 + bobY, 30, 14);
             // Face
             this.drawFace(g, x, y - 46 + bobY, f);
-        }
 
-        // ── TORSO / CLOTHING ──
-        if (this.fighterId === 'gojo') {
-            // Gojo Uniform (Dark Navy/Black) - Trapezoid (wider shoulders)
-            g.fillStyle(bodyColor, 0.95);
-            g.beginPath();
-            g.moveTo(x - 17, y - 28 + bobY); // Left shoulder (slightly wider)
-            g.lineTo(x + 17, y - 28 + bobY); // Right shoulder
-            g.lineTo(x + 11, y + 10 + bobY); // Right waist
-            g.lineTo(x - 11, y + 10 + bobY); // Left waist
-            g.fillPath();
-            // Jacket collar, zipper line, and creases
-            g.lineStyle(2, 0x05050A, 0.8);
-            g.beginPath();
-            g.moveTo(x, y - 28 + bobY);
-            g.lineTo(x, y + 10 + bobY); // Zipper
-            // Creases
-            g.moveTo(x - 8, y - 28 + bobY);
-            g.lineTo(x - 5, y + 5 + bobY);
-            g.moveTo(x + 8, y - 28 + bobY);
-            g.lineTo(x + 5, y + 5 + bobY);
-            g.strokePath();
-            // Torso already closed in previous step
-        } else if (this.fighterId === 'sukuna') {
-            // Sukuna Kimono - Trapezoid
-            g.fillStyle(0xf0f0f5, 0.95);
-            g.beginPath();
-            g.moveTo(x - 18, y - 28 + bobY);
-            g.lineTo(x + 18, y - 28 + bobY);
-            g.lineTo(x + 14, y + 12 + bobY);
-            g.lineTo(x - 14, y + 12 + bobY);
-            g.fillPath();
-            // Black neck trim (V-neck)
-            g.fillStyle(0x111111, 1);
-            g.beginPath();
-            g.moveTo(x - 10, y - 28 + bobY);
-            g.lineTo(x, y - 6 + bobY);
-            g.lineTo(x + 10, y - 28 + bobY);
-            g.fillPath();
-            // Dark Sash/Belt
-            g.fillStyle(0x111111, 1);
-            g.fillRect(x - 15, y + bobY - 2, 30, 10);
-        } else {
-            // Default generic body
-            g.fillStyle(bodyColor, 0.95);
-            g.beginPath();
-            g.moveTo(x - 15, y - 28 + bobY);
-            g.lineTo(x + 15, y - 28 + bobY);
-            g.lineTo(x + 12, y + 10 + bobY);
-            g.lineTo(x - 12, y + 10 + bobY);
-            g.fillPath();
-        }
+            // ── TORSO / CLOTHING ──
+            if (this.fighterId === 'sukuna') {
+                // Sukuna Kimono - Trapezoid
+                g.fillStyle(0xf0f0f5, 0.95);
+                g.beginPath();
+                g.moveTo(x - 18, y - 28 + bobY);
+                g.lineTo(x + 18, y - 28 + bobY);
+                g.lineTo(x + 14, y + 12 + bobY);
+                g.lineTo(x - 14, y + 12 + bobY);
+                g.fillPath();
+                // Black neck trim (V-neck)
+                g.fillStyle(0x111111, 1);
+                g.beginPath();
+                g.moveTo(x - 10, y - 28 + bobY);
+                g.lineTo(x, y - 6 + bobY);
+                g.lineTo(x + 10, y - 28 + bobY);
+                g.fillPath();
+                // Dark Sash/Belt
+                g.fillStyle(0x111111, 1);
+                g.fillRect(x - 15, y + bobY - 2, 30, 10);
+            } else {
+                // Default generic body
+                g.fillStyle(bodyColor, 0.95);
+                g.beginPath();
+                g.moveTo(x - 15, y - 28 + bobY);
+                g.lineTo(x + 15, y - 28 + bobY);
+                g.lineTo(x + 12, y + 10 + bobY);
+                g.lineTo(x - 12, y + 10 + bobY);
+                g.fillPath();
+            }
 
-        // ── ARMS ──
-        const armY = y - 24 + bobY;
-        const armExtend = this.attackSwing * 35;
+            // ── ARMS ──
+            const armY = y - 24 + bobY;
+            const armExtend = this.attackSwing * 35;
 
-        // Custom Idle pose for Gojo (Pixel art ref: Hand in pocket, other hand up)
-        const isGojoIdle = this.fighterId === 'gojo' && this.stateMachine.isAny('idle', 'walk') && this.attackSwing === 0;
-
-        // Back arm
-        g.lineStyle(11, armColor, 0.7);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY);
-        if (isGojoIdle) {
-            // Relaxed arm (in pocket)
-            g.lineTo(x - 14 * f, armY + 22);
-            g.lineTo(x - 8 * f, armY + 36);
-        } else {
-            // Ready stance back arm
+            // Back arm
+            g.lineStyle(11, armColor, 0.7);
+            g.beginPath();
+            g.moveTo(x - 12 * f, armY);
             g.lineTo(x - 22 * f, armY + 18);
-        }
-        g.strokePath();
-
-        // Front arm (attack arm)
-        g.lineStyle(11, armColor, 1);
-        g.beginPath();
-        g.moveTo(x + 12 * f, armY);
-        
-        if (isGojoIdle) {
-            // Arm raised doing gesture
-            g.lineTo(x + 18 * f, armY - 5);
-            g.lineTo(x + 24 * f, armY - 20);
-            // Hand/fingers gesture indicator
-            g.fillStyle(colors.skin, 1);
-            g.fillCircle(x + 24 * f, armY - 22, 5);
-        } else if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
-            // Normal Fighter Punch
-            g.lineTo(x + (25 + armExtend) * f, armY - 5);
-            // Fist glow during attack
-            g.fillStyle(colors.energy, 0.8);
-            g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
-        } else {
-            // Arm stays by side (Sukuna attacks hands-free or normal generic idle)
-            g.lineTo(x + 18 * f, armY + 22);
-        }
-        g.strokePath();
-
-        // ── SUKUNA INVISIBLE SLASH FX ──
-        if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
-            const slashX = x + (25 + armExtend) * f + (15 * f);
-            const slashY = armY - 5;
-            
-            // Big thick black crescent slash with white outline (Polygonal to avoid freeze)
-            g.lineStyle(14, 0xFFFFFF, 0.9);
-            g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 45);
-            g.lineTo(slashX + 30 * f, slashY - 10);
-            g.lineTo(slashX + 30 * f, slashY + 10);
-            g.lineTo(slashX - 15 * f, slashY + 45);
             g.strokePath();
-            
-            g.lineStyle(8, 0x000000, 1);
+
+            // Front arm (attack arm)
+            g.lineStyle(11, armColor, 1);
             g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 45);
-            g.lineTo(slashX + 30 * f, slashY - 10);
-            g.lineTo(slashX + 30 * f, slashY + 10);
-            g.lineTo(slashX - 15 * f, slashY + 45);
+            g.moveTo(x + 12 * f, armY);
+            
+            if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
+                // Normal Fighter Punch
+                g.lineTo(x + (25 + armExtend) * f, armY - 5);
+                g.fillStyle(colors.energy, 0.8);
+                g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
+            } else {
+                // Arm stays by side
+                g.lineTo(x + 18 * f, armY + 22);
+            }
             g.strokePath();
-        }
 
-        // ── LEGS ──
-        const legY = y + 8 + bobY;
-        let leftLegX = -8;
-        let rightLegX = 8;
-        let leftKnee = 25;
-        let rightKnee = 25;
+            // ── SUKUNA INVISIBLE SLASH FX ──
+            if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
+                const slashX = x + (25 + armExtend) * f + (15 * f);
+                const slashY = armY - 5;
+                
+                g.lineStyle(14, 0xFFFFFF, 0.9);
+                g.beginPath();
+                g.moveTo(slashX - 15 * f, slashY - 45);
+                g.lineTo(slashX + 30 * f, slashY - 10);
+                g.lineTo(slashX + 30 * f, slashY + 10);
+                g.lineTo(slashX - 15 * f, slashY + 45);
+                g.strokePath();
+                
+                g.lineStyle(8, 0x000000, 1);
+                g.beginPath();
+                g.moveTo(slashX - 15 * f, slashY - 45);
+                g.lineTo(slashX + 30 * f, slashY - 10);
+                g.lineTo(slashX + 30 * f, slashY + 10);
+                g.lineTo(slashX - 15 * f, slashY + 45);
+                g.strokePath();
+            }
 
-        if (this.stateMachine.is('walk')) {
-            leftKnee += this.walkCycle;
-            rightKnee -= this.walkCycle;
-        }
-        if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-            leftKnee = 15;
-            rightKnee = 15;
-            leftLegX = -12;
-            rightLegX = 12;
-        }
+            // ── LEGS ──
+            const legY = y + 8 + bobY;
+            let leftLegX = -8;
+            let rightLegX = 8;
+            let leftKnee = 25;
+            let rightKnee = 25;
 
-        g.lineStyle(12, legColor, 0.9);
-        g.beginPath();
-        g.moveTo(x + leftLegX, legY);
-        g.lineTo(x + leftLegX - 3, legY + leftKnee);
-        g.strokePath();
+            if (this.stateMachine.is('walk')) {
+                leftKnee += this.walkCycle;
+                rightKnee -= this.walkCycle;
+            }
+            if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
+                leftKnee = 15;
+                rightKnee = 15;
+                leftLegX = -12;
+                rightLegX = 12;
+            }
 
-        g.beginPath();
-        g.moveTo(x + rightLegX, legY);
-        g.lineTo(x + rightLegX + 3, legY + rightKnee);
-        g.strokePath();
+            g.lineStyle(12, legColor, 0.9);
+            g.beginPath();
+            g.moveTo(x + leftLegX, legY);
+            g.lineTo(x + leftLegX - 3, legY + leftKnee);
+            g.strokePath();
+
+            g.beginPath();
+            g.moveTo(x + rightLegX, legY);
+            g.lineTo(x + rightLegX + 3, legY + rightKnee);
+            g.strokePath();
+        } // end of procedural fallback
 
         // ── BLOCK VISUAL — Crouch + Arms Crossed (no shield) ──
         if (this.stateMachine.is('block')) {
