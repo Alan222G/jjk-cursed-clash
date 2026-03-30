@@ -205,6 +205,14 @@ export default class Gojo extends Fighter {
             ease: 'Quad.easeIn',
         });
 
+        // Stun enemy during cast
+        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        if (target && !target.isDead) {
+            target.stateMachine.lock(99999);
+            target.stateMachine.setState('domain_stunned');
+            target.sprite.body.setVelocity(0, 0);
+        }
+
         this.castWithAudio('sfx_purple', () => {
             // Audio finished → clean up visuals and fire
             redC.destroy();
@@ -220,7 +228,7 @@ export default class Gojo extends Fighter {
                 speed: 1200,
                 direction: this.facing,
                 color: 0x9922FF,
-                size: { w: 200, h: 200 },
+                size: { w: 300, h: 300 },
                 lifetime: 3000,
                 type: 'circle',
             });
@@ -230,7 +238,13 @@ export default class Gojo extends Fighter {
             }
 
             if (this.scene.screenEffects) {
-                this.scene.screenEffects.shake(0.03, 600);
+                this.scene.screenEffects.shake(0.04, 800);
+            }
+
+            // Unlock enemy
+            if (target && target.stateMachine.is('domain_stunned')) {
+                target.stateMachine.unlock();
+                target.stateMachine.setState('idle');
             }
 
             this.stateMachine.setState('idle');
@@ -284,8 +298,11 @@ export default class Gojo extends Fighter {
         this.domainActive = true;
         this.ceSystem.startDomain();
 
-        this.stateMachine.unlock();
-        this.stateMachine.setState('casting_domain');
+        // ── NO FREEZE FOR CASTER ──
+        // Caster can move while domain forms, only enemy is frozen by GameScene.
+        if (this.stateMachine.is('attack')) {
+            this.stateMachine.setState('idle');
+        }
 
         // Play domain voice — GameScene will listen for its completion
         try {

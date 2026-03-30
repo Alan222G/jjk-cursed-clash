@@ -116,14 +116,11 @@ export default class GameScene extends Phaser.Scene {
         this.domainOwner = owner;
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         
-        // Force-unlock state machines
-        owner.stateMachine.unlock();
+        // Force-unlock opponent
         opp.stateMachine.unlock();
         
-        // Freeze both players
-        owner.stateMachine.setState('casting_domain');
+        // Freeze ONLY enemy
         opp.stateMachine.setState('domain_stunned');
-        owner.sprite.body.setVelocity(0, 0);
         opp.sprite.body.setVelocity(0, 0);
 
         // Pause CE drain during Phase 1
@@ -357,13 +354,12 @@ export default class GameScene extends Phaser.Scene {
         if (owner.graphics) owner.graphics.setDepth(10);
         if (owner.auraGraphics) owner.auraGraphics.setDepth(9);
 
-        // FORCE-UNLOCK both fighters — set idle regardless of current state
-        owner.isCasting = false;
+        // Remove domain stunned from opponent
         opp.isCasting = false;
-        owner.stateMachine.unlock();
-        opp.stateMachine.unlock();
-        owner.stateMachine.setState('idle');
-        opp.stateMachine.setState('idle');
+        if (opp.stateMachine.is('domain_stunned')) {
+            opp.stateMachine.unlock();
+            opp.stateMachine.setState('idle');
+        }
 
         // Domain BG was already loaded at the start of Phase 1.
         this.sureHitTimer = 0;
@@ -390,17 +386,14 @@ export default class GameScene extends Phaser.Scene {
             this.domainBg = null;
         }
 
-        // FORCE-UNLOCK both fighters — set idle regardless of current state
+        // FORCE-UNLOCK ONLY opponent if they are still stunned or locked
         const opp = (owner === this.p1) ? this.p2 : this.p1;
-        if (owner) {
-            owner.isCasting = false;
-            owner.stateMachine.unlock();
-            owner.stateMachine.setState('idle');
-        }
         if (opp) {
             opp.isCasting = false;
-            opp.stateMachine.unlock();
-            opp.stateMachine.setState('idle');
+            if (opp.stateMachine.is('domain_stunned') || opp.stateMachine.locked) {
+                opp.stateMachine.unlock();
+                opp.stateMachine.setState('idle');
+            }
         }
         
         // Stop all audio and resume combat BGM

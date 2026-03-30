@@ -266,6 +266,14 @@ export default class Sukuna extends Fighter {
             onComplete: () => bow.destroy(),
         });
 
+        // Stun enemy during cast
+        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        if (target && !target.isDead) {
+            target.stateMachine.lock(99999);
+            target.stateMachine.setState('domain_stunned');
+            target.sprite.body.setVelocity(0, 0);
+        }
+
         this.castWithAudio('sfx_fire', () => {
             // Audio finished → fire the Fuga arrow
             const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
@@ -287,7 +295,13 @@ export default class Sukuna extends Fighter {
             }
 
             if (this.scene.screenEffects) {
-                this.scene.screenEffects.shake(0.015, 400);
+                this.scene.screenEffects.shake(0.02, 500);
+            }
+
+            // Unlock enemy
+            if (target && target.stateMachine.is('domain_stunned')) {
+                target.stateMachine.unlock();
+                target.stateMachine.setState('idle');
             }
 
             this.stateMachine.setState('idle');
@@ -306,8 +320,10 @@ export default class Sukuna extends Fighter {
         this.domainActive = true;
         this.ceSystem.startDomain();
 
-        this.stateMachine.unlock();
-        this.stateMachine.setState('casting_domain');
+        // ── NO FREEZE FOR CASTER ──
+        if (this.stateMachine.is('attack')) {
+            this.stateMachine.setState('idle');
+        }
 
         try {
             this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx ?? 50) / 100 });
