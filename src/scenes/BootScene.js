@@ -81,7 +81,10 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
-        this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
+        // Black Flash Assets
+        this.load.image('black_flash', 'assets/images/black_flash.png');
+        this.load.audio('black_flash_sfx', 'assets/audio/black_flash.mp3');
+
         // SFX Hooks
         this.load.audio('sfx_blue', 'assets/audio/gojo_blue.m4a');
         this.load.audio('sfx_red', 'assets/audio/gojo_red.mp3');

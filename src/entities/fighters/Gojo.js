@@ -135,7 +135,7 @@ export default class Gojo extends Fighter {
                 speed: 450,
                 direction: this.facing,
                 color: 0xFF2222,
-                size: { w: 150, h: 150 },
+                size: { w: 35, h: 35 },
                 lifetime: 1800,
                 type: 'circle',
             });
@@ -247,8 +247,8 @@ export default class Gojo extends Fighter {
         circle.setDepth(12);
         this.scene.tweens.add({
             targets: circle,
-            scaleX: 2.5,
-            scaleY: 2.5,
+            scaleX: 5, // 15 * 5 = 75px radius (150px diameter)
+            scaleY: 5,
             alpha: 0,
             duration: 400,
             ease: 'Power2',
@@ -352,19 +352,19 @@ export default class Gojo extends Fighter {
 
             const pulse = 0.8 + Math.sin(time * 0.01) * 0.2;
 
-            // Blue Core (100px diameter)
+            // Blue Core (150px diameter = 75 radius)
             this.blueGraphics.fillStyle(0x2244FF, pulse);
-            this.blueGraphics.fillCircle(bx, by, 50);
+            this.blueGraphics.fillCircle(bx, by, 75);
 
             // White center inner glow
             this.blueGraphics.fillStyle(0xFFFFFF, pulse * 0.6);
-            this.blueGraphics.fillCircle(bx, by, 25);
+            this.blueGraphics.fillCircle(bx, by, 35);
 
             // Outer attraction rings (spinning)
             this.blueGraphics.lineStyle(4, 0x00D4FF, pulse * 0.5);
-            this.blueGraphics.strokeCircle(bx, by, 50 + (time % 500) / 10);
+            this.blueGraphics.strokeCircle(bx, by, 75 + (time % 500) / 10);
             this.blueGraphics.lineStyle(2, 0x88EEFF, pulse * 0.3);
-            this.blueGraphics.strokeCircle(bx, by, 70 + (time % 800) / 15);
+            this.blueGraphics.strokeCircle(bx, by, 105 + (time % 800) / 15);
 
             // ── MASSIVE Gravitational Suction Logic (all directions) ──
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
