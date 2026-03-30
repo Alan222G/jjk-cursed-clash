@@ -67,6 +67,7 @@ export default class BootScene extends Phaser.Scene {
         // ── Load Assets ──
         // Backgrounds
         this.load.image('bg_shibuya', 'assets/backgrounds/shibuya.png');
+        this.load.image('ground_texture', 'assets/backgrounds/ground_texture.png');
         // Domains (official images)
         this.load.image('gojo_void', 'assets/domains/gojo_void.jpg');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');

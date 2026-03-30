@@ -384,7 +384,7 @@ export default class Fighter {
     }
 
     handleBlockInput() {
-        if (this.stateMachine.isAny('idle', 'walk')) {
+        if (this.stateMachine.isAny('idle', 'walk', 'block')) {
             // Check for Infinity Toggle (Gojo only: SHIFT + I/DOMAIN)
             if (this.input.isDown('BLOCK') && this.input.justPressed('DOMAIN') && this.fighterId === 'gojo') {
                 if (this.ceSystem.ce > 0) {
@@ -393,7 +393,7 @@ export default class Fighter {
                 }
             }
             // Normal block
-            if (this.input.isDown('BLOCK')) {
+            if (this.input.isDown('BLOCK') && !this.stateMachine.is('block') && !this.stateMachine.is('infinity')) {
                 this.stateMachine.setState('block');
             }
         }
@@ -506,12 +506,14 @@ export default class Fighter {
         this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
         this.comboSystem.registerHit(atk.type);
 
-        // Random slash SFX on melee impact
-        try {
-            const slashIdx = Phaser.Math.Between(1, 11);
-            const slashVol = (window.gameSettings?.sfx || 50) / 100 * 0.4;
-            this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
-        } catch (e) {}
+        // Random slash SFX on melee impact (SUKUNA ONLY)
+        if (this.fighterId === 'sukuna') {
+            try {
+                const slashIdx = Phaser.Math.Between(1, 11);
+                const slashVol = (window.gameSettings?.sfx || 50) / 100 * 0.4;
+                this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
+            } catch (e) {}
+        }
 
         // Screen effects
         if (this.scene.screenEffects) {
@@ -700,15 +702,37 @@ export default class Fighter {
         g.lineStyle(7, bodyColor, 1);
         g.beginPath();
         g.moveTo(x + 8 * f, armY);
-        if (this.attackSwing > 0) {
+        
+        if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
+            // Normal Fighter Punch
             g.lineTo(x + (25 + armExtend) * f, armY - 5);
             // Fist glow during attack
             g.fillStyle(colors.energy, 0.8);
             g.fillCircle(x + (28 + armExtend) * f, armY - 5, 6);
         } else {
+            // Arm stays by side (Sukuna attacks hands-free)
             g.lineTo(x + 18 * f, armY + 20);
         }
         g.strokePath();
+
+        // ── SUKUNA INVISIBLE SLASH FX ──
+        if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
+            const slashX = x + (25 + armExtend) * f + (15 * f);
+            const slashY = armY - 5;
+            
+            // Big thick black slash with white outline
+            g.lineStyle(12, 0xFFFFFF, 0.9); // White outer
+            g.beginPath();
+            g.moveTo(slashX - 15 * f, slashY - 35);
+            g.lineTo(slashX + 30 * f, slashY + 35);
+            g.strokePath();
+            
+            g.lineStyle(6, 0x000000, 1); // Black inner
+            g.beginPath();
+            g.moveTo(slashX - 15 * f, slashY - 35);
+            g.lineTo(slashX + 30 * f, slashY + 35);
+            g.strokePath();
+        }
 
         // ── LEGS ──
         const legY = y + 8 + bobY;

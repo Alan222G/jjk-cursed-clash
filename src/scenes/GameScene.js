@@ -35,7 +35,8 @@ export default class GameScene extends Phaser.Scene {
         
         // Floor
         const floorY = GAME_HEIGHT - 60;
-        this.add.rectangle(0, floorY, GAME_WIDTH, 60, 0x2A2A35).setOrigin(0).setDepth(0);
+        this.add.rectangle(0, floorY, GAME_WIDTH, 60, 0x1A1A22).setOrigin(0).setDepth(-1); // Shadow backdrop
+        this.add.tileSprite(0, floorY, GAME_WIDTH, 60, 'ground_texture').setOrigin(0).setDepth(0);
         
         // ── Groups ──
         this.projectiles = [];
