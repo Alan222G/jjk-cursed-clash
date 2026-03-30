@@ -277,7 +277,7 @@ export default class Sukuna extends Fighter {
                 speed: 900,
                 direction: this.facing,
                 color: 0xFF3300,
-                size: { w: 120, h: 40 },
+                size: { w: 150, h: 50 },
                 lifetime: 2500,
                 type: 'fire_arrow',
             });

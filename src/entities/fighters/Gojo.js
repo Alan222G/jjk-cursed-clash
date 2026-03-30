@@ -135,7 +135,7 @@ export default class Gojo extends Fighter {
                 speed: 450,
                 direction: this.facing,
                 color: 0xFF2222,
-                size: { w: 35, h: 35 },
+                size: { w: 150, h: 150 },
                 lifetime: 1800,
                 type: 'circle',
             });
@@ -220,7 +220,7 @@ export default class Gojo extends Fighter {
                 speed: 1200,
                 direction: this.facing,
                 color: 0x9922FF,
-                size: { w: 150, h: 150 },
+                size: { w: 200, h: 200 },
                 lifetime: 3000,
                 type: 'circle',
             });

@@ -77,18 +77,6 @@ export default class Fighter {
         this.graphics = scene.add.graphics();
         this.graphics.setDepth(10);
 
-        // ── Pixel Art Sprite Image (if available) ──
-        this.charSprite = null;
-        if (charData.id === 'gojo' && scene.textures.exists('sprite_gojo_idle')) {
-            this.charSprite = scene.add.image(x, y, 'sprite_gojo_idle');
-            this.charSprite.setDepth(10);
-            // Scale sprite to match the character body height (~110px)
-            const targetHeight = FIGHTER_DEFAULTS.BODY_HEIGHT + 30; // Slightly taller for visual
-            const scale = targetHeight / this.charSprite.height;
-            this.charSprite.setScale(scale);
-            this.charSprite.setOrigin(0.5, 0.75); // Anchor at feet area
-        }
-
         // ── Energy Aura Graphics ──
         this.auraGraphics = scene.add.graphics();
         this.auraGraphics.setDepth(9);
@@ -547,6 +535,11 @@ export default class Fighter {
         // Override in subclass
     }
 
+    applyBurn(duration) {
+        this.burnTimer = duration;
+        this.burnTickTimer = 500;
+    }
+
     tryActivateDomain() {
         // Override in subclass
     }
@@ -663,150 +656,137 @@ export default class Fighter {
         // Torso
         g.strokeRect(x - 14, y - 28 + bobY, 28, 38);
 
-        // ── HEAD & HAIR ──
-        // If using a pixel art sprite, skip ALL procedural body drawing
-        if (this.charSprite) {
-            // Position the sprite image to track the physics body
-            this.charSprite.setPosition(x, y + 5);
-            this.charSprite.setFlipX(f < 0); // Flip based on facing direction
-            this.charSprite.setVisible(!this.isDead);
+        // ── HEAD ──
+        g.fillStyle(colors.skin, 1);
+        g.fillCircle(x, y - 46 + bobY, 16);
+        // Hair
+        g.fillStyle(colors.hair, 1);
+        g.fillEllipse(x, y - 55 + bobY, 30, 14);
+        // Face
+        this.drawFace(g, x, y - 46 + bobY, f);
 
-            // Hit flash tint
-            if (isFlashing) {
-                this.charSprite.setTint(0xFFFFFF);
-                this.charSprite.setAlpha(0.7);
-            } else {
-                this.charSprite.clearTint();
-                this.charSprite.setAlpha(1);
-            }
-
-            // Still draw attack effects on top of the sprite
-            if (this.attackSwing > 0 && this.fighterId === 'gojo') {
-                const armY = y - 24 + bobY;
-                const armExtend = this.attackSwing * 35;
-                g.fillStyle(colors.energy, 0.8);
-                g.fillCircle(x + (28 + armExtend) * f, armY - 5, 10);
-            }
-        } else {  // Fallback: procedural drawing for characters without sprites
-
-            // ── HEAD ──
-            g.fillStyle(colors.skin, 1);
-            g.fillCircle(x, y - 46 + bobY, 16);
-            // Hair
-            g.fillStyle(colors.hair, 1);
-            g.fillEllipse(x, y - 55 + bobY, 30, 14);
-            // Face
-            this.drawFace(g, x, y - 46 + bobY, f);
-
-            // ── TORSO / CLOTHING ──
-            if (this.fighterId === 'sukuna') {
-                // Sukuna Kimono - Trapezoid
-                g.fillStyle(0xf0f0f5, 0.95);
-                g.beginPath();
-                g.moveTo(x - 18, y - 28 + bobY);
-                g.lineTo(x + 18, y - 28 + bobY);
-                g.lineTo(x + 14, y + 12 + bobY);
-                g.lineTo(x - 14, y + 12 + bobY);
-                g.fillPath();
-                // Black neck trim (V-neck)
-                g.fillStyle(0x111111, 1);
-                g.beginPath();
-                g.moveTo(x - 10, y - 28 + bobY);
-                g.lineTo(x, y - 6 + bobY);
-                g.lineTo(x + 10, y - 28 + bobY);
-                g.fillPath();
-                // Dark Sash/Belt
-                g.fillStyle(0x111111, 1);
-                g.fillRect(x - 15, y + bobY - 2, 30, 10);
-            } else {
-                // Default generic body
-                g.fillStyle(bodyColor, 0.95);
-                g.beginPath();
-                g.moveTo(x - 15, y - 28 + bobY);
-                g.lineTo(x + 15, y - 28 + bobY);
-                g.lineTo(x + 12, y + 10 + bobY);
-                g.lineTo(x - 12, y + 10 + bobY);
-                g.fillPath();
-            }
-
-            // ── ARMS ──
-            const armY = y - 24 + bobY;
-            const armExtend = this.attackSwing * 35;
-
-            // Back arm
-            g.lineStyle(11, armColor, 0.7);
+        // ── TORSO / CLOTHING ──
+        if (this.fighterId === 'gojo') {
+            // Gojo Uniform (Dark Navy/Black) - Trapezoid
+            g.fillStyle(0x1a1a24, 0.95);
             g.beginPath();
-            g.moveTo(x - 12 * f, armY);
-            g.lineTo(x - 22 * f, armY + 18);
+            g.moveTo(x - 17, y - 28 + bobY);
+            g.lineTo(x + 17, y - 28 + bobY);
+            g.lineTo(x + 11, y + 10 + bobY);
+            g.lineTo(x - 11, y + 10 + bobY);
+            g.fillPath();
+            // Zipper line
+            g.lineStyle(2, 0x05050A, 0.6);
+            g.beginPath();
+            g.moveTo(x, y - 28 + bobY);
+            g.lineTo(x, y + 10 + bobY);
             g.strokePath();
-
-            // Front arm (attack arm)
-            g.lineStyle(11, armColor, 1);
+        } else if (this.fighterId === 'sukuna') {
+            // Sukuna Kimono - Trapezoid
+            g.fillStyle(0xf0f0f5, 0.95);
             g.beginPath();
-            g.moveTo(x + 12 * f, armY);
+            g.moveTo(x - 18, y - 28 + bobY);
+            g.lineTo(x + 18, y - 28 + bobY);
+            g.lineTo(x + 14, y + 12 + bobY);
+            g.lineTo(x - 14, y + 12 + bobY);
+            g.fillPath();
+            // Black neck trim (V-neck)
+            g.fillStyle(0x111111, 1);
+            g.beginPath();
+            g.moveTo(x - 10, y - 28 + bobY);
+            g.lineTo(x, y - 6 + bobY);
+            g.lineTo(x + 10, y - 28 + bobY);
+            g.fillPath();
+            // Dark Sash/Belt
+            g.fillStyle(0x111111, 1);
+            g.fillRect(x - 15, y + bobY - 2, 30, 10);
+        } else {
+            // Default generic body
+            g.fillStyle(bodyColor, 0.95);
+            g.beginPath();
+            g.moveTo(x - 15, y - 28 + bobY);
+            g.lineTo(x + 15, y - 28 + bobY);
+            g.lineTo(x + 12, y + 10 + bobY);
+            g.lineTo(x - 12, y + 10 + bobY);
+            g.fillPath();
+        }
+
+        // ── ARMS ──
+        const armY = y - 24 + bobY;
+        const armExtend = this.attackSwing * 35;
+
+        // Back arm
+        g.lineStyle(11, armColor, 0.7);
+        g.beginPath();
+        g.moveTo(x - 12 * f, armY);
+        g.lineTo(x - 22 * f, armY + 18);
+        g.strokePath();
+
+        // Front arm (attack arm)
+        g.lineStyle(11, armColor, 1);
+        g.beginPath();
+        g.moveTo(x + 12 * f, armY);
+        
+        if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
+            // Normal Fighter Punch
+            g.lineTo(x + (25 + armExtend) * f, armY - 5);
+            g.fillStyle(colors.energy, 0.8);
+            g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
+        } else {
+            g.lineTo(x + 18 * f, armY + 22);
+        }
+        g.strokePath();
+
+        // ── SUKUNA INVISIBLE SLASH FX ──
+        if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
+            const slashX = x + (25 + armExtend) * f + (15 * f);
+            const slashY = armY - 5;
             
-            if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
-                // Normal Fighter Punch
-                g.lineTo(x + (25 + armExtend) * f, armY - 5);
-                g.fillStyle(colors.energy, 0.8);
-                g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
-            } else {
-                // Arm stays by side
-                g.lineTo(x + 18 * f, armY + 22);
-            }
-            g.strokePath();
-
-            // ── SUKUNA INVISIBLE SLASH FX ──
-            if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
-                const slashX = x + (25 + armExtend) * f + (15 * f);
-                const slashY = armY - 5;
-                
-                g.lineStyle(14, 0xFFFFFF, 0.9);
-                g.beginPath();
-                g.moveTo(slashX - 15 * f, slashY - 45);
-                g.lineTo(slashX + 30 * f, slashY - 10);
-                g.lineTo(slashX + 30 * f, slashY + 10);
-                g.lineTo(slashX - 15 * f, slashY + 45);
-                g.strokePath();
-                
-                g.lineStyle(8, 0x000000, 1);
-                g.beginPath();
-                g.moveTo(slashX - 15 * f, slashY - 45);
-                g.lineTo(slashX + 30 * f, slashY - 10);
-                g.lineTo(slashX + 30 * f, slashY + 10);
-                g.lineTo(slashX - 15 * f, slashY + 45);
-                g.strokePath();
-            }
-
-            // ── LEGS ──
-            const legY = y + 8 + bobY;
-            let leftLegX = -8;
-            let rightLegX = 8;
-            let leftKnee = 25;
-            let rightKnee = 25;
-
-            if (this.stateMachine.is('walk')) {
-                leftKnee += this.walkCycle;
-                rightKnee -= this.walkCycle;
-            }
-            if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-                leftKnee = 15;
-                rightKnee = 15;
-                leftLegX = -12;
-                rightLegX = 12;
-            }
-
-            g.lineStyle(12, legColor, 0.9);
+            g.lineStyle(14, 0xFFFFFF, 0.9);
             g.beginPath();
-            g.moveTo(x + leftLegX, legY);
-            g.lineTo(x + leftLegX - 3, legY + leftKnee);
+            g.moveTo(slashX - 15 * f, slashY - 45);
+            g.lineTo(slashX + 30 * f, slashY - 10);
+            g.lineTo(slashX + 30 * f, slashY + 10);
+            g.lineTo(slashX - 15 * f, slashY + 45);
             g.strokePath();
-
+            
+            g.lineStyle(8, 0x000000, 1);
             g.beginPath();
-            g.moveTo(x + rightLegX, legY);
-            g.lineTo(x + rightLegX + 3, legY + rightKnee);
+            g.moveTo(slashX - 15 * f, slashY - 45);
+            g.lineTo(slashX + 30 * f, slashY - 10);
+            g.lineTo(slashX + 30 * f, slashY + 10);
+            g.lineTo(slashX - 15 * f, slashY + 45);
             g.strokePath();
-        } // end of procedural fallback
+        }
+
+        // ── LEGS ──
+        const legY = y + 8 + bobY;
+        let leftLegX = -8;
+        let rightLegX = 8;
+        let leftKnee = 25;
+        let rightKnee = 25;
+
+        if (this.stateMachine.is('walk')) {
+            leftKnee += this.walkCycle;
+            rightKnee -= this.walkCycle;
+        }
+        if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
+            leftKnee = 15;
+            rightKnee = 15;
+            leftLegX = -12;
+            rightLegX = 12;
+        }
+
+        g.lineStyle(12, legColor, 0.9);
+        g.beginPath();
+        g.moveTo(x + leftLegX, legY);
+        g.lineTo(x + leftLegX - 3, legY + leftKnee);
+        g.strokePath();
+
+        g.beginPath();
+        g.moveTo(x + rightLegX, legY);
+        g.lineTo(x + rightLegX + 3, legY + rightKnee);
+        g.strokePath();
 
         // ── BLOCK VISUAL — Crouch + Arms Crossed (no shield) ──
         if (this.stateMachine.is('block')) {
@@ -909,29 +889,8 @@ export default class Fighter {
 
         const x = this.sprite.x;
         const y = this.sprite.y;
-        const ceRatio = this.ceSystem.getRatio();
 
-        // Base energy aura (intensity based on CE level)
-        if (ceRatio > 0.1) {
-            const intensity = ceRatio * 0.25;
-            const auraSize = 50 + ceRatio * 30;
-            ag.fillStyle(this.colors.energy, intensity * 0.3);
-            ag.fillEllipse(x, y - 10, auraSize, auraSize * 1.4);
-
-            // Floating energy particles
-            const numParticles = Math.floor(ceRatio * 6);
-            for (let i = 0; i < numParticles; i++) {
-                const angle = this.animTimer * 0.002 + (i * Math.PI * 2 / numParticles);
-                const radius = 30 + Math.sin(this.animTimer * 0.003 + i) * 15;
-                const px = x + Math.cos(angle) * radius;
-                const py = y - 10 + Math.sin(angle) * radius * 0.6 - ceRatio * 20;
-                const pSize = 2 + Math.sin(this.animTimer * 0.005 + i * 2) * 1.5;
-                ag.fillStyle(this.colors.energy, 0.6);
-                ag.fillCircle(px, py, pSize);
-            }
-        }
-
-        // Domain casting aura (extreme glow)
+        // Domain casting aura (extreme glow) — keep this
         if (this.stateMachine.is('casting_domain')) {
             const pulse = 0.5 + Math.sin(this.animTimer * 0.008) * 0.3;
             ag.fillStyle(this.colors.energy, pulse * 0.4);
@@ -940,7 +899,7 @@ export default class Fighter {
             ag.strokeCircle(x, y - 10, 60 + Math.sin(this.animTimer * 0.01) * 20);
         }
 
-        // Fatigue visual (dim, flickering aura)
+        // Fatigue visual (dim, flickering)
         if (this.ceSystem.isFatigued) {
             const flicker = Math.random() * 0.3;
             ag.fillStyle(0x444444, flicker);

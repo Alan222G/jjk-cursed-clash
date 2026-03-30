@@ -357,18 +357,15 @@ export default class GameScene extends Phaser.Scene {
         if (owner.graphics) owner.graphics.setDepth(10);
         if (owner.auraGraphics) owner.auraGraphics.setDepth(9);
 
-        // Force-unlock and restore mobility
+        // FORCE-UNLOCK both fighters — set idle regardless of current state
+        owner.isCasting = false;
+        opp.isCasting = false;
         owner.stateMachine.unlock();
         opp.stateMachine.unlock();
-        if (owner.stateMachine.is('casting_domain')) {
-            owner.stateMachine.setState('idle');
-        }
-        if (opp.stateMachine.is('domain_stunned')) {
-            opp.stateMachine.setState('idle');
-        }
+        owner.stateMachine.setState('idle');
+        opp.stateMachine.setState('idle');
 
-        // Domain BG was already loaded at the start of Phase 1 — no need to recreate it.
-        // Just resume combat BGM and reset sure-hit timer.
+        // Domain BG was already loaded at the start of Phase 1.
         this.sureHitTimer = 0;
 
         try {
@@ -380,6 +377,7 @@ export default class GameScene extends Phaser.Scene {
     onDomainEnd(owner) {
         this.domainActive = false;
         this.domainPhase1 = false;
+        this.domainOwner = null;
         
         // Clean up all cinematic elements
         if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
@@ -392,19 +390,17 @@ export default class GameScene extends Phaser.Scene {
             this.domainBg = null;
         }
 
-        // CRITICAL: Unlock both fighters so they can move again
+        // FORCE-UNLOCK both fighters — set idle regardless of current state
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         if (owner) {
+            owner.isCasting = false;
             owner.stateMachine.unlock();
-            if (owner.stateMachine.is('casting_domain')) {
-                owner.stateMachine.setState('idle');
-            }
+            owner.stateMachine.setState('idle');
         }
         if (opp) {
+            opp.isCasting = false;
             opp.stateMachine.unlock();
-            if (opp.stateMachine.is('domain_stunned')) {
-                opp.stateMachine.setState('idle');
-            }
+            opp.stateMachine.setState('idle');
         }
         
         // Stop all audio and resume combat BGM
@@ -412,7 +408,7 @@ export default class GameScene extends Phaser.Scene {
             this.sound.stopAll();
             const musicVol = (window.gameSettings?.music ?? 50) / 100 * 0.4;
             this.sound.play('bgm_combat', { volume: musicVol, loop: true });
-        } catch(e) { console.warn('Audio resume error', e); }
+        } catch(e) {}
     }
 
     // ════════════════════════════════════════════════════════
