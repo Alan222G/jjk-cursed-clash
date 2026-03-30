@@ -140,14 +140,23 @@ export default class GameScene extends Phaser.Scene {
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
-        // ── DIAGONAL PARALLEL LINES CINEMATIC ──
-        // Direction: P1 = bottom-left to top-right, P2 = bottom-right to top-left
-        const isP1 = (owner === this.p1);
-        const angle = isP1 ? -35 : 35; // Degrees of diagonal tilt
-        const angleRad = angle * (Math.PI / 180);
-        const stripWidth = 280; // Width of visible strip between the two lines
+        // Reveal Domain Background immediately (replaces overlay transition freeze)
+        const bgKey = owner.charData.domainBg;
+        this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
+            .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+            .setDepth(-5);
+        
+        if (this.screenEffects) {
+            this.screenEffects.shake(0.04, 800);
+        }
 
-        // 1. Solid overlay
+        // ── DIAGONAL PARALLEL LINES CINEMATIC (5 Seconds) ──
+        const isP1 = (owner === this.p1);
+        const angle = isP1 ? -35 : 35; 
+        const angleRad = angle * (Math.PI / 180);
+        const stripWidth = 280; 
+
+        // 1. Dark Overlay covering characters
         this.domainOverlay = this.add.rectangle(
             GAME_WIDTH / 2, GAME_HEIGHT / 2, 
             GAME_WIDTH, GAME_HEIGHT, 
@@ -161,24 +170,20 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
-        // 2. Create a mask shape — a diagonal strip between two parallel lines
+        // 2. Mask shape
         const maskGraphics = this.make.graphics();
         maskGraphics.fillStyle(0xffffff, 1);
         
-        // Calculate the four corners of the diagonal strip
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;
-        const diagLen = GAME_WIDTH * 2; // Long enough to cover the whole screen
+        const diagLen = GAME_WIDTH * 2; 
         const halfW = stripWidth / 2;
         
-        // Direction perpendicular to the strip
         const perpX = Math.cos(angleRad + Math.PI / 2);
         const perpY = Math.sin(angleRad + Math.PI / 2);
-        // Direction along the strip
         const paraX = Math.cos(angleRad);
         const paraY = Math.sin(angleRad);
 
-        // Four corners of the strip
         const p1x = cx - paraX * diagLen + perpX * halfW;
         const p1y = cy - paraY * diagLen + perpY * halfW;
         const p2x = cx + paraX * diagLen + perpX * halfW;
@@ -198,19 +203,17 @@ export default class GameScene extends Phaser.Scene {
 
         const mask = maskGraphics.createGeometryMask();
 
-        // 3. Portrait image — masked to only show inside the diagonal strip
+        // 3. Portrait image
         const startX = isP1 ? -400 : GAME_WIDTH + 400;
         this.domainPortrait = this.add.image(
             startX, GAME_HEIGHT / 2, portraitKey
         ).setDepth(51).setOrigin(0.5);
 
-        // Scale to fill the strip area
         const imgScale = Math.max(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.8;
         this.domainPortrait.setScale(imgScale);
         this.domainPortrait.setTint(tintColor);
         this.domainPortrait.setMask(mask);
 
-        // Sweep portrait into view
         this.tweens.add({
             targets: this.domainPortrait,
             x: GAME_WIDTH / 2,
@@ -218,7 +221,6 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
-        // Subtle pulse
         this.tweens.add({
             targets: this.domainPortrait,
             scaleX: imgScale * 1.03,
@@ -229,26 +231,22 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Sine.easeInOut',
         });
 
-        // 4. Draw the two parallel diagonal lines (thick, glowing)
+        // 4. Parallel diagonal lines
         this.domainLines = this.add.graphics();
         this.domainLines.setDepth(52);
         
         const lineColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         
-        // Top parallel line
         this.domainLines.lineStyle(6, lineColor, 0.9);
         this.domainLines.beginPath();
         this.domainLines.moveTo(p1x, p1y);
         this.domainLines.lineTo(p2x, p2y);
         this.domainLines.strokePath();
-        
-        // Bottom parallel line
         this.domainLines.beginPath();
         this.domainLines.moveTo(p4x, p4y);
         this.domainLines.lineTo(p3x, p3y);
         this.domainLines.strokePath();
 
-        // Glow effect on lines
         this.domainLines.lineStyle(12, lineColor, 0.2);
         this.domainLines.beginPath();
         this.domainLines.moveTo(p1x, p1y);
@@ -266,10 +264,8 @@ export default class GameScene extends Phaser.Scene {
             duration: 600,
         });
 
-        // 5. Domain name text — TILTED at the same angle, below the strip
+        // 5. Text
         const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
-        
-        // Position text below the bottom parallel line
         const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
         const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
         
@@ -282,7 +278,6 @@ export default class GameScene extends Phaser.Scene {
             align: 'center',
         }).setDepth(53).setOrigin(0.5).setAlpha(0);
         
-        // Rotate text to match the diagonal angle
         this.domainText.setRotation(angleRad);
 
         this.tweens.add({
@@ -292,15 +287,31 @@ export default class GameScene extends Phaser.Scene {
             delay: 800,
         });
 
-        // Store mask reference for cleanup
         this._domainMask = mask;
         this._domainMaskGraphics = maskGraphics;
 
-        // 6. AUDIO-DRIVEN: Listen for voice line completion
-        try {
-            const domainVoice = this.sound.add(voiceKey, {
-                volume: (window.gameSettings?.sfx ?? 50) / 100
+        // ── 5 SECOND CINEMATIC TIMER ──
+        // Fade out visual elements exactly at 5 seconds revealing Domain
+        this.time.delayedCall(5000, () => {
+            if (!this.domainPhase1) return;
+            this.tweens.add({
+                targets: [this.domainOverlay, this.domainPortrait, this.domainLines, this.domainText],
+                alpha: 0,
+                duration: 500,
+                onComplete: () => {
+                    if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+                    if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+                    if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+                    if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
+                    if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
+                }
             });
+        });
+
+        // 6. AUDIO-DRIVEN DOMAIN ACTUAL END
+        try {
+            let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
+            const domainVoice = this.sound.add(voiceKey, { volume: specialVol });
 
             domainVoice.once('complete', () => {
                 this.transitionToPhase2(owner, domainType);

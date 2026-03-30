@@ -69,30 +69,40 @@ export default class Projectile {
         // Sync glow
         this.glow.setPosition(this.sprite.x, this.sprite.y);
 
-        // Update trail
-        this.trailPoints.push({ x: this.sprite.x, y: this.sprite.y, alpha: 1 });
-        if (this.trailPoints.length > 12) this.trailPoints.shift();
+        // Update trail (Length depends on type)
+        const px = this.sprite.x;
+        const py = this.sprite.y;
+        const dir = this.direction;
+        const pulse = 0.2 + Math.sin(this.timer * 0.01) * 0.15;
+        this.glow.setAlpha(this.type === 'slash' || this.type === 'fire_arrow' ? 0 : pulse);
+
+        const maxTrail = this.type === 'fire_arrow' ? 25 : 12;
+        this.trailPoints.push({ x: px, y: py, alpha: 1 });
+        if (this.trailPoints.length > maxTrail) this.trailPoints.shift();
 
         this.trail.clear();
         for (let i = 0; i < this.trailPoints.length; i++) {
             const p = this.trailPoints[i];
-            p.alpha -= 0.08;
+            p.alpha -= (this.type === 'fire_arrow' ? 0.04 : 0.08);
             if (p.alpha > 0) {
-                this.trail.fillStyle(this.color, p.alpha * 0.5);
-                const s = (i / this.trailPoints.length) * this.size.w;
-                this.trail.fillEllipse(p.x, p.y, s, s * 0.6);
+                if (this.type === 'fire_arrow') {
+                    // Flame trail spreading out chaotic
+                    const s = (i / this.trailPoints.length) * 35;
+                    const chaos = (Math.random() - 0.5) * 15;
+                    this.trail.fillStyle(0xFF3300, p.alpha * 0.4);
+                    this.trail.fillCircle(p.x - (20 * dir), p.y + chaos, s);
+                    this.trail.fillStyle(0xFFDD00, p.alpha * 0.6);
+                    this.trail.fillCircle(p.x - (10 * dir) + chaos, p.y + chaos/2, s * 0.6);
+                } else {
+                    this.trail.fillStyle(this.color, p.alpha * 0.5);
+                    const s = (i / this.trailPoints.length) * this.size.w;
+                    this.trail.fillEllipse(p.x, p.y, s, s * 0.6);
+                }
             }
         }
 
-        // Pulsating glow
-        const pulse = 0.2 + Math.sin(this.timer * 0.01) * 0.15;
-        this.glow.setAlpha(this.type === 'slash' || this.type === 'fire_arrow' ? 0 : pulse);
-
         // Custom rendering
         this.customGraphics.clear();
-        const px = this.sprite.x;
-        const py = this.sprite.y;
-        const dir = this.direction;
 
         if (this.type === 'slash') {
             // Black slash anime style
@@ -140,6 +150,32 @@ export default class Projectile {
                 px + 5 * dir, py - 25,
                 px + 5 * dir, py + 25
             );
+        }
+        else if (this.type === 'circle') {
+            if (this.color === 0xFF2222) { // RED
+                // Repulsion Rings that emit outward
+                const ringSize = 25 + (this.timer % 150) / 3;
+                this.customGraphics.lineStyle(3, 0xFFFFFF, Math.max(0, 1 - (this.timer % 150)/150));
+                this.customGraphics.strokeCircle(px + 10 * dir, py, ringSize);
+                
+                this.customGraphics.lineStyle(5, 0xFF2222, pulse);
+                this.customGraphics.strokeCircle(px, py, 18);
+            } 
+            else if (this.color === 0x9922FF) { // HOLLOW PURPLE
+                // Devastating Black/Purple lightning spikes
+                for (let i = 0; i < 4; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const r = 40 + Math.random() * 40;
+                    const endX = px + Math.cos(ang) * r;
+                    const endY = py + Math.sin(ang) * r;
+                    this.customGraphics.lineStyle(3, Math.random() > 0.5 ? 0x000000 : 0xAA00FF, 0.8);
+                    this.customGraphics.beginPath();
+                    this.customGraphics.moveTo(px, py);
+                    this.customGraphics.lineTo(px + Math.cos(ang)*(r/2) + (Math.random()-0.5)*10, py + Math.sin(ang)*(r/2) + (Math.random()-0.5)*10);
+                    this.customGraphics.lineTo(endX, endY);
+                    this.customGraphics.strokePath();
+                }
+            }
         }
     }
 

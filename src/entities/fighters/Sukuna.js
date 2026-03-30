@@ -169,7 +169,6 @@ export default class Sukuna extends Fighter {
                 if (dist < 180) {
                     const dmg = Math.floor(skill.damage * this.power);
                     this.opponent.takeDamage(dmg, 400 * this.facing, -250, 500);
-                    this.ceSystem.gain(12);
                     this.comboSystem.registerHit('SPECIAL');
 
                     if (this.scene.screenEffects) {

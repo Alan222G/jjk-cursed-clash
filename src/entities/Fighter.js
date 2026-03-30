@@ -456,8 +456,7 @@ export default class Fighter {
         if (damage < 1) damage = 1;
 
         this.hp -= damage;
-        this.hitFlash = 6;
-        this.ceSystem.gain(FIGHTER_DEFAULTS.CE_REGEN_ON_DAMAGE);
+        // Passive CE only: no gain on damage
 
         // Spawn damage number
         if (this.scene.spawnDamageNumber) {
@@ -502,8 +501,7 @@ export default class Fighter {
         // Pass attack data to scene for block mechanics
         this.scene.lastHitAttack = atk;
 
-        opponent.takeDamage(dmg, kbX, atk.knockbackY, atk.stunDuration);
-        this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
+        opponent.takeDamage(dmg, kbX, atk.knockbackY, atk.stunDuration); // Passive CE only: no gain on hit
         this.comboSystem.registerHit(atk.type);
 
         // Random slash SFX on melee impact (SUKUNA ONLY)
@@ -660,61 +658,75 @@ export default class Fighter {
 
         // ── TORSO / CLOTHING ──
         if (this.fighterId === 'gojo') {
-            // Gojo Jacket (Dark Blue/Black)
+            // Gojo Jacket (Dark Blue/Black) - Trapezoid (wider shoulders)
             g.fillStyle(0x1a1a24, 0.95);
-            g.fillRect(x - 13, y - 28 + bobY, 26, 36);
+            g.beginPath();
+            g.moveTo(x - 16, y - 28 + bobY); // Left shoulder
+            g.lineTo(x + 16, y - 28 + bobY); // Right shoulder
+            g.lineTo(x + 12, y + 10 + bobY); // Right waist
+            g.lineTo(x - 12, y + 10 + bobY); // Left waist
+            g.fillPath();
             // Jacket collar & zipper line
             g.lineStyle(2, 0x111111, 0.8);
             g.beginPath();
             g.moveTo(x, y - 28 + bobY);
-            g.lineTo(x, y + 8 + bobY);
+            g.lineTo(x, y + 10 + bobY);
             g.strokePath();
         } else if (this.fighterId === 'sukuna') {
-            // Sukuna Kimono (White with black trim)
+            // Sukuna Kimono - Trapezoid
             g.fillStyle(0xf0f0f5, 0.95);
-            g.fillRect(x - 14, y - 28 + bobY, 28, 38); 
+            g.beginPath();
+            g.moveTo(x - 18, y - 28 + bobY);
+            g.lineTo(x + 18, y - 28 + bobY);
+            g.lineTo(x + 14, y + 12 + bobY);
+            g.lineTo(x - 14, y + 12 + bobY);
+            g.fillPath();
             // Black neck trim (V-neck)
             g.fillStyle(0x111111, 1);
             g.beginPath();
-            g.moveTo(x - 8, y - 28 + bobY);
-            g.lineTo(x, y - 10 + bobY);
-            g.lineTo(x + 8, y - 28 + bobY);
-            g.closePath();
+            g.moveTo(x - 10, y - 28 + bobY);
+            g.lineTo(x, y - 6 + bobY);
+            g.lineTo(x + 10, y - 28 + bobY);
             g.fillPath();
             // Dark Sash/Belt
             g.fillStyle(0x111111, 1);
-            g.fillRect(x - 16, y + bobY - 2, 32, 8);
+            g.fillRect(x - 15, y + bobY - 2, 30, 10);
         } else {
             // Default generic body
             g.fillStyle(bodyColor, 0.95);
-            g.fillRect(x - 13, y - 28 + bobY, 26, 36);
+            g.beginPath();
+            g.moveTo(x - 15, y - 28 + bobY);
+            g.lineTo(x + 15, y - 28 + bobY);
+            g.lineTo(x + 12, y + 10 + bobY);
+            g.lineTo(x - 12, y + 10 + bobY);
+            g.fillPath();
         }
 
         // ── ARMS ──
-        const armY = y - 20 + bobY;
+        const armY = y - 24 + bobY;
         const armExtend = this.attackSwing * 35;
 
-        // Back arm
-        g.lineStyle(7, bodyColor, 0.7);
+        // Back arm (thicker, attached to shoulder)
+        g.lineStyle(11, bodyColor, 0.7);
         g.beginPath();
-        g.moveTo(x - 8 * f, armY);
+        g.moveTo(x - 12 * f, armY);
         g.lineTo(x - 22 * f, armY + 18);
         g.strokePath();
 
         // Front arm (attack arm)
-        g.lineStyle(7, bodyColor, 1);
+        g.lineStyle(11, bodyColor, 1);
         g.beginPath();
-        g.moveTo(x + 8 * f, armY);
+        g.moveTo(x + 12 * f, armY);
         
         if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
             // Normal Fighter Punch
             g.lineTo(x + (25 + armExtend) * f, armY - 5);
             // Fist glow during attack
             g.fillStyle(colors.energy, 0.8);
-            g.fillCircle(x + (28 + armExtend) * f, armY - 5, 6);
+            g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
         } else {
             // Arm stays by side (Sukuna attacks hands-free)
-            g.lineTo(x + 18 * f, armY + 20);
+            g.lineTo(x + 18 * f, armY + 22);
         }
         g.strokePath();
 
@@ -723,25 +735,28 @@ export default class Fighter {
             const slashX = x + (25 + armExtend) * f + (15 * f);
             const slashY = armY - 5;
             
-            // Big thick black curve crescent slash with white outline
-            g.lineStyle(14, 0xFFFFFF, 0.9); // White outer thickness
+            // Big thick black crescent slash with white outline (Polygonal to avoid freeze)
+            g.lineStyle(14, 0xFFFFFF, 0.9);
             g.beginPath();
             g.moveTo(slashX - 15 * f, slashY - 45);
-            // control point protruding forward to make a curve
-            g.quadraticCurveTo(slashX + 45 * f, slashY, slashX - 15 * f, slashY + 45);
+            g.lineTo(slashX + 30 * f, slashY - 10);
+            g.lineTo(slashX + 30 * f, slashY + 10);
+            g.lineTo(slashX - 15 * f, slashY + 45);
             g.strokePath();
             
-            g.lineStyle(8, 0x000000, 1); // Black inner thickness
+            g.lineStyle(8, 0x000000, 1);
             g.beginPath();
             g.moveTo(slashX - 15 * f, slashY - 45);
-            g.quadraticCurveTo(slashX + 45 * f, slashY, slashX - 15 * f, slashY + 45);
+            g.lineTo(slashX + 30 * f, slashY - 10);
+            g.lineTo(slashX + 30 * f, slashY + 10);
+            g.lineTo(slashX - 15 * f, slashY + 45);
             g.strokePath();
         }
 
         // ── LEGS ──
         const legY = y + 8 + bobY;
-        let leftLegX = -7;
-        let rightLegX = 7;
+        let leftLegX = -8;
+        let rightLegX = 8;
         let leftKnee = 25;
         let rightKnee = 25;
 
@@ -756,7 +771,7 @@ export default class Fighter {
             rightLegX = 12;
         }
 
-        g.lineStyle(7, bodyColor, 0.9);
+        g.lineStyle(12, bodyColor, 0.9);
         g.beginPath();
         g.moveTo(x + leftLegX, legY);
         g.lineTo(x + leftLegX - 3, legY + leftKnee);
