@@ -237,8 +237,8 @@ export default class Fighter {
                 this.infinityActive = true;
             },
             onUpdate: function (dt) {
-                // Drain CE while active (5 CE per second)
-                const drain = 5 * (dt / 1000);
+                // Drain CE while active (15 CE per second — very notable)
+                const drain = 15 * (dt / 1000);
                 this.ceSystem.ce -= drain;
                 if (this.ceSystem.ce <= 0) {
                     this.ceSystem.ce = 0;
@@ -748,22 +748,51 @@ export default class Fighter {
             g.strokePath();
         }
 
-        // ── INFINITY VISUAL — Full body shield sphere ──
+        // ── INFINITY VISUAL — Round Shield (blocks all damage) ──
         if (this.stateMachine.is('infinity')) {
             const pulse = 0.4 + Math.sin(this.animTimer * 0.008) * 0.2;
-            // Outer shield circle
-            g.lineStyle(3, 0x44CCFF, pulse + 0.3);
-            g.strokeCircle(x, y - 15, 55);
-            // Inner glow
-            g.fillStyle(0x44CCFF, pulse * 0.2);
-            g.fillCircle(x, y - 15, 55);
-            // Hexagonal pattern
+            const shieldR = 60;
+            const cx = x;
+            const cy = y - 15;
+
+            // Outer thick energy ring
+            g.lineStyle(5, 0x44CCFF, pulse + 0.4);
+            g.strokeCircle(cx, cy, shieldR);
+
+            // Second ring (slightly larger, dimmer)
+            g.lineStyle(2, 0x88EEFF, pulse * 0.4);
+            g.strokeCircle(cx, cy, shieldR + 8);
+
+            // Inner dome fill
+            g.fillStyle(0x44CCFF, pulse * 0.15);
+            g.fillCircle(cx, cy, shieldR);
+
+            // Center glow core
+            g.fillStyle(0xFFFFFF, pulse * 0.3);
+            g.fillCircle(cx, cy, 12);
+
+            // Rotating hexagonal energy nodes
             for (let i = 0; i < 6; i++) {
-                const a = (i * Math.PI / 3) + this.animTimer * 0.002;
-                const hx = x + Math.cos(a) * 40;
-                const hy = y - 15 + Math.sin(a) * 40;
-                g.fillStyle(0x88EEFF, 0.3);
-                g.fillCircle(hx, hy, 8);
+                const a = (i * Math.PI / 3) + this.animTimer * 0.003;
+                const hx = cx + Math.cos(a) * 42;
+                const hy = cy + Math.sin(a) * 42;
+                g.fillStyle(0x88EEFF, 0.5);
+                g.fillCircle(hx, hy, 6);
+                // Connect nodes with faint lines
+                const nextA = ((i + 1) * Math.PI / 3) + this.animTimer * 0.003;
+                const nx = cx + Math.cos(nextA) * 42;
+                const ny = cy + Math.sin(nextA) * 42;
+                g.lineStyle(1, 0x44CCFF, 0.3);
+                g.beginPath(); g.moveTo(hx, hy); g.lineTo(nx, ny); g.strokePath();
+            }
+
+            // Outer particle ring
+            for (let i = 0; i < 8; i++) {
+                const pa = (i * Math.PI / 4) + this.animTimer * -0.005;
+                const px = cx + Math.cos(pa) * (shieldR + 15);
+                const py = cy + Math.sin(pa) * (shieldR + 15);
+                g.fillStyle(0xCCEEFF, 0.4 + pulse * 0.3);
+                g.fillCircle(px, py, 3);
             }
         }
 
