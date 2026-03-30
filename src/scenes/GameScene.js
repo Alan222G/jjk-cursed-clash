@@ -346,24 +346,28 @@ export default class GameScene extends Phaser.Scene {
             opp.stateMachine.setState('idle');
         }
 
-        // Reveal Domain Background image
-        const bgKey = owner.charData.domainBg;
-        if (this.domainBg) this.domainBg.destroy();
-        this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
-            .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-            .setDepth(-5);
+        // Defer background creation and BGM to allow canvas GC to clear phase 1 visuals without freezing
+        this.time.delayedCall(50, () => {
+            if (this.domainBg) this.domainBg.destroy();
             
-        if (this.screenEffects) {
-            this.screenEffects.shake(0.04, 800);
-        }
+            // Reveal Domain Background image
+            const bgKey = owner.charData.domainBg;
+            this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
+                .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+                .setDepth(-5);
+                
+            if (this.screenEffects) {
+                this.screenEffects.shake(0.04, 800);
+            }
 
-        // Reset sure-hit timer for Phase 2
-        this.sureHitTimer = 0;
+            // Reset sure-hit timer for Phase 2
+            this.sureHitTimer = 0;
 
-        // Resume combat BGM
-        try {
-            this.sound.play('bgm_combat', { volume: 0.3, loop: true });
-        } catch(e) {}
+            // Resume combat BGM
+            try {
+                this.sound.play('bgm_combat', { volume: 0.3, loop: true });
+            } catch(e) {}
+        });
     }
 
     onDomainEnd(owner) {

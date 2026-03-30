@@ -54,28 +54,29 @@ export default class Sukuna extends Fighter {
         this.stateMachine.lock(99999);
         this.sprite.body.setVelocityX(0);
 
-        try {
-            const snd = this.scene.sound.add(sfxKey, {
-                volume: (window.gameSettings?.sfx || 50) / 100
-            });
-            snd.once('complete', () => {
-                this.isCasting = false;
+        let _fired = false;
+        const fireAction = () => {
+            if (_fired) return;
+            _fired = true;
+            this.isCasting = false;
+            if (this.stateMachine.is('casting_domain') || this.stateMachine.locked) {
                 this.stateMachine.unlock();
-                callback();
-            });
+            }
+            callback();
+        };
+
+        try {
+            // Boost volume for specials (multiply by 2.0 but cap at 1)
+            let rawVol = (window.gameSettings?.sfx || 50) / 100;
+            let specialVol = Math.min(rawVol * 2.0, 1.0);
+            
+            const snd = this.scene.sound.add(sfxKey, { volume: specialVol });
+            snd.once('complete', fireAction);
             snd.play();
 
-            this.scene.time.delayedCall(fallbackMs || 5000, () => {
-                if (this.isCasting) {
-                    this.isCasting = false;
-                    this.stateMachine.unlock();
-                    callback();
-                }
-            });
+            this.scene.time.delayedCall(fallbackMs || 5000, fireAction);
         } catch (e) {
-            this.isCasting = false;
-            this.stateMachine.unlock();
-            callback();
+            fireAction();
         }
     }
 

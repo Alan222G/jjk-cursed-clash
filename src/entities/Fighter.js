@@ -506,6 +506,13 @@ export default class Fighter {
         this.ceSystem.gain(atk.ceGain || FIGHTER_DEFAULTS.CE_REGEN_ON_HIT);
         this.comboSystem.registerHit(atk.type);
 
+        // Random slash SFX on melee impact
+        try {
+            const slashIdx = Phaser.Math.Between(1, 11);
+            const slashVol = (window.gameSettings?.sfx || 50) / 100 * 0.4;
+            this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
+        } catch (e) {}
+
         // Screen effects
         if (this.scene.screenEffects) {
             if (atk.type === 'HEAVY') {

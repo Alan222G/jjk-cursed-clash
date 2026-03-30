@@ -92,9 +92,29 @@ export default class OptionsScene extends Phaser.Scene {
             const val = Math.round(newX - x);
             fill.width = val;
             window.gameSettings[type] = val;
-            if (type === 'music') this.musicText.setText(`${val}%`);
-            else this.sfxText.setText(`${val}%`);
+            
+            if (type === 'music') {
+                this.musicText.setText(`${val}%`);
+                // Update currently playing BGM in real-time
+                this.sound.sounds.forEach(snd => {
+                    if (snd.key && snd.key.startsWith('bgm')) {
+                        snd.setVolume((val / 100) * 0.5); // 0.5 is the base multiplier for menu BGM
+                    }
+                });
+            } else {
+                this.sfxText.setText(`${val}%`);
+            }
             this.saveSettings();
+        });
+
+        // Play test sound for SFX when drag ends
+        this.input.on('dragend', (pointer, gameObject) => {
+            if (gameObject === knob && type === 'sfx') {
+                try {
+                    let vol = window.gameSettings.sfx / 100;
+                    this.sound.play('sfx_slash', { volume: vol });
+                } catch(e) {}
+            }
         });
     }
 
