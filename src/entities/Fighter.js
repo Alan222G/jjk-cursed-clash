@@ -510,9 +510,11 @@ export default class Fighter {
         if (this.fighterId === 'sukuna') {
             try {
                 const slashIdx = Phaser.Math.Between(1, 11);
-                // Increased volume dramatically from 0.4 to 1.5
-                const slashVol = (window.gameSettings?.sfx ?? 50) / 100 * 1.5;
-                this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
+                // Boost volume for specials massively (multiply by 4.0)
+                let rawVol = (window.gameSettings?.sfx ?? 50) / 100;
+                let specialVol = rawVol * 4.0;
+                
+                this.scene.sound.play(`slash_${slashIdx}`, { volume: specialVol });
             } catch (e) {}
         }
 
@@ -721,19 +723,18 @@ export default class Fighter {
             const slashX = x + (25 + armExtend) * f + (15 * f);
             const slashY = armY - 5;
             
-            // Big thick black arrow slash with white outline (> shape)
-            g.lineStyle(12, 0xFFFFFF, 0.9); // White outer
+            // Big thick black curve crescent slash with white outline
+            g.lineStyle(14, 0xFFFFFF, 0.9); // White outer thickness
             g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 35);
-            g.lineTo(slashX + 30 * f, slashY);
-            g.lineTo(slashX - 15 * f, slashY + 35);
+            g.moveTo(slashX - 15 * f, slashY - 45);
+            // control point protruding forward to make a curve
+            g.quadraticCurveTo(slashX + 45 * f, slashY, slashX - 15 * f, slashY + 45);
             g.strokePath();
             
-            g.lineStyle(6, 0x000000, 1); // Black inner
+            g.lineStyle(8, 0x000000, 1); // Black inner thickness
             g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 35);
-            g.lineTo(slashX + 30 * f, slashY);
-            g.lineTo(slashX - 15 * f, slashY + 35);
+            g.moveTo(slashX - 15 * f, slashY - 45);
+            g.quadraticCurveTo(slashX + 45 * f, slashY, slashX - 15 * f, slashY + 45);
             g.strokePath();
         }
 

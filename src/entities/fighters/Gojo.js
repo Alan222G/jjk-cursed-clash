@@ -94,7 +94,7 @@ export default class Gojo extends Fighter {
 
         try {
             const snd = this.scene.sound.add('sfx_blue', {
-                volume: (window.gameSettings?.sfx ?? 50) / 100
+                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 3.0
             });
             snd.play();
         } catch(e) {}
