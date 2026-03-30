@@ -463,14 +463,11 @@ export default class Fighter {
             this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, damage);
         }
 
-        // Check death — FORCE isDead and unlock BEFORE setState
+        // Check death — flag hp=0 here, but let GameScene.update() handle isDead + onKnockout
         if (this.hp <= 0) {
             this.hp = 0;
-            this.isDead = true;
-            this.stateMachine.unlock();
             this.sprite.body.setVelocity(kbX, kbY * 1.5);
-            this.stateMachine.setState('dead');
-            return;
+            return; // GameScene.update() will detect hp<=0 && !isDead and call onKnockout
         }
 
         // Apply knockback
@@ -629,7 +626,15 @@ export default class Fighter {
 
         // Hit flash effect
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
-        const bodyColor = isFlashing ? 0xFFFFFF : colors.primary;
+        let bodyColor = isFlashing ? 0xFFFFFF : colors.primary;
+        let armColor = bodyColor;
+        let legColor = bodyColor;
+
+        if (this.fighterId === 'gojo' && !isFlashing) {
+            bodyColor = 0x111118; // Dark Navy/Black for uniform
+            armColor = 0x111118;
+            legColor = 0x151520;  // Slightly distinct dark tone for pants
+        }
         const outlineColor = colors.secondary;
 
         // Dead state — simple fallen figure
@@ -646,32 +651,76 @@ export default class Fighter {
         // Torso
         g.strokeRect(x - 14, y - 28 + bobY, 28, 38);
 
-        // ── HEAD ──
-        g.fillStyle(colors.skin, 1);
-        g.fillCircle(x, y - 46 + bobY, 16);
-        // Hair
-        g.fillStyle(colors.hair, 1);
-        g.fillEllipse(x, y - 55 + bobY, 30, 14);
+        // ── HEAD & HAIR ──
+        if (this.fighterId === 'gojo' && !this.isDead) { // Custom Gojo Head (Pixel-art style)
+            // High collar that covers chin/neck
+            g.fillStyle(bodyColor, 1);
+            g.fillRect(x - 12, y - 48 + bobY, 24, 18);
+            g.lineStyle(2, 0x05050A, 0.5);
+            g.strokeRect(x - 12, y - 48 + bobY, 24, 18);
 
-        // ── Character-specific face details (overridden) ──
-        this.drawFace(g, x, y - 46 + bobY, f);
+            // Skin (only upper face visible above collar)
+            g.fillStyle(colors.skin, 1);
+            g.beginPath();
+            g.arc(x, y - 48 + bobY, 15, Math.PI, 0); // Semicircle
+            g.fillPath();
+
+            // Custom face details (Blindfold)
+            this.drawFace(g, x, y - 48 + bobY, f);
+
+            // Spiky Hair (White/Silver)
+            g.fillStyle(colors.hair, 1);
+            g.beginPath();
+            g.moveTo(x - 16, y - 50 + bobY);
+            // Left to right spikes
+            g.lineTo(x - 20, y - 62 + bobY);
+            g.lineTo(x - 10, y - 58 + bobY);
+            g.lineTo(x - 5, y - 72 + bobY);
+            g.lineTo(x + 2, y - 60 + bobY);
+            g.lineTo(x + 12, y - 68 + bobY);
+            g.lineTo(x + 15, y - 55 + bobY);
+            g.lineTo(x + 22, y - 60 + bobY);
+            g.lineTo(x + 16, y - 50 + bobY);
+            g.fillPath();
+            // Inner hair details (shadows/depth)
+            g.lineStyle(2, 0xDDDDEE, 0.8);
+            g.beginPath();
+            g.moveTo(x - 5, y - 72 + bobY); g.lineTo(x - 2, y - 55 + bobY);
+            g.moveTo(x + 12, y - 68 + bobY); g.lineTo(x + 8, y - 58 + bobY);
+            g.strokePath();
+        } else {
+            // Default Head
+            g.fillStyle(colors.skin, 1);
+            g.fillCircle(x, y - 46 + bobY, 16);
+            // Default Hair
+            g.fillStyle(colors.hair, 1);
+            g.fillEllipse(x, y - 55 + bobY, 30, 14);
+            // Face
+            this.drawFace(g, x, y - 46 + bobY, f);
+        }
 
         // ── TORSO / CLOTHING ──
         if (this.fighterId === 'gojo') {
-            // Gojo Jacket (Dark Blue/Black) - Trapezoid (wider shoulders)
-            g.fillStyle(0x1a1a24, 0.95);
+            // Gojo Uniform (Dark Navy/Black) - Trapezoid (wider shoulders)
+            g.fillStyle(bodyColor, 0.95);
             g.beginPath();
-            g.moveTo(x - 16, y - 28 + bobY); // Left shoulder
-            g.lineTo(x + 16, y - 28 + bobY); // Right shoulder
-            g.lineTo(x + 12, y + 10 + bobY); // Right waist
-            g.lineTo(x - 12, y + 10 + bobY); // Left waist
+            g.moveTo(x - 17, y - 28 + bobY); // Left shoulder (slightly wider)
+            g.lineTo(x + 17, y - 28 + bobY); // Right shoulder
+            g.lineTo(x + 11, y + 10 + bobY); // Right waist
+            g.lineTo(x - 11, y + 10 + bobY); // Left waist
             g.fillPath();
-            // Jacket collar & zipper line
-            g.lineStyle(2, 0x111111, 0.8);
+            // Jacket collar, zipper line, and creases
+            g.lineStyle(2, 0x05050A, 0.8);
             g.beginPath();
             g.moveTo(x, y - 28 + bobY);
-            g.lineTo(x, y + 10 + bobY);
+            g.lineTo(x, y + 10 + bobY); // Zipper
+            // Creases
+            g.moveTo(x - 8, y - 28 + bobY);
+            g.lineTo(x - 5, y + 5 + bobY);
+            g.moveTo(x + 8, y - 28 + bobY);
+            g.lineTo(x + 5, y + 5 + bobY);
             g.strokePath();
+            // Torso already closed in previous step
         } else if (this.fighterId === 'sukuna') {
             // Sukuna Kimono - Trapezoid
             g.fillStyle(0xf0f0f5, 0.95);
@@ -706,26 +755,43 @@ export default class Fighter {
         const armY = y - 24 + bobY;
         const armExtend = this.attackSwing * 35;
 
-        // Back arm (thicker, attached to shoulder)
-        g.lineStyle(11, bodyColor, 0.7);
+        // Custom Idle pose for Gojo (Pixel art ref: Hand in pocket, other hand up)
+        const isGojoIdle = this.fighterId === 'gojo' && this.stateMachine.isAny('idle', 'walk') && this.attackSwing === 0;
+
+        // Back arm
+        g.lineStyle(11, armColor, 0.7);
         g.beginPath();
         g.moveTo(x - 12 * f, armY);
-        g.lineTo(x - 22 * f, armY + 18);
+        if (isGojoIdle) {
+            // Relaxed arm (in pocket)
+            g.lineTo(x - 14 * f, armY + 22);
+            g.lineTo(x - 8 * f, armY + 36);
+        } else {
+            // Ready stance back arm
+            g.lineTo(x - 22 * f, armY + 18);
+        }
         g.strokePath();
 
         // Front arm (attack arm)
-        g.lineStyle(11, bodyColor, 1);
+        g.lineStyle(11, armColor, 1);
         g.beginPath();
         g.moveTo(x + 12 * f, armY);
         
-        if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
+        if (isGojoIdle) {
+            // Arm raised doing gesture
+            g.lineTo(x + 18 * f, armY - 5);
+            g.lineTo(x + 24 * f, armY - 20);
+            // Hand/fingers gesture indicator
+            g.fillStyle(colors.skin, 1);
+            g.fillCircle(x + 24 * f, armY - 22, 5);
+        } else if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
             // Normal Fighter Punch
             g.lineTo(x + (25 + armExtend) * f, armY - 5);
             // Fist glow during attack
             g.fillStyle(colors.energy, 0.8);
             g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
         } else {
-            // Arm stays by side (Sukuna attacks hands-free)
+            // Arm stays by side (Sukuna attacks hands-free or normal generic idle)
             g.lineTo(x + 18 * f, armY + 22);
         }
         g.strokePath();
@@ -771,7 +837,7 @@ export default class Fighter {
             rightLegX = 12;
         }
 
-        g.lineStyle(12, bodyColor, 0.9);
+        g.lineStyle(12, legColor, 0.9);
         g.beginPath();
         g.moveTo(x + leftLegX, legY);
         g.lineTo(x + leftLegX - 3, legY + leftKnee);
@@ -785,7 +851,7 @@ export default class Fighter {
         // ── BLOCK VISUAL — Crouch + Arms Crossed (no shield) ──
         if (this.stateMachine.is('block')) {
             // Draw crossed arms in front of body
-            g.lineStyle(8, bodyColor, 1);
+            g.lineStyle(8, armColor, 1);
             // Left arm crossed over
             g.beginPath();
             g.moveTo(x - 12, armY);

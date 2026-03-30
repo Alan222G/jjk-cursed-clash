@@ -391,11 +391,27 @@ export default class GameScene extends Phaser.Scene {
             this.domainBg.destroy();
             this.domainBg = null;
         }
+
+        // CRITICAL: Unlock both fighters so they can move again
+        const opp = (owner === this.p1) ? this.p2 : this.p1;
+        if (owner) {
+            owner.stateMachine.unlock();
+            if (owner.stateMachine.is('casting_domain')) {
+                owner.stateMachine.setState('idle');
+            }
+        }
+        if (opp) {
+            opp.stateMachine.unlock();
+            if (opp.stateMachine.is('domain_stunned')) {
+                opp.stateMachine.setState('idle');
+            }
+        }
         
         // Stop all audio and resume combat BGM
         try {
             this.sound.stopAll();
-            this.sound.play('bgm_combat', { volume: 0.4, loop: true });
+            const musicVol = (window.gameSettings?.music ?? 50) / 100 * 0.4;
+            this.sound.play('bgm_combat', { volume: musicVol, loop: true });
         } catch(e) { console.warn('Audio resume error', e); }
     }
 
