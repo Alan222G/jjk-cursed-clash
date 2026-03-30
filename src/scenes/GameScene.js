@@ -36,7 +36,15 @@ export default class GameScene extends Phaser.Scene {
         // Floor
         const floorY = GAME_HEIGHT - 60;
         this.add.rectangle(0, floorY, GAME_WIDTH, 60, 0x1A1A22).setOrigin(0).setDepth(-1); // Shadow backdrop
-        this.add.tileSprite(0, floorY, GAME_WIDTH, 60, 'ground_texture').setOrigin(0).setDepth(0);
+        const floorSprite = this.add.tileSprite(0, floorY, GAME_WIDTH, 60, 'ground_texture').setOrigin(0).setDepth(0);
+        
+        // Auto-scale tile texture to perfectly fit the 60px height without cropping
+        const groundImage = this.textures.get('ground_texture').getSourceImage();
+        if (groundImage && groundImage.height) {
+            const scaleFactor = 60 / groundImage.height;
+            floorSprite.tileScaleX = scaleFactor;
+            floorSprite.tileScaleY = scaleFactor;
+        }
         
         // ── Groups ──
         this.projectiles = [];
@@ -130,6 +138,7 @@ export default class GameScene extends Phaser.Scene {
         const voiceKey = (charKey === 'GOJO') ? 'gojo_domain_voice' : 'sukuna_domain_voice';
         const portraitKey = (charKey === 'GOJO') ? 'portrait_gojo' : 'portrait_sukuna';
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
+        const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
         // ── DIAGONAL PARALLEL LINES CINEMATIC ──
         // Direction: P1 = bottom-left to top-right, P2 = bottom-right to top-left
@@ -138,11 +147,11 @@ export default class GameScene extends Phaser.Scene {
         const angleRad = angle * (Math.PI / 180);
         const stripWidth = 280; // Width of visible strip between the two lines
 
-        // 1. Black overlay
+        // 1. Solid overlay
         this.domainOverlay = this.add.rectangle(
             GAME_WIDTH / 2, GAME_HEIGHT / 2, 
             GAME_WIDTH, GAME_HEIGHT, 
-            0x000000, 0
+            bgColor, 0
         ).setDepth(50).setOrigin(0.5);
 
         this.tweens.add({
@@ -290,7 +299,7 @@ export default class GameScene extends Phaser.Scene {
         // 6. AUDIO-DRIVEN: Listen for voice line completion
         try {
             const domainVoice = this.sound.add(voiceKey, {
-                volume: (window.gameSettings?.sfx || 50) / 100
+                volume: (window.gameSettings?.sfx ?? 50) / 100
             });
 
             domainVoice.once('complete', () => {

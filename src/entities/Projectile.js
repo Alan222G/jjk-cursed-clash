@@ -160,7 +160,7 @@ export default class Projectile {
             if (this.type === 'slash') {
                 try {
                     const slashIdx = Phaser.Math.Between(1, 11);
-                    const slashVol = (window.gameSettings?.sfx || 50) / 100 * 0.5;
+                    const slashVol = (window.gameSettings?.sfx ?? 50) / 100 * 1.5;
                     this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
                 } catch (e) {}
             }

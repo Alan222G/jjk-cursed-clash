@@ -64,7 +64,7 @@ export default class Gojo extends Fighter {
 
         try {
             // Boost volume for specials (multiply by 2.0 but cap at 1)
-            let rawVol = (window.gameSettings?.sfx || 50) / 100;
+            let rawVol = (window.gameSettings?.sfx ?? 50) / 100;
             let specialVol = Math.min(rawVol * 2.0, 1.0);
             
             const snd = this.scene.sound.add(sfxKey, { volume: specialVol });
@@ -94,7 +94,7 @@ export default class Gojo extends Fighter {
 
         try {
             const snd = this.scene.sound.add('sfx_blue', {
-                volume: (window.gameSettings?.sfx || 50) / 100
+                volume: (window.gameSettings?.sfx ?? 50) / 100
             });
             snd.play();
         } catch(e) {}
@@ -289,7 +289,7 @@ export default class Gojo extends Fighter {
 
         // Play domain voice — GameScene will listen for its completion
         try {
-            this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            this.scene.sound.play('gojo_domain_voice', { volume: (window.gameSettings?.sfx ?? 50) / 100 });
         } catch (e) { console.warn('Gojo domain voice error', e); }
 
         if (this.scene.onDomainActivated) {

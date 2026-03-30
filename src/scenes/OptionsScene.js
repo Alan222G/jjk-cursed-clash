@@ -66,23 +66,16 @@ export default class OptionsScene extends Phaser.Scene {
         cy += 120;
 
         // Back Button
-        const backBtn = this.add.text(cx, cy, 'VOLVER AL MENÚ', {
-            fontFamily: 'Arial Black',
-            fontSize: '28px',
-            color: '#AAAAAA'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-
-        backBtn.on('pointerover', () => backBtn.setColor('#FFFFFF'));
-        backBtn.on('pointerout', () => backBtn.setColor('#AAAAAA'));
-        backBtn.on('pointerdown', () => {
+        this.createMenuButton(cx, cy, 'VOLVER AL MENÚ', () => {
             this.scene.start('MenuScene');
         });
     }
 
     createSlider(x, y, type) {
+        let currentVal = window.gameSettings[type] ?? 50;
         const bg = this.add.rectangle(x, y, 100, 10, 0x444444).setOrigin(0, 0.5);
-        const fill = this.add.rectangle(x, y, window.gameSettings[type], 10, 0xD4A843).setOrigin(0, 0.5);
-        const knob = this.add.circle(x + window.gameSettings[type], y, 10, 0xFFFFFF).setInteractive({ useHandCursor: true });
+        const fill = this.add.rectangle(x, y, currentVal, 10, 0xD4A843).setOrigin(0, 0.5);
+        const knob = this.add.circle(x + currentVal, y, 10, 0xFFFFFF).setInteractive({ useHandCursor: true });
         this.input.setDraggable(knob);
 
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
@@ -111,7 +104,7 @@ export default class OptionsScene extends Phaser.Scene {
         this.input.on('dragend', (pointer, gameObject) => {
             if (gameObject === knob && type === 'sfx') {
                 try {
-                    let vol = window.gameSettings.sfx / 100;
+                    let vol = (window.gameSettings.sfx ?? 50) / 100;
                     this.sound.play('sfx_slash', { volume: vol });
                 } catch(e) {}
             }
@@ -120,5 +113,52 @@ export default class OptionsScene extends Phaser.Scene {
 
     saveSettings() {
         localStorage.setItem('jjk_settings', JSON.stringify(window.gameSettings));
+    }
+
+    createMenuButton(x, y, label, callback) {
+        const container = this.add.container(x, y).setDepth(5);
+
+        // Button background
+        const bg = this.add.graphics();
+        bg.fillStyle(0x1A1A2E, 0.8);
+        bg.fillRoundedRect(-160, -25, 320, 50, 8);
+        bg.lineStyle(2, 0xD4A843, 0.6);
+        bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+        container.add(bg);
+
+        // Button text
+        const text = this.add.text(0, 0, label, {
+            fontFamily: 'Arial Black, Impact, sans-serif',
+            fontSize: '24px',
+            color: '#CCCCDD',
+            letterSpacing: 4,
+        }).setOrigin(0.5);
+        container.add(text);
+
+        // Interactive zone
+        const zone = this.add.zone(0, 0, 320, 50).setInteractive({ useHandCursor: true });
+        container.add(zone);
+
+        zone.on('pointerover', () => {
+            text.setColor('#FFFFFF');
+            bg.clear();
+            bg.fillStyle(0x7722CC, 0.4);
+            bg.fillRoundedRect(-160, -25, 320, 50, 8);
+            bg.lineStyle(2, 0xD4A843, 1);
+            bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+        });
+
+        zone.on('pointerout', () => {
+            text.setColor('#CCCCDD');
+            bg.clear();
+            bg.fillStyle(0x1A1A2E, 0.8);
+            bg.fillRoundedRect(-160, -25, 320, 50, 8);
+            bg.lineStyle(2, 0xD4A843, 0.6);
+            bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+        });
+
+        zone.on('pointerdown', callback);
+
+        return container;
     }
 }

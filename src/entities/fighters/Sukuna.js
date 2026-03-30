@@ -67,7 +67,7 @@ export default class Sukuna extends Fighter {
 
         try {
             // Boost volume for specials (multiply by 2.0 but cap at 1)
-            let rawVol = (window.gameSettings?.sfx || 50) / 100;
+            let rawVol = (window.gameSettings?.sfx ?? 50) / 100;
             let specialVol = Math.min(rawVol * 2.0, 1.0);
             
             const snd = this.scene.sound.add(sfxKey, { volume: specialVol });
@@ -311,7 +311,7 @@ export default class Sukuna extends Fighter {
         this.stateMachine.setState('casting_domain');
 
         try {
-            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx || 50) / 100 });
+            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx ?? 50) / 100 });
         } catch (e) { console.warn('Sukuna domain voice error', e); }
 
         if (this.scene.onDomainActivated) {

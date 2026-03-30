@@ -13,10 +13,11 @@ import PauseScene from './scenes/PauseScene.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
 
 // Inicializar configuración global desde localStorage
-window.gameSettings = JSON.parse(localStorage.getItem('jjk_settings')) || {
-    graphics: 'low',
-    music: 50,
-    sfx: 50
+let saved = JSON.parse(localStorage.getItem('jjk_settings')) || {};
+window.gameSettings = {
+    graphics: saved.graphics ?? 'low',
+    music: saved.music ?? 50,
+    sfx: saved.sfx ?? 50
 };
 
 const config = {

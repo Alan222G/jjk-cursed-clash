@@ -510,7 +510,8 @@ export default class Fighter {
         if (this.fighterId === 'sukuna') {
             try {
                 const slashIdx = Phaser.Math.Between(1, 11);
-                const slashVol = (window.gameSettings?.sfx || 50) / 100 * 0.4;
+                // Increased volume dramatically from 0.4 to 1.5
+                const slashVol = (window.gameSettings?.sfx ?? 50) / 100 * 1.5;
                 this.scene.sound.play(`slash_${slashIdx}`, { volume: slashVol });
             } catch (e) {}
         }
@@ -720,17 +721,19 @@ export default class Fighter {
             const slashX = x + (25 + armExtend) * f + (15 * f);
             const slashY = armY - 5;
             
-            // Big thick black slash with white outline
+            // Big thick black arrow slash with white outline (> shape)
             g.lineStyle(12, 0xFFFFFF, 0.9); // White outer
             g.beginPath();
             g.moveTo(slashX - 15 * f, slashY - 35);
-            g.lineTo(slashX + 30 * f, slashY + 35);
+            g.lineTo(slashX + 30 * f, slashY);
+            g.lineTo(slashX - 15 * f, slashY + 35);
             g.strokePath();
             
             g.lineStyle(6, 0x000000, 1); // Black inner
             g.beginPath();
             g.moveTo(slashX - 15 * f, slashY - 35);
-            g.lineTo(slashX + 30 * f, slashY + 35);
+            g.lineTo(slashX + 30 * f, slashY);
+            g.lineTo(slashX - 15 * f, slashY + 35);
             g.strokePath();
         }
 
