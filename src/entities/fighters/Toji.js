@@ -116,7 +116,7 @@ export default class Toji extends Fighter {
 
         // Draw Storage Curse (Purple Blob) on shoulder/back
         const curseX = x - 12 * f;
-        const curseY = y - 40; // Hombro/Espalda Alta
+        const curseY = y - 70; // Hombro/Espalda Alta elevada
         // Body of curse
         g.fillStyle(0x331144, 1);
         g.fillEllipse(curseX, curseY + 10, 18, 25);
@@ -134,7 +134,7 @@ export default class Toji extends Fighter {
 
         // Weapon indicator in HAND when idle
         const armX = x + 15 * f;
-        const armY = y - 40;
+        const armY = y - 55;
         if (!this.stateMachine.is('attack')) {
             g.fillStyle(this.currentWeapon.color, 0.8);
             g.fillRect(armX - 2, armY - 10, 4, 30);
@@ -145,7 +145,7 @@ export default class Toji extends Fighter {
             // Re-calculate Hand Position matching Fighter.js extension
             const armExtend = swing * 40;
             const handX = x + (34 + armExtend) * f;
-            const handY = y - 36;
+            const handY = y - 55;
             
             if (this.currentWeapon.key === 'spear' && this.spearChainMode) {
                 // Chain of a Thousand Miles

@@ -430,6 +430,14 @@ export default class GameScene extends Phaser.Scene {
             this.onDomainEnd(this.domainOwner);
         }
 
+        // Clean up any remaining active projectiles immediately
+        if (this.projectiles && this.projectiles.length > 0) {
+            this.projectiles.forEach(p => {
+                if (p.isAlive()) p.destroy();
+            });
+            this.projectiles = [];
+        }
+
         // Stop all sounds first, then play game over after a tiny delay
         this.sound.stopAll();
         this.time.delayedCall(100, () => {

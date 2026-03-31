@@ -95,7 +95,7 @@ export default class Kenjaku extends Fighter {
         this.spawnWormEffect();
 
         // Fire a large worm projectile
-        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 50, {
+        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 70, {
             owner: this,
             damage: Math.floor(skill.damage * this.power),
             knockbackX: 0,
@@ -140,7 +140,7 @@ export default class Kenjaku extends Fighter {
         this.spiritTarget = target;
 
         const spawnX = this.sprite.x + 80 * this.facing;
-        const spawnY = this.sprite.y - 50;
+        const spawnY = this.sprite.y - 70;
 
         this.summonedSpirit = {
             x: spawnX,
@@ -182,7 +182,7 @@ export default class Kenjaku extends Fighter {
 
         this.scene.time.delayedCall(700, () => {
             // Massive beam projectile spanning screen
-            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 50, {
+            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 70, {
                 owner: this,
                 damage: 0, // Handled continuously
                 knockbackX: 0,
@@ -299,11 +299,22 @@ export default class Kenjaku extends Fighter {
             for (let i = this.activeWorms.length - 1; i >= 0; i--) {
                 const w = this.activeWorms[i];
                 if (w.alive && w.swallowedTarget) {
-                    // Pull target along with the worm
-                    w.swallowedTarget.sprite.setPosition(w.sprite.x, w.sprite.y);
-                    w.swallowedTarget.sprite.body.setVelocity(w.sprite.body.velocity.x, 0); // nullify gravity
-                    w.swallowedTarget.sprite.setAlpha(0); // keep hidden
-                    w.swallowedTarget.isInvulnerable = true;
+                    
+                    // Asegurar que el gusano y su víctima no salgan físicamente de la pantalla
+                    // (Los límites del juego físico son de 0 a 1280 aproximadamente)
+                    let clampedX = w.sprite.x;
+                    if (clampedX < 40) clampedX = 40;
+                    if (clampedX > 1240) clampedX = 1240;
+                    
+                    if (w.sprite.x < 30 || w.sprite.x > 1250) {
+                        w.destroy(); // Forzar estallido contra la pared si exceden los límites
+                    } else {
+                        // Pull target along with the worm
+                        w.swallowedTarget.sprite.setPosition(clampedX, w.sprite.y);
+                        w.swallowedTarget.sprite.body.setVelocity(w.sprite.body.velocity.x, 0); // nullify gravity
+                        w.swallowedTarget.sprite.setAlpha(0); // keep hidden
+                        w.swallowedTarget.isInvulnerable = true;
+                    }
                 } else if (!w.alive && w.swallowedTarget) {
                     // Worm died or expired, pop them out!
                     const t = w.swallowedTarget;
@@ -487,7 +498,7 @@ export default class Kenjaku extends Fighter {
 
     spawnUzumakiChargeEffect() {
         const x = this.sprite.x;
-        const y = this.sprite.y - 50;
+        const y = this.sprite.y - 70;
         const g = this.scene.add.graphics().setDepth(15);
         
         // Massive swirling pool

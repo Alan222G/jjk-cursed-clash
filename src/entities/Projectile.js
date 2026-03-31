@@ -32,10 +32,18 @@ export default class Projectile {
             this.sprite = scene.add.circle(x, y, this.size.w / 2, this.color, 0.9);
             this.glow = scene.add.circle(x, y, this.size.w / 2 + 12, this.color, 0.3);
         } else {
-            // Invisible physics body for custom drawn types
-            const alpha = (this.type === 'slash' || this.type === 'fire_arrow') ? 0 : 0.9;
+            // Invisible physics body for custom drawn types including worm
+            const alpha = (this.type === 'slash' || this.type === 'fire_arrow' || this.type === 'worm') ? 0 : 0.9;
             this.sprite = scene.add.rectangle(x, y, this.size.w, this.size.h, this.color, alpha);
             this.glow = scene.add.rectangle(x, y, this.size.w + 12, this.size.h + 12, this.color, alpha === 0 ? 0 : 0.3);
+            
+            // Si es el gusano, inicializar el Sprite visual de Phaser que va a seguir a la hitbox
+            if (this.type === 'worm') {
+                this.wormSprite = scene.add.image(x, y, 'sprite_worm_1');
+                this.wormSprite.setDepth(15);
+                this.wormSprite.setFlipX(this.direction > 0);
+                this.wormSprite.setDisplaySize(300, 200); // Haciéndolo tan masivo como un personaje
+            }
         }
 
         scene.physics.add.existing(this.sprite);
@@ -153,30 +161,15 @@ export default class Projectile {
             );
         }
         else if (this.type === 'worm') {
-            // Giant Worm Projectile
-            const w = this.size.w;
-            const h = this.size.h;
-
-            // Worm body segments
-            this.customGraphics.lineStyle(2, 0x1A051A, 1);
-            for(let i=1; i<=6; i++) {
-                const segX = px - ((w/6)*i)*dir;
-                const segY = py + Math.sin(this.timer*0.02 + i)*15;
-                this.customGraphics.fillStyle(0x3B2043, 1);
-                this.customGraphics.fillEllipse(segX, segY, w/4, h);
-                this.customGraphics.strokeEllipse(segX, segY, w/4, h);
-            }
-
-            // Head (mouth)
-            this.customGraphics.fillStyle(0x271330, 1);
-            this.customGraphics.fillEllipse(px, py, w/3, h + 10);
-            
-            // Teeth
-            this.customGraphics.fillStyle(0xDDDDDD, 1);
-            for(let a=0; a<Math.PI*2; a+=0.6) {
-                const tx = px + Math.cos(a)*10;
-                const ty = py + Math.sin(a)*(h/2);
-                this.customGraphics.fillTriangle(tx, ty, tx+(dir*5), ty+3, tx, ty+6);
+            // Actualizar la posición de la imagen al cuerpo físico
+            if (this.wormSprite) {
+                // Hacer que siga el body invisible pero agregándole offset si es necesario
+                this.wormSprite.setPosition(px + (30 * dir), py);
+                
+                // Animación (cambia de imagen 1,2,3,4 basado en el tiempo)
+                // Se recorren las texturas cada 100ms
+                const currentFrameUrl = 1 + (Math.floor(this.timer / 100) % 4);
+                this.wormSprite.setTexture(`sprite_worm_${currentFrameUrl}`);
             }
         }
         else if (this.type === 'uzumaki') {
@@ -287,6 +280,21 @@ export default class Projectile {
         this.glow.destroy();
         this.trail.destroy();
         if (this.customGraphics) this.customGraphics.destroy();
+        
+        // Destrucción / Estallido del Gusano Sprite
+        if (this.wormSprite) {
+            this.wormSprite.setTexture('sprite_worm_5');
+            this.scene.tweens.add({
+                targets: this.wormSprite,
+                alpha: 0,
+                scaleX: 1.5,
+                scaleY: 1.5,
+                duration: 400,
+                onComplete: () => {
+                    this.wormSprite.destroy();
+                }
+            });
+        }
     }
 
     isAlive() {

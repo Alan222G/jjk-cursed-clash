@@ -79,6 +79,12 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
         // Character Sprites (Pixel Art)
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
+        
+        // Kenjaku Hookworm Sprites
+        for(let i=1; i<=5; i++) {
+            this.load.image(`sprite_worm_${i}`, `assets/sprites/kenjaku/hookworm/${i}.png`);
+        }
+
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
         this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
