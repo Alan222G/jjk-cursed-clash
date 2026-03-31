@@ -157,7 +157,7 @@ export default class Sukuna extends Fighter {
 
             if (this.opponent) {
                 const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-                if (dist < 180) {
+                if (dist < 350) {
                     const dmg = Math.floor(skill.damage * this.power);
                     this.opponent.takeDamage(dmg, 400 * this.facing, -250, 500);
                     this.comboSystem.registerHit('SPECIAL');
@@ -204,17 +204,22 @@ export default class Sukuna extends Fighter {
         const y = this.sprite.y - 10;
         const g = this.scene.add.graphics();
         g.setDepth(15);
-        for (let i = 0; i < 5; i++) {
-            const angle = -Math.PI / 3 + (i * Math.PI / 6) + (this.facing < 0 ? Math.PI : 0);
-            const len = 80 + i * 10;
+        for (let i = 0; i < 7; i++) {
+            const angle = -Math.PI / 2.5 + (i * Math.PI / 7.5) + (this.facing < 0 ? Math.PI : 0);
+            const len = 160 + i * 20;
             const ex = x + Math.cos(angle) * len;
             const ey = y + Math.sin(angle) * len;
-            g.lineStyle(4 + (i === 2 ? 4 : 0), 0x000000, 1);
+            // White outline
+            g.lineStyle(8 + (i === 3 ? 6 : 0), 0xFFFFFF, 0.9);
             g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
-            g.lineStyle(2 + (i === 2 ? 2 : 0), 0xFF0000, 0.8);
+            // Black core
+            g.lineStyle(4 + (i === 3 ? 4 : 0), 0x000000, 1);
+            g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
+            // Red accent
+            g.lineStyle(2 + (i === 3 ? 2 : 0), 0xFF0000, 0.8);
             g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
         }
-        const flash = this.scene.add.circle(x, y, 50, 0xFF2222, 0.4);
+        const flash = this.scene.add.circle(x, y, 120, 0xFF2222, 0.3);
         flash.setDepth(14);
         this.scene.tweens.add({
             targets: [g, flash],

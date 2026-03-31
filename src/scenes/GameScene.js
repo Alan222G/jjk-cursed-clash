@@ -5,6 +5,8 @@
 import Phaser from 'phaser';
 import Gojo from '../entities/fighters/Gojo.js';
 import Sukuna from '../entities/fighters/Sukuna.js';
+import Toji from '../entities/fighters/Toji.js';
+import Kenjaku from '../entities/fighters/Kenjaku.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -101,6 +103,8 @@ export default class GameScene extends Phaser.Scene {
     createFighter(key, x, y, index) {
         if (key === 'GOJO') return new Gojo(this, x, y, index);
         if (key === 'SUKUNA') return new Sukuna(this, x, y, index);
+        if (key === 'TOJI') return new Toji(this, x, y, index);
+        if (key === 'KENJAKU') return new Kenjaku(this, x, y, index);
         return new Gojo(this, x, y, index);
     }
 
@@ -286,6 +290,26 @@ export default class GameScene extends Phaser.Scene {
         this._domainMask = mask;
         this._domainMaskGraphics = maskGraphics;
 
+        // ── FADE OUT CINEMATIC after 3 seconds (domain stays active!) ──
+        this.time.delayedCall(3000, () => {
+            const fadeTargets = [this.domainOverlay, this.domainPortrait, this.domainText, this.domainLines].filter(Boolean);
+            if (fadeTargets.length > 0) {
+                this.tweens.add({
+                    targets: fadeTargets,
+                    alpha: 0,
+                    duration: 800,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+                        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+                        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+                        if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
+                        if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
+                    }
+                });
+            }
+        });
+
         // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
         const endDomain = () => {
             if (!this.domainActive) return;
@@ -300,9 +324,8 @@ export default class GameScene extends Phaser.Scene {
             domainVoice.once('complete', endDomain);
             domainVoice.play();
 
-            // Safety fallback removed as requested to respect audio strictly
-            // But we keep a fail-safe extremely high just in case audio fails entirely
-            const maxWait = owner.charData.stats.domainDuration + 2000;
+            // Safety fallback — only if audio totally fails to fire 'complete'
+            const maxWait = owner.charData.stats.domainDuration + 5000;
             this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
         } catch (e) {
             const fallback = owner.charData.stats.domainDuration || 15000;
