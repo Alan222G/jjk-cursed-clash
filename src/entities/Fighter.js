@@ -172,6 +172,7 @@ export default class Fighter {
         sm.addState('domain_stunned', {
             onEnter: function () {
                 this.sprite.body.setVelocity(0, 0);
+                this.isInvulnerable = false; // Never stay invulnerable when paralyzed
                 if (this.sprite.anims && this.sprite.anims.currentAnim) {
                     this.sprite.anims.pause();
                 }
@@ -279,6 +280,9 @@ export default class Fighter {
                     this.stateMachine.setState('getup');
                 }
             },
+            onExit: function () {
+                this.isInvulnerable = false;
+            }
         });
 
         sm.addState('getup', {
@@ -691,11 +695,12 @@ export default class Fighter {
         let legColor = bodyColor;
 
         if (this.fighterId === 'gojo' && !isFlashing) {
-            bodyColor = 0x111118;
-            armColor = 0x111118;
+            bodyColor = 0x0D0D14; // Match torso panel 1
+            armColor = 0x1A1A24;  // Lighter dark navy to stand out
             legColor = 0x151520;
+            // The outlineColor for joints will be pure black for strong contrast
         }
-        const outlineColor = colors.secondary;
+        const outlineColor = (this.fighterId === 'gojo' && !isFlashing) ? 0x05050A : colors.secondary;
 
         if (this.isDead) {
             g.fillStyle(bodyColor, 0.5);

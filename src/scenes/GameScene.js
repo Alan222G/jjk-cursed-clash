@@ -131,7 +131,7 @@ export default class GameScene extends Phaser.Scene {
 
         const charKey = (owner === this.p1) ? this.p1Key : this.p2Key;
         const voiceKey = (charKey === 'GOJO') ? 'gojo_domain_voice' : 'sukuna_domain_voice';
-        const portraitKey = (charKey === 'GOJO') ? 'portrait_gojo' : 'portrait_sukuna';
+        const signKey = (charKey === 'GOJO') ? 'gojo_sign' : 'sukuna_sign';
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
@@ -198,15 +198,14 @@ export default class GameScene extends Phaser.Scene {
 
         const mask = maskGraphics.createGeometryMask();
 
-        // Portrait image
+        // Sign image (replaces portrait)
         const startX = isP1 ? -400 : GAME_WIDTH + 400;
         this.domainPortrait = this.add.image(
-            startX, GAME_HEIGHT / 2, portraitKey
+            startX, GAME_HEIGHT / 2, signKey
         ).setDepth(51).setOrigin(0.5);
 
         const imgScale = Math.max(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.8;
         this.domainPortrait.setScale(imgScale);
-        this.domainPortrait.setTint(tintColor);
         this.domainPortrait.setMask(mask);
 
         this.tweens.add({
