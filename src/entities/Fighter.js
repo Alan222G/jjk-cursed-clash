@@ -847,6 +847,21 @@ export default class Fighter {
             g.fillPath();
         }
 
+        // ── LIMB RENDER HELPER ──
+        const strokeOrFill = (x1, y1, x2, y2, thick, color, alpha) => {
+            if (this.fighterId === 'gojo') {
+                const dx = x2 - x1, dy = y2 - y1, ang = Math.atan2(dy, dx);
+                const px = Math.cos(ang + Math.PI/2) * (thick/2), py = Math.sin(ang + Math.PI/2) * (thick/2);
+                g.fillStyle(color, alpha); g.beginPath();
+                g.moveTo(x1 + px, y1 + py); g.lineTo(x2 + px, y2 + py);
+                g.lineTo(x2 - px, y2 - py); g.lineTo(x1 - px, y1 - py);
+                g.closePath(); g.fillPath();
+            } else {
+                g.lineStyle(thick, color, alpha);
+                g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.strokePath();
+            }
+        };
+
         // ── ARMS (Segmented: upper + forearm + joint) ──
         const armY = y - 32 + bobY;
         const armExtend = this.attackSwing * 40;
@@ -855,10 +870,8 @@ export default class Fighter {
         const bsx = x - 12 * f;
         const bex = bsx - 6 * f;
         const bey = armY + 18;
-        g.lineStyle(7, armColor, 0.7);
-        g.beginPath(); g.moveTo(bsx, armY); g.lineTo(bex, bey); g.strokePath();
-        g.lineStyle(6, armColor, 0.7);
-        g.beginPath(); g.moveTo(bex, bey); g.lineTo(bex - 2 * f, bey + 16); g.strokePath();
+        strokeOrFill(bsx, armY, bex, bey, 7, armColor, 0.7);
+        strokeOrFill(bex, bey, bex - 2 * f, bey + 16, 6, armColor, 0.7);
         g.fillStyle(outlineColor, 0.3);
         g.fillCircle(bex, bey, 3);
 
@@ -875,10 +888,8 @@ export default class Fighter {
             fex = fsx + 4 * f; fey = armY + 18;
             fhx = fex + 2 * f; fhy = fey + 16;
         }
-        g.lineStyle(8, armColor, 1);
-        g.beginPath(); g.moveTo(fsx, armY); g.lineTo(fex, fey); g.strokePath();
-        g.lineStyle(7, armColor, 1);
-        g.beginPath(); g.moveTo(fex, fey); g.lineTo(fhx, fhy); g.strokePath();
+        strokeOrFill(fsx, armY, fex, fey, 8, armColor, 1);
+        strokeOrFill(fex, fey, fhx, fhy, 7, armColor, 1);
         g.fillStyle(outlineColor, 0.4);
         g.fillCircle(fex, fey, 3);
 
@@ -938,10 +949,8 @@ export default class Fighter {
             const ky = hipY + Math.cos(ang) * 18;
             const fx2 = kx + Math.sin(ang * 0.3) * 16;
             const fy2 = ky + 16;
-            g.lineStyle(9, legColor, alpha);
-            g.beginPath(); g.moveTo(hx, hipY); g.lineTo(kx, ky); g.strokePath();
-            g.lineStyle(7, legColor, alpha);
-            g.beginPath(); g.moveTo(kx, ky); g.lineTo(fx2, fy2); g.strokePath();
+            strokeOrFill(hx, hipY, kx, ky, 9, legColor, alpha);
+            strokeOrFill(kx, ky, fx2, fy2, 7, legColor, alpha);
             g.fillStyle(outlineColor, 0.3);
             g.fillCircle(kx, ky, 3);
             g.fillStyle(0x222233, 1);

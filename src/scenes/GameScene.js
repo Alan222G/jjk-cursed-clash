@@ -9,7 +9,7 @@ import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
 import AIManager from '../systems/AIManager.js';
-import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, PHYSICS, DOMAIN } from '../config.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -115,6 +115,7 @@ export default class GameScene extends Phaser.Scene {
         this.domainActive = true;
         this.domainPhase1 = false; // No separate phases
         this.domainOwner = owner;
+        this.domainCastTime = this.time.now;
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         
         // Freeze ONLY enemy during domain
@@ -204,7 +205,8 @@ export default class GameScene extends Phaser.Scene {
             startX, GAME_HEIGHT / 2, signKey
         ).setDepth(51).setOrigin(0.5);
 
-        const imgScale = Math.max(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.8;
+        // FIT scaling so the entire hand sign is visible inside the screen
+        const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
         this.domainPortrait.setScale(imgScale);
         this.domainPortrait.setMask(mask);
 
@@ -298,13 +300,66 @@ export default class GameScene extends Phaser.Scene {
             domainVoice.once('complete', endDomain);
             domainVoice.play();
 
-            // Safety fallback
-            const maxWait = (owner.charData.stats.domainDuration || 20000) + 3000;
-            this.time.delayedCall(maxWait, endDomain);
+            // Safety fallback removed as requested to respect audio strictly
+            // But we keep a fail-safe extremely high just in case audio fails entirely
+            const maxWait = owner.charData.stats.domainDuration + 2000;
+            this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
         } catch (e) {
             const fallback = owner.charData.stats.domainDuration || 15000;
-            this.time.delayedCall(fallback, endDomain);
+            this.domainTimeout = this.time.delayedCall(fallback, endDomain);
         }
+    }
+
+    attemptDomainClash(triggeringPlayer) {
+        if (!this.domainActive || !this.domainOwner) return false;
+        
+        // Check window
+        const timeSince = this.time.now - this.domainCastTime;
+        if (timeSince > DOMAIN.CLASH_WINDOW) {
+            return false; // Too late!
+        }
+
+        // It's a valid clash!
+        console.log("DOMAIN CLASH TRIGGERED!");
+        
+        // 1. Stop current domain progression
+        try { this.sound.stopAll(); } catch(e) {}
+        if (this.domainTimeout) { this.domainTimeout.remove(); }
+        
+        // We leave the visual overlays as is, but pause physics
+        this.physics.pause();
+        this.scene.pause();
+        
+        // 2. Launch Clash Scene
+        this.scene.launch('DomainClashScene', {
+            p1: this.p1,
+            p2: this.p2,
+            callback: (winnerId) => this.resolveDomainClash(winnerId)
+        });
+        
+        return true;
+    }
+
+    resolveDomainClash(winnerId) {
+        this.scene.resume();
+        this.physics.resume();
+        
+        const winner = (winnerId === 'P1') ? this.p1 : this.p2;
+        const loser = (winnerId === 'P1') ? this.p2 : this.p1;
+
+        // Clean up current domain visuals
+        this.onDomainEnd(this.domainOwner);
+
+        // Loser gets punished
+        loser.ceSystem.ce = 0;
+        loser.ceSystem.endDomain(); // forces fatigue
+        loser.stateMachine.setState('hitstun');
+        loser.stunTimer = 2000; // Big stun
+
+        // Winner gets to cast freely!
+        winner.ceSystem.ce = 100; // Refill so they can cast
+        winner.domainActive = false; // Reset their own lock
+        winner.tryActivateDomain();
     }
 
     onDomainEnd(owner) {

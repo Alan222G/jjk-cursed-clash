@@ -466,7 +466,17 @@ export default class Gojo extends Fighter {
     tryActivateDomain() {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-        if (this.domainActive) return;
+        
+        if (this.scene.domainActive) {
+            if (this.scene.domainOwner !== this) {
+                const clashPossible = this.scene.attemptDomainClash(this);
+                if (!clashPossible) return;
+            } else {
+                return;
+            }
+        } else if (this.domainActive) {
+            return; // Own domain
+        }
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
         this.domainActive = true;

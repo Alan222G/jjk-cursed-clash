@@ -92,18 +92,16 @@ export const DOMAIN = {
     CE_DRAIN_RATE: 13.33,       // replaced with dynamic calculated drain rate per character
     SURE_HIT_DPS: 50,          // Damage per tick
     SURE_HIT_INTERVAL: 1000,   // ms between Sure-Hit ticks
-    CLASH_WINDOW: 1500,        // ms window to counter-domain
+    CLASH_WINDOW: 1200,        // ms window to counter-domain
     FATIGUE_DURATION: 10000,   // ms of no CE regen after domain ends
     CAST_INVULN_TIME: 1500,    // ms of invulnerability while casting
 };
 
 // ── Domain Clash QTE ─────────────────────────────────────
 export const DOMAIN_CLASH = {
-    NUM_KEYS: 8,
-    TIME_LIMIT: 3500,           // ms
-    KEYS: ['W', 'A', 'S', 'D', 'UP', 'DOWN', 'LEFT', 'RIGHT'],
-    PERFECT_WINDOW: 100,        // ms for "perfect" timing
-    GOOD_WINDOW: 250,           // ms for "good" timing
+    TIME_LIMIT: 6000,           // ms for mash tug-of-war
+    P1_MASH_KEY: 'J',
+    P2_MASH_KEY: '1',
 };
 
 // ── Rounds ───────────────────────────────────────────────
@@ -164,8 +162,8 @@ export const CHARACTERS = {
             ceRegen: 3.5,
             weight: 95,
             jumpForce: -640,
-            domainDuration: 46000,
-            domainPhase1: 20000, // Reverted to 20s as user requested
+            domainDuration: 45000,
+            domainPhase1: 20000,
         },
         skills: {
             skill1: { name: 'Ao — Blue', cost: 30, damage: 50, type: 'projectile' },
@@ -196,7 +194,7 @@ export const CHARACTERS = {
             weight: 110,
             jumpForce: -600,
             domainDuration: 35000,
-            domainPhase1: 10000, // Reverted to 10s as user requested
+            domainPhase1: 10000,
         },
         skills: {
             skill1: { name: 'Dismantle', cost: 30, damage: 45, type: 'slash_ranged' },

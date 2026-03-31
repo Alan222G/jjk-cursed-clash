@@ -307,7 +307,17 @@ export default class Sukuna extends Fighter {
     tryActivateDomain() {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-        if (this.domainActive) return;
+        
+        if (this.scene.domainActive) {
+            if (this.scene.domainOwner !== this) {
+                const clashPossible = this.scene.attemptDomainClash(this);
+                if (!clashPossible) return;
+            } else {
+                return;
+            }
+        } else if (this.domainActive) {
+            return; // Own domain
+        }
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
         this.domainActive = true;
@@ -330,14 +340,50 @@ export default class Sukuna extends Fighter {
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
 
-        opponent.takeDamage(50, 50 * this.facing, 0, 100);
+        opponent.takeDamage(50, 20 * this.facing, 0, 100);
 
         const ox = opponent.sprite.x;
-        const oy = opponent.sprite.y;
+        const oy = opponent.sprite.y - 20;
+        
+        // Spawn sharp Black/White cuts ("X" or straight horizontal/vertical) 
+        const g = this.scene.add.graphics().setDepth(15);
+        const slX = ox + (Math.random() - 0.5) * 50;
+        const slY = oy + (Math.random() - 0.5) * 60;
+        
+        // Decide if it's an 'X' or straight lines
+        const isX = Math.random() > 0.5;
+
+        const drawCut = (startX, startY, endX, endY) => {
+            g.lineStyle(8, 0xFFFFFF, 0.9);
+            g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
+            g.lineStyle(4, 0x000000, 1);
+            g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
+        };
+
+        if (isX) {
+            // Draw an X
+            drawCut(slX - 30, slY - 30, slX + 30, slY + 30);
+            drawCut(slX - 30, slY + 30, slX + 30, slY - 30);
+        } else {
+            // Straight slanting or horizontal
+            for (let i = 0; i < 3; i++) {
+                const yOff = (i - 1) * 20;
+                drawCut(slX - 40, slY + yOff, slX + 40, slY + yOff);
+            }
+        }
+
+        this.scene.tweens.add({
+            targets: g,
+            alpha: 0,
+            duration: 150,
+            ease: 'Power2',
+            onComplete: () => g.destroy()
+        });
+
         this.spawnSlashEffect(
             ox + (Math.random() - 0.5) * 40,
-            oy + (Math.random() - 0.5) * 60 - 20,
-            0xFF4444,
+            oy + (Math.random() - 0.5) * 60,
+            0xFF1100,
             40 + Math.random() * 30
         );
 
