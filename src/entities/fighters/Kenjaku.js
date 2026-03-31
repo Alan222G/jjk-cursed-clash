@@ -12,11 +12,15 @@ export default class Kenjaku extends Fighter {
     constructor(scene, x, y, playerIndex) {
         super(scene, x, y, playerIndex, CHARACTERS.KENJAKU);
         this.isCasting = false;
+        
         // Summoned spirit tracking
         this.summonedSpirit = null;
         this.spiritTimer = 0;
         this.spiritTarget = null;
         this.spiritGraphics = null;
+
+        // Custom trackers for specialized projectiles
+        this.activeWorms = [];
     }
 
     /** Stitched forehead with sinister eyes */
@@ -48,10 +52,10 @@ export default class Kenjaku extends Fighter {
 
         if (tier >= 2 && this.input.isDown('DOWN')) {
             this.castUzumaki();
-        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            this.castSummonSpirit();
-        } else if (tier >= 1) {
+        } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.castWormProjectile();
+        } else if (tier >= 1) {
+            this.castSummonSpirit();
         }
     }
 
@@ -82,7 +86,7 @@ export default class Kenjaku extends Fighter {
     }
 
     // ════════════════════════════════════════════
-    // SKILL 1: WORM PROJECTILE — Large cursed worm
+    // SKILL 1: WORM PROJECTILE — Giant dragging worm
     // ════════════════════════════════════════════
     castWormProjectile() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
@@ -94,24 +98,39 @@ export default class Kenjaku extends Fighter {
         const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 10, {
             owner: this,
             damage: Math.floor(skill.damage * this.power),
-            knockbackX: 200,
-            knockbackY: -80,
-            stunDuration: 400,
-            speed: 400,
+            knockbackX: 0,
+            knockbackY: 0,
+            stunDuration: 1000,
+            speed: 500,
             direction: this.facing,
-            color: 0x8844CC,
-            size: { w: 60, h: 30 },
+            color: 0x3B2043,
+            size: { w: 180, h: 80 },
             lifetime: 2500,
-            type: 'circle',
+            type: 'worm',
+            onHitCallback: (projectile, target) => {
+                // Ignore if already swallowed someone
+                if (projectile.swallowedTarget) return true; 
+
+                // Swallow the target!
+                projectile.swallowedTarget = target;
+                target.takeDamage(projectile.damage, 0, 0, 500);
+                target.sprite.setAlpha(0); // Invisible, inside the stomach
+                target.stateMachine.lock(projectile.lifetime);
+                target.isInvulnerable = true; 
+                
+                // Return true to prevent projectile from destroying itself
+                return true; 
+            }
         });
 
         if (this.scene.projectiles) {
             this.scene.projectiles.push(proj);
+            this.activeWorms.push(proj);
         }
     }
 
     // ════════════════════════════════════════════
-    // SKILL 2: SUMMON CURSED SPIRIT — AI fighter for 8s
+    // SKILL 2: SUMMON CURSED SPIRIT — 4-Armed Beast
     // ════════════════════════════════════════════
     castSummonSpirit() {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
@@ -120,7 +139,6 @@ export default class Kenjaku extends Fighter {
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         this.spiritTarget = target;
 
-        // Create the spirit as a visual entity near Kenjaku
         const spawnX = this.sprite.x + 80 * this.facing;
         const spawnY = this.sprite.y - 10;
 
@@ -128,22 +146,19 @@ export default class Kenjaku extends Fighter {
             x: spawnX,
             y: spawnY,
             facing: this.facing,
-            hp: 200,
+            hp: 300,
             attackCooldown: 0,
             moveTimer: 0,
+            state: 'idle', // idle, walk, attack
+            animTimer: 0
         };
-        this.spiritTimer = 8000; // Lives for 8 seconds
+        this.spiritTimer = 10000; // Lives for 10 seconds
         this.spiritGraphics = this.scene.add.graphics().setDepth(14);
 
         // Summon flash
-        const flash = this.scene.add.circle(spawnX, spawnY, 30, 0xAA66FF, 0.6).setDepth(15);
+        const flash = this.scene.add.circle(spawnX, spawnY, 30, 0x111111, 0.8).setDepth(15);
         this.scene.tweens.add({
-            targets: flash,
-            alpha: 0,
-            scaleX: 2,
-            scaleY: 2,
-            duration: 400,
-            onComplete: () => flash.destroy()
+            targets: flash, alpha: 0, scaleX: 3, scaleY: 3, duration: 400, onComplete: () => flash.destroy()
         });
     }
 
@@ -155,30 +170,41 @@ export default class Kenjaku extends Fighter {
         const skill = this.charData.skills.skill2;
 
         this.isCasting = true;
-        this.stateMachine.lock(99999);
+        this.stateMachine.lock(2500);
         this.sprite.body.setVelocityX(0);
 
         // Charge-up VFX
         this.spawnUzumakiChargeEffect();
 
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.slowMotion(0.3, 400);
+            this.scene.screenEffects.slowMotion(0.2, 500);
         }
 
-        this.scene.time.delayedCall(600, () => {
-            // Massive beam projectile
-            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 10, {
+        this.scene.time.delayedCall(700, () => {
+            // Massive beam projectile spanning screen
+            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 10, {
                 owner: this,
-                damage: Math.floor(skill.damage * this.power),
-                knockbackX: 800,
-                knockbackY: -200,
-                stunDuration: 700,
-                speed: 900,
+                damage: 0, // Handled continuously
+                knockbackX: 0,
+                knockbackY: 0,
+                stunDuration: 100,
+                speed: 0, // Stationary relative to origin, but spans the map
                 direction: this.facing,
                 color: 0x8844CC,
-                size: { w: 250, h: 100 },
-                lifetime: 2000,
-                type: 'circle',
+                size: { w: 1500, h: 120 },
+                lifetime: 1800, // active for 1.8s
+                type: 'uzumaki',
+                onHitCallback: (projectile, victim) => {
+                    // Continuous tick damage
+                    if (!projectile.tickTimer) projectile.tickTimer = 0;
+                    
+                    const now = projectile.timer; // 0 to 1800
+                    if (now - projectile.tickTimer > 150) { // dmg every 150ms
+                        victim.takeDamage(18 * this.power, 60 * this.facing, 0, 300);
+                        projectile.tickTimer = now;
+                    }
+                    return true; // Don't destroy!
+                }
             });
 
             if (this.scene.projectiles) {
@@ -186,12 +212,14 @@ export default class Kenjaku extends Fighter {
             }
 
             if (this.scene.screenEffects) {
-                this.scene.screenEffects.shake(0.04, 600);
+                this.scene.screenEffects.shake(0.06, 1800);
             }
 
-            this.isCasting = false;
-            this.stateMachine.unlock();
-            this.stateMachine.setState('idle');
+            this.scene.time.delayedCall(1800, () => {
+                this.isCasting = false;
+                this.stateMachine.unlock();
+                this.stateMachine.setState('idle');
+            });
         });
     }
 
@@ -230,42 +258,69 @@ export default class Kenjaku extends Fighter {
         }
     }
 
-    /** Sure-Hit: Spirit orbs damage opponent */
+    /** Sure-Hit: Gravity Crush */
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
         
-        opponent.takeDamage(40, 30 * this.facing, 0, 80);
+        // Heavy crush damage and knockback
+        opponent.takeDamage(35, 0, 800, 300); // 800 positive Y = DOWN into the ground
+        
+        // Force them down into the floor
+        opponent.sprite.body.setVelocityY(800); 
+        opponent.isOnGround = true; // Pretend they are grounded immediately
+        if (opponent.stateMachine.isAny('jump', 'fall')) {
+            opponent.stateMachine.setState('hitstun'); // Cancel jumps
+        }
 
         const ox = opponent.sprite.x;
-        const oy = opponent.sprite.y - 20;
+        const oy = opponent.sprite.y;
         
+        // Gravity visual effect (dark red pillars from sky)
         const g = this.scene.add.graphics().setDepth(15);
-        for (let i = 0; i < 3; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const dist = 20 + Math.random() * 40;
-            const sx = ox + Math.cos(angle) * dist;
-            const sy = oy + Math.sin(angle) * dist;
-            g.fillStyle(0xAA66FF, 0.7);
-            g.fillCircle(sx, sy, 8 + Math.random() * 6);
-            g.fillStyle(0xFFFFFF, 0.3);
-            g.fillCircle(sx, sy, 4);
-        }
+        g.fillStyle(0x330011, 0.6);
+        g.fillRect(ox - 30, oy - 600, 60, 620);
+        g.lineStyle(4, 0x881122, 0.8);
+        g.strokeRect(ox - 30, oy - 600, 60, 620);
         
-        this.scene.tweens.add({
-            targets: g,
-            alpha: 0,
-            duration: 200,
-            onComplete: () => g.destroy()
-        });
+        this.scene.tweens.add({ targets: g, alpha: 0, duration: 250, onComplete: () => g.destroy() });
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.shake(0.015, 200);
+        }
     }
 
     // ════════════════════════════════════════════
-    // UPDATE — Summoned spirit AI logic
+    // UPDATE LOGIC
     // ════════════════════════════════════════════
     update(time, dt) {
         super.update(time, dt);
 
-        // Handle summoned spirit
+        // ── Worm Abduction Logic ──
+        if (this.activeWorms.length > 0) {
+            for (let i = this.activeWorms.length - 1; i >= 0; i--) {
+                const w = this.activeWorms[i];
+                if (w.alive && w.swallowedTarget) {
+                    // Pull target along with the worm
+                    w.swallowedTarget.sprite.setPosition(w.sprite.x, w.sprite.y);
+                    w.swallowedTarget.sprite.body.setVelocity(w.sprite.body.velocity.x, 0); // nullify gravity
+                    w.swallowedTarget.sprite.setAlpha(0); // keep hidden
+                    w.swallowedTarget.isInvulnerable = true;
+                } else if (!w.alive && w.swallowedTarget) {
+                    // Worm died or expired, pop them out!
+                    const t = w.swallowedTarget;
+                    t.sprite.setAlpha(1);
+                    t.isInvulnerable = false;
+                    t.stateMachine.unlock();
+                    t.stateMachine.setState('knockdown');
+                    t.takeDamage(10, 200 * w.direction, -300, 600); // Toss them to the floor
+                    w.swallowedTarget = null;
+                    this.activeWorms.splice(i, 1);
+                } else if (!w.alive) {
+                    this.activeWorms.splice(i, 1);
+                }
+            }
+        }
+
+        // ── Summoned Beast AI ──
         if (this.summonedSpirit && this.spiritTarget) {
             this.spiritTimer -= dt;
 
@@ -276,106 +331,140 @@ export default class Kenjaku extends Fighter {
 
             const spirit = this.summonedSpirit;
             const target = this.spiritTarget;
+            spirit.animTimer += dt;
 
-            // ── Spirit AI: Chase and attack ──
             const dx = target.sprite.x - spirit.x;
             const dy = (target.sprite.y - 10) - spirit.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            // Face target
-            spirit.facing = dx > 0 ? 1 : -1;
-
-            // Move towards target
-            const speed = 200 * (dt / 1000);
-            if (dist > 60) {
-                spirit.x += (dx / dist) * speed;
-                spirit.y += (dy / dist) * speed * 0.5;
+            if (spirit.state !== 'attack') {
+                spirit.facing = dx > 0 ? 1 : -1;
             }
 
-            // Attack if close enough
-            spirit.attackCooldown -= dt;
-            if (dist < 80 && spirit.attackCooldown <= 0) {
-                spirit.attackCooldown = 1200; // Attack every 1.2s
-                if (!target.isDead) {
-                    target.takeDamage(25, 100 * spirit.facing, -50, 200);
-                    
-                    // Attack flash
-                    const flash = this.scene.add.circle(spirit.x, spirit.y, 15, 0xAA66FF, 0.5).setDepth(16);
-                    this.scene.tweens.add({
-                        targets: flash,
-                        alpha: 0,
-                        scaleX: 2,
-                        scaleY: 2,
-                        duration: 200,
-                        onComplete: () => flash.destroy()
-                    });
+            // Movement rules
+            const speed = 260 * (dt / 1000); // Fast beast
+            if (spirit.state !== 'attack') {
+                if (dist > 70) {
+                    spirit.state = 'walk';
+                    spirit.x += (dx / dist) * speed;
+                    spirit.y += (dy / dist) * speed * 0.8;
+                } else {
+                    spirit.state = 'idle';
                 }
             }
 
-            // Draw the spirit
-            this.drawSpirit(spirit, time);
+            // Attack logic
+            spirit.attackCooldown -= dt;
+            if (dist < 80 && spirit.attackCooldown <= 0 && spirit.state !== 'attack') {
+                spirit.attackCooldown = 1500; // Attack every 1.5s
+                spirit.state = 'attack';
+                spirit.animTimer = 0;
+                
+                // Deal damage immediately
+                if (!target.isDead) {
+                    target.takeDamage(45, 120 * spirit.facing, -80, 400); // Built like a heavy attack
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.shake(0.02, 150);
+                    }
+                }
+                
+                // Return to idle after attack anim ends
+                this.scene.time.delayedCall(400, () => {
+                    if (this.summonedSpirit) this.summonedSpirit.state = 'idle';
+                });
+            }
+
+            this.drawSummonedBeast(spirit, time);
         }
     }
 
-    drawSpirit(spirit, time) {
+    drawSummonedBeast(spirit, time) {
         if (!this.spiritGraphics) return;
         this.spiritGraphics.clear();
 
         const x = spirit.x;
         const y = spirit.y;
         const f = spirit.facing;
-        const pulse = 0.6 + Math.sin(time * 0.008) * 0.2;
+        const g = this.spiritGraphics;
 
-        // Body — dark amorphous blob
-        this.spiritGraphics.fillStyle(0x332255, pulse);
-        this.spiritGraphics.fillEllipse(x, y, 40, 50);
+        const bob = spirit.state === 'walk' ? Math.sin(spirit.animTimer * 0.02) * 8 : Math.sin(time * 0.005) * 4;
+        const torsoY = y + bob;
 
-        // Inner glow
-        this.spiritGraphics.fillStyle(0x6633AA, pulse * 0.6);
-        this.spiritGraphics.fillEllipse(x, y - 5, 25, 30);
+        // ── Drawing a 4-Armed Beast ──
+        // Back Arms
+        g.lineStyle(10, 0x1A0D22, 1);
+        g.beginPath();
+        // Top Back arm
+        let bAng1 = f > 0 ? -Math.PI/4 : Math.PI + Math.PI/4;
+        if(spirit.state === 'attack') bAng1 += (1 - spirit.animTimer/400) * 1.5 * f;
+        g.moveTo(x, torsoY - 20);
+        g.lineTo(x + Math.cos(bAng1)*50, torsoY - 20 + Math.sin(bAng1)*50);
+        g.strokePath();
 
-        // Eyes
-        this.spiritGraphics.fillStyle(0xFF0000, 1);
-        this.spiritGraphics.fillCircle(x - 6 * f, y - 8, 3);
-        this.spiritGraphics.fillCircle(x + 6 * f, y - 8, 3);
+        // Bottom Back Arm
+        let bAng2 = f > 0 ? Math.PI/6 : Math.PI - Math.PI/6;
+        g.beginPath();
+        g.moveTo(x, torsoY);
+        g.lineTo(x + Math.cos(bAng2)*40, torsoY + Math.sin(bAng2)*40);
+        g.strokePath();
 
-        // Mouth
-        this.spiritGraphics.lineStyle(2, 0xFF3333, 0.8);
-        this.spiritGraphics.beginPath();
-        this.spiritGraphics.moveTo(x - 5, y + 2);
-        this.spiritGraphics.lineTo(x, y + 6);
-        this.spiritGraphics.lineTo(x + 5, y + 2);
-        this.spiritGraphics.strokePath();
+        // Beast Body
+        g.fillStyle(0x221133, 1);
+        g.fillEllipse(x, torsoY, 45, 65); // Torso
 
-        // Wispy tendrils
-        for (let i = 0; i < 4; i++) {
-            const angle = (i * Math.PI / 2) + time * 0.003;
-            const len = 15 + Math.sin(time * 0.005 + i) * 8;
-            this.spiritGraphics.lineStyle(2, 0x6633AA, 0.5);
-            this.spiritGraphics.beginPath();
-            this.spiritGraphics.moveTo(x, y + 15);
-            this.spiritGraphics.lineTo(
-                x + Math.cos(angle) * len,
-                y + 15 + Math.sin(angle) * len
-            );
-            this.spiritGraphics.strokePath();
+        // Beast Head
+        const hx = x + 10 * f;
+        const hy = torsoY - 45;
+        g.fillStyle(0x331144, 1);
+        g.fillEllipse(hx, hy, 25, 20);
+
+        // Spikes on back
+        g.fillStyle(0x110011, 1);
+        for(let i=0; i<3; i++){
+            const sx = x - 15 * f;
+            const sy = torsoY - 20 + (i*15);
+            g.fillTriangle(sx, sy, sx - 20*f, sy - 10, sx, sy - 10);
         }
+
+        // Eyes (6 eyes!)
+        g.fillStyle(0xFF0055, 1);
+        for(let i=0; i<3; i++) {
+            g.fillCircle(hx + (5 + i*4) * f, hy - 5 + i*2, 2);
+        }
+        // Mouth full of fangs
+        g.fillStyle(0xDDDDDD, 1);
+        g.fillTriangle(hx + 8*f, hy + 5, hx + 18*f, hy + 5, hx + 13*f, hy + 12);
+
+        // Front Arms
+        g.lineStyle(12, 0x331144, 1);
+        g.beginPath();
+        // Top Front arm
+        let fAng1 = f > 0 ? -Math.PI/6 : Math.PI + Math.PI/6;
+        if(spirit.state === 'attack') fAng1 += Math.sin(spirit.animTimer*0.02) * -1.2 * f; // Smash down
+        else if (spirit.state === 'walk') fAng1 += Math.cos(spirit.animTimer*0.015) * 0.5;
+        
+        g.moveTo(x + 10*f, torsoY - 20);
+        g.lineTo(x + 10*f + Math.cos(fAng1)*60, torsoY - 20 + Math.sin(fAng1)*60);
+        g.strokePath();
+
+        // Bottom Front Arm
+        let fAng2 = f > 0 ? Math.PI/4 : Math.PI - Math.PI/4;
+        if (spirit.state === 'walk') fAng2 += Math.sin(spirit.animTimer*0.015) * -0.5;
+        g.beginPath();
+        g.moveTo(x + 5*f, torsoY + 10);
+        g.lineTo(x + 5*f + Math.cos(fAng2)*50, torsoY + 10 + Math.sin(fAng2)*50);
+        g.strokePath();
     }
 
     destroySpirit() {
         if (this.spiritGraphics) {
-            // Death puff
             const x = this.summonedSpirit ? this.summonedSpirit.x : this.sprite.x;
             const y = this.summonedSpirit ? this.summonedSpirit.y : this.sprite.y;
             
-            const puff = this.scene.add.circle(x, y, 20, 0x6633AA, 0.6).setDepth(15);
+            // Death blood splash
+            const puff = this.scene.add.circle(x, y, 40, 0x440022, 0.8).setDepth(15);
             this.scene.tweens.add({
-                targets: puff,
-                alpha: 0,
-                scaleX: 3,
-                scaleY: 3,
-                duration: 400,
-                onComplete: () => puff.destroy()
+                targets: puff, alpha: 0, scaleX: 2, scaleY: 2, duration: 400, onComplete: () => puff.destroy()
             });
 
             this.spiritGraphics.clear();
@@ -391,46 +480,9 @@ export default class Kenjaku extends Fighter {
     // VFX Helpers
     // ════════════════════════════════════════════
     spawnWormEffect() {
-        const x = this.sprite.x + 40 * this.facing;
-        const y = this.sprite.y - 5;
-        const g = this.scene.add.graphics().setDepth(15);
-        
-        // Worm body — curved segmented shape
-        g.lineStyle(12, 0x663399, 0.8);
-        g.beginPath();
-        g.moveTo(x, y);
-        for (let i = 1; i <= 6; i++) {
-            const segX = x + (i * 10) * this.facing;
-            const segY = y + Math.sin(i * 1.2) * 8;
-            g.lineTo(segX, segY);
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x000000, 150, 0.8);
         }
-        g.strokePath();
-
-        // Worm highlight
-        g.lineStyle(6, 0x9966CC, 0.5);
-        g.beginPath();
-        g.moveTo(x, y - 2);
-        for (let i = 1; i <= 6; i++) {
-            const segX = x + (i * 10) * this.facing;
-            const segY = y - 2 + Math.sin(i * 1.2) * 6;
-            g.lineTo(segX, segY);
-        }
-        g.strokePath();
-
-        // Head
-        const headX = x + 65 * this.facing;
-        g.fillStyle(0x8844CC, 1);
-        g.fillCircle(headX, y, 10);
-        // Eye
-        g.fillStyle(0xFF0000, 1);
-        g.fillCircle(headX + 3 * this.facing, y - 3, 2);
-        
-        this.scene.tweens.add({
-            targets: g,
-            alpha: 0,
-            duration: 400,
-            onComplete: () => g.destroy()
-        });
     }
 
     spawnUzumakiChargeEffect() {
@@ -438,33 +490,26 @@ export default class Kenjaku extends Fighter {
         const y = this.sprite.y - 10;
         const g = this.scene.add.graphics().setDepth(15);
         
-        // Spiraling convergence lines
-        for (let i = 0; i < 16; i++) {
-            const angle = (i * Math.PI * 2) / 16;
-            const r1 = 80;
+        // Massive swirling pool
+        for (let i = 0; i < 30; i++) {
+            const angle = (i * Math.PI * 2) / 30;
+            const r1 = 150;
             const sx = x + Math.cos(angle) * r1;
             const sy = y + Math.sin(angle) * r1;
             
-            g.lineStyle(2, 0xAA66FF, 0.6);
-            g.beginPath(); g.moveTo(sx, sy); g.lineTo(x, y); g.strokePath();
+            g.lineStyle(3, 0x550088, 0.8);
+            g.beginPath(); g.moveTo(sx, sy); g.lineTo(x + 50*this.facing, y); g.strokePath();
         }
 
-        // Central orb growing
-        const orb = this.scene.add.circle(x + 30 * this.facing, y, 8, 0x8844CC, 0.8).setDepth(16);
+        const orb = this.scene.add.circle(x + 50 * this.facing, y, 10, 0x000000, 1.0).setDepth(16);
+        orb.setStrokeStyle(4, 0xAA00FF);
+
         this.scene.tweens.add({
-            targets: orb,
-            scaleX: 4,
-            scaleY: 4,
-            alpha: 0.3,
-            duration: 500,
-            onComplete: () => orb.destroy()
+            targets: orb, scaleX: 6, scaleY: 6, duration: 700, onComplete: () => orb.destroy()
         });
         
         this.scene.tweens.add({
-            targets: g,
-            alpha: 0,
-            duration: 600,
-            onComplete: () => g.destroy()
+            targets: g, alpha: 0, duration: 700, onComplete: () => g.destroy()
         });
     }
 }

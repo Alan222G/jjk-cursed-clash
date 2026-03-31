@@ -17,9 +17,10 @@ export default class Projectile {
         this.lifetime = config.lifetime || 2000;
         this.color = config.color || 0x4488FF;
         this.size = config.size || { w: 30, h: 20 };
-        this.type = config.type || 'normal'; // normal, heavy, beam, circle, slash, fire_arrow
+        this.type = config.type || 'normal'; // normal, heavy, beam, circle, slash, fire_arrow, worm, uzumaki
         this.alive = true;
         this.timer = 0;
+        this.onHitCallback = config.onHitCallback || null;
 
         // Custom visuals
         this.customGraphics = scene.add.graphics().setDepth(6);
@@ -151,6 +152,58 @@ export default class Projectile {
                 px + 5 * dir, py + 25
             );
         }
+        else if (this.type === 'worm') {
+            // Giant Worm Projectile
+            const w = this.size.w;
+            const h = this.size.h;
+
+            // Worm body segments
+            this.customGraphics.lineStyle(2, 0x1A051A, 1);
+            for(let i=1; i<=6; i++) {
+                const segX = px - ((w/6)*i)*dir;
+                const segY = py + Math.sin(this.timer*0.02 + i)*15;
+                this.customGraphics.fillStyle(0x3B2043, 1);
+                this.customGraphics.fillEllipse(segX, segY, w/4, h);
+                this.customGraphics.strokeEllipse(segX, segY, w/4, h);
+            }
+
+            // Head (mouth)
+            this.customGraphics.fillStyle(0x271330, 1);
+            this.customGraphics.fillEllipse(px, py, w/3, h + 10);
+            
+            // Teeth
+            this.customGraphics.fillStyle(0xDDDDDD, 1);
+            for(let a=0; a<Math.PI*2; a+=0.6) {
+                const tx = px + Math.cos(a)*10;
+                const ty = py + Math.sin(a)*(h/2);
+                this.customGraphics.fillTriangle(tx, ty, tx+(dir*5), ty+3, tx, ty+6);
+            }
+        }
+        else if (this.type === 'uzumaki') {
+            // Uzumaki Beam
+            const w = this.size.w; // Massive width
+            const h = this.size.h; // Massive height
+            
+            // Core beam
+            this.customGraphics.fillStyle(0x000000, 0.8);
+            this.customGraphics.fillRect(px - (dir > 0 ? w : 0), py - h/2, w, h);
+            
+            // Spiral aura
+            this.customGraphics.lineStyle(6, 0xAA00FF, pulse + 0.5);
+            this.customGraphics.strokeRect(px - (dir > 0 ? w : 0), py - h/2, w, h);
+
+            // Swirling faces inside beam
+            for(let i=0; i<8; i++) {
+                const fx = px - (dir > 0 ? Math.random()*w : -Math.random()*w);
+                const fy = py - h/2 + Math.random()*h;
+                this.customGraphics.fillStyle(0x550088, 0.7);
+                this.customGraphics.fillEllipse(fx, fy, 15, 20);
+                // Eyes
+                this.customGraphics.fillStyle(0xFF0000, 0.9);
+                this.customGraphics.fillCircle(fx-3, fy-2, 2);
+                this.customGraphics.fillCircle(fx+3, fy-2, 2);
+            }
+        }
         else if (this.type === 'circle') {
             if (this.color === 0xFF2222) { // RED
                 // Repulsion Rings that emit outward
@@ -187,6 +240,12 @@ export default class Projectile {
     /** Called when hitting an opponent */
     onHit(target) {
         if (!this.alive) return;
+
+        if (this.onHitCallback) {
+            const override = this.onHitCallback(this, target);
+            if (override) return; // If callback returns true, skip default hit logic
+        }
+
         // Apply damage
         if (target && target.takeDamage) {
             target.takeDamage(this.damage, this.knockbackX * this.direction, this.knockbackY, this.stunDuration);

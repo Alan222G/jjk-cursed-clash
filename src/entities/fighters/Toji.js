@@ -94,7 +94,6 @@ export default class Toji extends Fighter {
         return base;
     }
 
-    /** Menacing scar face + Weapon indicator */
     drawFace(g, x, y, facing) {
         g.fillStyle(0x222222, 1);
         g.fillRect(x - 7 * facing, y - 3, 4, 2);
@@ -104,13 +103,99 @@ export default class Toji extends Fighter {
         g.moveTo(x - 3, y + 3);
         g.lineTo(x + 4, y + 5);
         g.strokePath();
+    }
 
-        // Weapon indicator in HAND instead of back
+    /** Override drawBody to add the Inventory Curse and active weapon during basic attacks */
+    drawBody(dt) {
+        super.drawBody(dt); // Draws base torso, limbs, and face
+
+        const g = this.graphics;
         const f = this.facing;
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+
+        // Draw Storage Curse (Purple Blob) on shoulder/back
+        const curseX = x - 12 * f;
+        const curseY = y - 5;
+        // Body of curse
+        g.fillStyle(0x331144, 1);
+        g.fillEllipse(curseX, curseY + 10, 18, 25);
+        // Head / eyes of curse
+        g.fillEllipse(curseX + 5 * f, curseY, 12, 10);
+        g.fillStyle(0x000000, 1);
+        g.fillCircle(curseX + 8 * f, curseY - 2, 2);
+        g.fillCircle(curseX + 2 * f, curseY - 2, 2);
+        // Mouth
+        g.lineStyle(2, 0x110011, 1);
+        g.beginPath();
+        g.moveTo(curseX + 3 * f, curseY + 3);
+        g.lineTo(curseX + 7 * f, curseY + 3);
+        g.strokePath();
+
+        // Weapon indicator in HAND when idle
         const armX = x + 15 * f;
         const armY = y + 25;
-        g.fillStyle(this.currentWeapon.color, 0.8);
-        g.fillRect(armX - 2, armY - 10, 4, 30);
+        if (!this.stateMachine.is('attack')) {
+            g.fillStyle(this.currentWeapon.color, 0.8);
+            g.fillRect(armX - 2, armY - 10, 4, 30);
+        } else {
+            // Draw active weapon during attack swing
+            const swing = this.attackSwing; // 0 to 1
+            
+            if (this.currentWeapon.key === 'spear' && this.spearChainMode) {
+                // Chain of a Thousand Miles
+                const reach = this.currentAttack?.range || 300;
+                const endX = armX + (swing * reach * f);
+                const endY = armY;
+                
+                // Draw linked chain
+                g.lineStyle(3, 0x555555, 1);
+                // Draw ~16 links
+                const links = 16;
+                for(let i=0; i<links; i++) {
+                    const cx = Phaser.Math.Interpolation.Linear([armX, endX], i/(links-1));
+                    const cy = Phaser.Math.Interpolation.Linear([armY, endY], i/(links-1));
+                    // Alternate link rotation by drawing horizontal/vertical pulses
+                    if (i % 2 === 0) {
+                        g.strokeEllipse(cx, cy, 6, 3);
+                    } else {
+                        g.strokeEllipse(cx, cy, 3, 6);
+                    }
+                }
+                
+                // Draw Spear Tip
+                g.fillStyle(0x88CCFF, 1);
+                g.beginPath();
+                g.moveTo(endX, endY - 6);
+                g.lineTo(endX + 20 * f, endY);
+                g.lineTo(endX, endY + 6);
+                g.fillPath();
+            } else {
+                // Normal weapon swing (Katana, Cloud, or unchained Spear)
+                g.lineStyle(6, this.currentWeapon.color, 1);
+                g.beginPath();
+                g.moveTo(armX, armY);
+                // Swing arc calculation
+                let angle;
+                if (f > 0) {
+                    angle = (swing * Math.PI) - Math.PI/2;
+                } else {
+                    angle = Math.PI + Math.PI/2 - (swing * Math.PI);
+                }
+                const len = 70;
+                g.lineTo(armX + Math.cos(angle)*len, armY + Math.sin(angle)*len);
+                g.strokePath();
+                
+                // Draw blade/tip variations
+                if (this.currentWeapon.key === 'katana') {
+                    g.lineStyle(2, 0xFFFFFF, 0.5);
+                    g.beginPath();
+                    g.moveTo(armX, armY);
+                    g.lineTo(armX + Math.cos(angle)*len, armY + Math.sin(angle)*len);
+                    g.strokePath();
+                }
+            }
+        }
     }
 
     trySpecialAttack() {
