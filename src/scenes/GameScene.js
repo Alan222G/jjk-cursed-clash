@@ -549,7 +549,7 @@ export default class GameScene extends Phaser.Scene {
             const target = p.owner === this.p1 ? this.p2 : this.p1;
             if (this.physics.overlap(p.getBody(), target.sprite)) {
                 p.onHit(target);
-                return false;
+                return p.isAlive();
             }
             
             return true;

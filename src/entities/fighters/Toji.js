@@ -116,7 +116,7 @@ export default class Toji extends Fighter {
 
         // Draw Storage Curse (Purple Blob) on shoulder/back
         const curseX = x - 12 * f;
-        const curseY = y - 5;
+        const curseY = y - 40; // Hombro/Espalda Alta
         // Body of curse
         g.fillStyle(0x331144, 1);
         g.fillEllipse(curseX, curseY + 10, 18, 25);
@@ -142,19 +142,24 @@ export default class Toji extends Fighter {
             // Draw active weapon during attack swing
             const swing = this.attackSwing; // 0 to 1
             
+            // Re-calculate Hand Position matching Fighter.js extension
+            const armExtend = swing * 40;
+            const handX = x + (34 + armExtend) * f;
+            const handY = y - 36;
+            
             if (this.currentWeapon.key === 'spear' && this.spearChainMode) {
                 // Chain of a Thousand Miles
                 const reach = this.currentAttack?.range || 300;
-                const endX = armX + (swing * reach * f);
-                const endY = armY;
+                const endX = handX + (swing * reach * f);
+                const endY = handY;
                 
                 // Draw linked chain
                 g.lineStyle(3, 0x555555, 1);
                 // Draw ~16 links
                 const links = 16;
                 for(let i=0; i<links; i++) {
-                    const cx = Phaser.Math.Interpolation.Linear([armX, endX], i/(links-1));
-                    const cy = Phaser.Math.Interpolation.Linear([armY, endY], i/(links-1));
+                    const cx = Phaser.Math.Interpolation.Linear([handX, endX], i/(links-1));
+                    const cy = Phaser.Math.Interpolation.Linear([handY, endY], i/(links-1));
                     // Alternate link rotation by drawing horizontal/vertical pulses
                     if (i % 2 === 0) {
                         g.strokeEllipse(cx, cy, 6, 3);
@@ -174,7 +179,7 @@ export default class Toji extends Fighter {
                 // Normal weapon swing (Katana, Cloud, or unchained Spear)
                 g.lineStyle(6, this.currentWeapon.color, 1);
                 g.beginPath();
-                g.moveTo(armX, armY);
+                g.moveTo(handX, handY);
                 // Swing arc calculation
                 let angle;
                 if (f > 0) {
@@ -183,15 +188,15 @@ export default class Toji extends Fighter {
                     angle = Math.PI + Math.PI/2 - (swing * Math.PI);
                 }
                 const len = 70;
-                g.lineTo(armX + Math.cos(angle)*len, armY + Math.sin(angle)*len);
+                g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
                 g.strokePath();
                 
                 // Draw blade/tip variations
                 if (this.currentWeapon.key === 'katana') {
                     g.lineStyle(2, 0xFFFFFF, 0.5);
                     g.beginPath();
-                    g.moveTo(armX, armY);
-                    g.lineTo(armX + Math.cos(angle)*len, armY + Math.sin(angle)*len);
+                    g.moveTo(handX, handY);
+                    g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
                     g.strokePath();
                 }
             }
