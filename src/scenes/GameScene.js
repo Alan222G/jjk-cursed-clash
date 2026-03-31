@@ -353,11 +353,13 @@ export default class GameScene extends Phaser.Scene {
             this.onDomainEnd(this.domainOwner);
         }
 
-        // Stop all sounds, play game over
+        // Stop all sounds first, then play game over after a tiny delay
         this.sound.stopAll();
-        try {
-            this.sound.play('bgm_gameover', { volume: 0.5, loop: false });
-        } catch(e) {}
+        this.time.delayedCall(100, () => {
+            try {
+                this.sound.play('bgm_gameover', { volume: 0.8, loop: false });
+            } catch(e) {}
+        });
 
         if (this.screenEffects) {
             this.screenEffects.slowMotion(0.2, 2000);

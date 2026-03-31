@@ -15,21 +15,12 @@ export default class Sukuna extends Fighter {
         this.isCasting = false;
     }
 
-    /** Facial markings + menacing eyes */
+    /** Menacing eyes */
     drawFace(g, x, y, facing) {
-        g.fillStyle(0xFF2200, 1);
-        g.fillCircle(x - 5 * facing, y - 2, 3);
-        g.fillCircle(x + 5 * facing, y - 2, 3);
-
-        g.lineStyle(2, 0x330000, 0.9);
-        g.beginPath(); g.moveTo(x - 5, y + 2); g.lineTo(x - 5, y + 10); g.strokePath();
-        g.beginPath(); g.moveTo(x + 5, y + 2); g.lineTo(x + 5, y + 10); g.strokePath();
-        g.beginPath(); g.moveTo(x - 8, y - 5); g.lineTo(x + 8, y - 5); g.strokePath();
-
-        g.lineStyle(1, 0x330000, 0.8);
-        g.beginPath();
-        g.moveTo(x - 6, y + 5); g.lineTo(x, y + 7); g.lineTo(x + 6, y + 5);
-        g.strokePath();
+        // Just small red eyes as requested
+        g.fillStyle(0xFF0000, 1);
+        g.fillCircle(x - 5 * facing, y - 2, 2);
+        g.fillCircle(x + 5 * facing, y - 2, 2);
     }
 
     trySpecialAttack() {

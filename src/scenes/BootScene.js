@@ -83,15 +83,15 @@ export default class BootScene extends Phaser.Scene {
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
         // Black Flash Assets
         this.load.image('black_flash', 'assets/images/black_flash.png');
-        this.load.audio('black_flash_sfx', 'assets/audio/black_flash.m4a');
+        this.load.audio('black_flash_sfx', 'assets/audio/black_flash_better.m4a');
 
         // SFX Hooks
         this.load.audio('sfx_blue', 'assets/audio/gojo_blue.m4a');
-        this.load.audio('sfx_red', 'assets/audio/gojo_red.mp3');
-        this.load.audio('sfx_purple', 'assets/audio/hollow_purple.m4a');
-        this.load.audio('sfx_slash', 'assets/audio/sukuna_dismantle.mp3');
-        this.load.audio('sfx_cleave', 'assets/audio/sukuna_dismantle.mp3'); // Fallback to dismantle
-        this.load.audio('sfx_fire', 'assets/audio/sukuna_fuga.mp3');
+        this.load.audio('sfx_red', 'assets/audio/ultimate_red.m4a');
+        this.load.audio('sfx_purple', 'assets/audio/ultimate_purple.m4a');
+        this.load.audio('sfx_slash', 'assets/audio/ultimate_dismantle.m4a');
+        this.load.audio('sfx_cleave', 'assets/audio/ultimate_dismantle.m4a'); // Fallback to dismantle
+        this.load.audio('sfx_fire', 'assets/audio/fuga_better.m4a');
         this.load.audio('sfx_dash', 'assets/audio/dbz_dash.mp3');
 
         // Slash Array for Sukuna Domain
