@@ -81,6 +81,7 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
+        this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
         // Black Flash Assets
         this.load.image('black_flash', 'assets/images/black_flash.png');
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
