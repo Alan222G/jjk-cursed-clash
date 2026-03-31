@@ -359,6 +359,10 @@ export default class Fighter {
         }
     }
 
+    getBasicAttackData(type) {
+        return ATTACKS[type];
+    }
+
     handleAttackInput() {
         const attackAction = this.input.pollAttacks();
         if (!attackAction) return;
@@ -379,7 +383,7 @@ export default class Fighter {
 
         // Normal attacks
         if (this.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
-            const atkData = ATTACKS[attackAction];
+            const atkData = this.getBasicAttackData(attackAction);
             if (atkData) {
                 this.currentAttack = { ...atkData, type: attackAction };
                 this.stateMachine.setState('attack');
@@ -439,16 +443,17 @@ export default class Fighter {
         if (this.stateMachine.is('block')) {
             const breaksBlock = atk?.breaksBlock || false;
             const blockKnockMult = atk?.blockKnockMult ?? 0.3;
+            const ignoresBlockDamage = atk?.ignoresBlockDamage || false;
 
             if (breaksBlock) {
                 // Heavy breaks block — reduced damage but full knockback
-                damage = Math.floor(damage * 0.4);
+                damage = ignoresBlockDamage ? damage : Math.floor(damage * 0.4);
                 // Force out of block into hitstun
                 this.stateMachine.setState('hitstun');
                 this.stunTimer = stunDuration;
             } else {
                 // Normal block — 40% damage reduction
-                damage = Math.floor(damage * 0.6);
+                damage = ignoresBlockDamage ? damage : Math.floor(damage * 0.6);
                 kbX *= blockKnockMult;
                 kbY *= blockKnockMult;
                 stunDuration = 0; // No stun when blocking normally
@@ -498,6 +503,16 @@ export default class Fighter {
         const atk = this.currentAttack;
         let dmg = Math.floor(atk.damage * this.power);
         const kbX = atk.knockbackX * this.facing;
+
+        // Custom % Damage (e.g., Soul Split Katana)
+        if (atk.percentDamage) {
+            dmg = Math.floor(opponent.hp * atk.percentDamage * this.power);
+        }
+
+        // Fire custom hit callback if weapon provides it
+        if (atk.onHit) {
+            atk.onHit(this, opponent, dmg);
+        }
 
         // ── BLACK FLASH MECHANIC (Only for non-Sukuna characters) ──
         let isBlackFlash = false;
@@ -600,6 +615,11 @@ export default class Fighter {
         this.burnTickTimer = 500;
     }
 
+    applyBleed(duration) {
+        this.bleedTimer = duration;
+        this.bleedTickTimer = 500;
+    }
+
     tryActivateDomain() {
         // Override in subclass
     }
@@ -609,11 +629,6 @@ export default class Fighter {
         if (this.scene.onDomainEnd) {
             this.scene.onDomainEnd(this);
         }
-    }
-
-    applyBurn(duration) {
-        this.burnTimer = duration;
-        this.burnTickTimer = 500;
     }
 
     // ── Update ───────────────────────────────────────────
@@ -648,6 +663,31 @@ export default class Fighter {
                 
                 if (this.scene.spawnDamageNumber) {
                     this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, 20);
+                }
+                
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    this.isDead = true;
+                    this.stateMachine.unlock();
+                    this.stateMachine.setState('dead');
+                }
+            }
+        }
+
+        // Bleed DoT
+        if (this.bleedTimer > 0) {
+            this.bleedTimer -= dt;
+            this.bleedTickTimer -= dt;
+            if (this.bleedTickTimer <= 0) {
+                this.bleedTickTimer = 500;
+                this.hp -= 10; // bleeding damage tick
+                
+                if (this.scene.spawnDamageNumber) {
+                    // Blood explosion visual
+                    const blood = this.scene.add.circle(this.sprite.x, this.sprite.y - 40, 8, 0xAA0000, 0.7);
+                    this.scene.tweens.add({ targets: blood, y: '+=30', alpha: 0, scaleX: 2, scaleY: 2, duration: 400, onComplete: () => blood.destroy() });
+                    
+                    this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, 10);
                 }
                 
                 if (this.hp <= 0) {

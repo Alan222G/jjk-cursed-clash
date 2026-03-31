@@ -221,7 +221,7 @@ export const CHARACTERS = {
             speed: 400,
             power: 1.4,
             defense: 0.85,
-            ceRegen: 0,
+            ceRegen: 8.0,
             weight: 105,
             jumpForce: -700,
             domainDuration: 0,

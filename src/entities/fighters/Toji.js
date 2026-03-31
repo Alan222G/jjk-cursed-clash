@@ -1,91 +1,161 @@
 // ========================================================
 // Toji Fushiguro — The Sorcerer Killer
-// Zero Cursed Energy Physical Fighter — Weapon Switching
+// Zero CE Fighter — Stances, Counters, and \% Damage
 // ========================================================
 
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
-import { CHARACTERS, CE_COSTS } from '../../config.js';
+import { CHARACTERS, CE_COSTS, ATTACKS } from '../../config.js';
 
 const WEAPONS = [
     { name: 'Playful Cloud', key: 'cloud', color: 0x55FF55 },
-    { name: 'Inverted Spear', key: 'spear', color: 0x88CCFF },
     { name: 'Soul Katana', key: 'katana', color: 0xFF44AA },
+    { name: 'Inverted Spear', key: 'spear', color: 0x88CCFF },
 ];
 
 export default class Toji extends Fighter {
     constructor(scene, x, y, playerIndex) {
         super(scene, x, y, playerIndex, CHARACTERS.TOJI);
         this.isCasting = false;
-        // Toji has NO cursed energy
-        this.ceSystem.ce = 0;
-        this.ceSystem.maxCe = 0;
+        
         // Weapon switching
         this.currentWeaponIndex = 0;
         this.switchCooldown = 0;
         this.weaponSwitchText = null;
+
+        // Weapon states
+        this.cloudSharp = false; // Bleed toggle
+        this.katanaLifestealTimer = 0; // Lifesteal toggle
+        this.spearChainMode = false; // Chain range toggle
+
+        // Buff state
+        this.buffTimer = 0;
+        
+        // Counter Stance tracking
+        this.counterStanceWeapon = null; // 'katana' or 'spear'
+        this.counterTimer = 0;
     }
 
     get currentWeapon() {
         return WEAPONS[this.currentWeaponIndex];
     }
 
-    /** Menacing scar face */
+    /** Overrides default basic attacks depending on active weapon & state */
+    getBasicAttackData(type) {
+        const base = { ...ATTACKS[type] }; // clone
+
+        // If in counter stance, you cannot do basic attacks until it finishes
+        if (this.counterTimer > 0) return null;
+
+        if (this.currentWeapon.key === 'cloud') {
+            // Playful Cloud Overrides
+            if (type === 'LIGHT') {
+                base.breaksBlock = true;
+                base.knockbackX = 350;
+                base.damage = 30;
+                base.stunDuration = 400;
+            } else if (type === 'HEAVY') {
+                base.knockbackX = 1200; // Launch across map
+                base.knockbackY = -400;
+                base.damage = 60;
+            }
+            if (this.cloudSharp) {
+                base.onHit = (attacker, victim, dmg) => {
+                    victim.applyBleed(3000); // 3 seconds of bleed
+                };
+            }
+        } 
+        else if (this.currentWeapon.key === 'katana') {
+            // Katana Overrides
+            base.ignoresBlockDamage = true; // Damage passes through shield
+            
+            // Set percent damage based on attack type
+            if (type === 'LIGHT') base.percentDamage = 0.02; // 2%
+            if (type === 'MEDIUM') base.percentDamage = 0.04; // 4%
+            if (type === 'HEAVY') base.percentDamage = 0.07; // 7%
+
+            if (this.katanaLifestealTimer > 0) {
+                base.onHit = (attacker, victim, dmg) => {
+                    attacker.hp = Math.min(attacker.charData.stats.maxHp, attacker.hp + Math.floor(dmg * 0.5));
+                };
+            }
+        }
+        else if (this.currentWeapon.key === 'spear') {
+            // Inverted Spear Overrides
+            if (this.spearChainMode) {
+                // Extended range
+                base.range = 300;
+                base.hitboxW = 100;
+                base.startup += 50; // Slower because of chain
+                base.recovery += 100;
+            }
+        }
+
+        return base;
+    }
+
+    /** Menacing scar face + Weapon indicator */
     drawFace(g, x, y, facing) {
-        // Dark narrow eyes
         g.fillStyle(0x222222, 1);
         g.fillRect(x - 7 * facing, y - 3, 4, 2);
         g.fillRect(x + 3 * facing, y - 3, 4, 2);
-        // Scar on lip
         g.lineStyle(1, 0x884444, 0.8);
         g.beginPath();
         g.moveTo(x - 3, y + 3);
         g.lineTo(x + 4, y + 5);
         g.strokePath();
-        // Current weapon indicator on back
-        g.fillStyle(this.currentWeapon.color, 0.6);
-        g.fillRect(x - 2 - 12 * facing, y + 5, 3, 20);
+
+        // Weapon indicator in HAND instead of back
+        const f = this.facing;
+        const armX = x + 15 * f;
+        const armY = y + 25;
+        g.fillStyle(this.currentWeapon.color, 0.8);
+        g.fillRect(armX - 2, armY - 10, 4, 30);
     }
 
     trySpecialAttack() {
         if (this.isCasting) return;
+        if (this.counterTimer > 0) return;
 
-        // "U" (SPECIAL) alone = switch weapon
-        // "U" + direction = attack with current weapon
-        if (this.input.isDown('UP') || this.input.isDown('DOWN') || 
-            this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
-            this.attackWithCurrentWeapon();
-        } else {
+        // "U + Abajo/S" = Swap weapon
+        if (this.input.isDown('DOWN')) {
             this.switchWeapon();
+            return;
         }
+
+        // "U + Izquierda/Derecha" = Weapon Special
+        if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
+            this.executeWeaponSpecial();
+            return;
+        }
+
+        // "U" solo = Physical Buff (Uses CE stamina)
+        this.castPhysicalBuff();
     }
 
     switchWeapon() {
         if (this.switchCooldown > 0) return;
-        this.switchCooldown = 500;
+        this.switchCooldown = 400;
 
+        // Reset states from previous weapon
+        this.spearChainMode = false;
+        
         this.currentWeaponIndex = (this.currentWeaponIndex + 1) % WEAPONS.length;
         
-        // Show weapon name on screen
         if (this.weaponSwitchText) this.weaponSwitchText.destroy();
-        
         this.weaponSwitchText = this.scene.add.text(
             this.sprite.x, this.sprite.y - 70, 
             `⚔ ${this.currentWeapon.name}`, {
-                fontSize: '14px',
-                fontFamily: 'Arial Black',
+                fontSize: '14px', fontFamily: 'Arial Black',
                 color: '#' + this.currentWeapon.color.toString(16).padStart(6, '0'),
-                stroke: '#000000',
-                strokeThickness: 3,
+                stroke: '#000000', strokeThickness: 3,
             }
         ).setOrigin(0.5).setDepth(20);
 
         this.scene.tweens.add({
             targets: this.weaponSwitchText,
-            y: this.sprite.y - 100,
-            alpha: 0,
-            duration: 1200,
-            ease: 'Power2',
+            y: this.sprite.y - 100, alpha: 0,
+            duration: 1000, ease: 'Power2',
             onComplete: () => {
                 if (this.weaponSwitchText) {
                     this.weaponSwitchText.destroy();
@@ -93,216 +163,310 @@ export default class Toji extends Fighter {
                 }
             }
         });
+    }
 
-        // Small screen shake on swap
+    castPhysicalBuff() {
+        if (this.buffTimer > 0) return;
+        if (!this.ceSystem.spend(50)) return; // Requires some CE/Stamina to buff
+
+        this.buffTimer = 8000; // 8 seconds
+        
+        // Apply buffs
+        this.speed *= 1.4;
+        this.power *= 1.3;
+        this.defense *= 1.2;
+        this.jumpForce *= 1.2;
+
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.shake(0.002, 100);
+            this.scene.screenEffects.flash(0x55FF55, 300, 0.3);
         }
     }
 
-    attackWithCurrentWeapon() {
+    executeWeaponSpecial() {
         switch (this.currentWeapon.key) {
-            case 'cloud': this.castPlayfulCloud(); break;
-            case 'spear': this.castInvertedSpear(); break;
-            case 'katana': this.castSoulKatana(); break;
+            case 'cloud': 
+                this.castCloudRush(); 
+                break;
+            case 'katana': 
+                this.enterCounterStance('katana'); 
+                break;
+            case 'spear': 
+                this.enterCounterStance('spear'); 
+                break;
         }
     }
 
-    // ════════════════════════════════════════════
-    // PLAYFUL CLOUD — Devastating 3-section staff smash
-    // ════════════════════════════════════════════
-    castPlayfulCloud() {
-        const damage = 120;
+    // ── Weapon 1: Playful Cloud ──
+    castCloudRush() {
         this.isCasting = true;
         this.stateMachine.lock(99999);
         this.sprite.body.setVelocityX(0);
+
+        // Flurry rush multi-hits
+        let hits = 0;
+        const rushTimer = this.scene.time.addEvent({
+            delay: 150,
+            repeat: 4,
+            callback: () => {
+                hits++;
+                this.sprite.body.setVelocityX(400 * this.facing);
+                this.spawnPlayfulCloudEffect(0.5); // Smaller effect
+
+                if (this.opponent) {
+                    const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                    if (dist < 100) {
+                        this.opponent.takeDamage(Math.floor(20 * this.power), 100 * this.facing, -50, 200);
+                        this.comboSystem.registerHit('SPECIAL');
+                    }
+                }
+
+                if (hits >= 5) {
+                    this.scene.time.delayedCall(200, () => {
+                        this.isCasting = false;
+                        this.stateMachine.unlock();
+                        this.stateMachine.setState('idle');
+                    });
+                }
+            }
+        });
+    }
+
+    // ── Weapon 2 & 3: Counter Mechanics ──
+    enterCounterStance(weaponKey) {
+        this.counterStanceWeapon = weaponKey;
+        this.counterTimer = 1500; // Active for 1.5s
+        this.stateMachine.lock(1500); 
+        this.sprite.body.setVelocityX(0);
+
+        // Visual indicator of stance
+        const color = weaponKey === 'katana' ? 0xFF44AA : 0x88CCFF;
+        this.stanceAura = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, color, 0.4).setDepth(10);
+    }
+
+    triggerKatanaCounter(projectile) {
+        if (!this.opponent) return;
+
+        // Teleport behind opponent
+        const teleportX = this.opponent.sprite.x - (50 * this.facing);
+        this.sprite.setPosition(teleportX, this.opponent.sprite.y);
+        this.facing = this.opponent.sprite.x > this.sprite.x ? 1 : -1;
+
+        // Instant Heavy Attack
+        this.spawnSoulKatanaEffect();
+        this.opponent.takeDamage(Math.floor(this.opponent.hp * 0.1 * this.power), 600 * this.facing, -300, 600);
+        this.comboSystem.registerHit('HEAVY');
+        
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xFF44AA, 200, 0.4);
+            this.scene.screenEffects.shake(0.04, 300);
+        }
+
+        // End stance immediately
+        this.counterTimer = 0;
+        this.stateMachine.unlock();
+        this.stateMachine.setState('idle');
+    }
+
+    triggerSpearCounter(projectile) {
+        // Just destroy the projectile cleanly with a visual
+        this.spawnSpearEffect();
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x88CCFF, 150, 0.3);
+        }
+
+        // End stance immediately
+        this.counterTimer = 0;
+        this.stateMachine.unlock();
+        this.stateMachine.setState('idle');
+    }
+
+    // ── Button 'I' (Domain Key) ──
+    tryActivateDomain() {
+        if (this.isCasting) return;
+
+        if (this.currentWeapon.key === 'cloud') {
+            // Sharpen Cloud -> Bleed
+            this.cloudSharp = true;
+            this.showWeaponBuffText("SHARPENED!");
+        } 
+        else if (this.currentWeapon.key === 'katana') {
+            // Lifesteal for 10s
+            this.katanaLifestealTimer = 10000;
+            this.showWeaponBuffText("SOUL SIPHON!");
+        } 
+        else if (this.currentWeapon.key === 'spear') {
+            if (this.scene.domainActive && this.scene.domainOwner !== this) {
+                // BREAK DOMAIN
+                this.breakDomain();
+            } else {
+                // Toggle Chain Mode
+                this.spearChainMode = !this.spearChainMode;
+                this.showWeaponBuffText(this.spearChainMode ? "CHAIN EQUIPPED" : "CHAIN UNEQUIPPED");
+            }
+        }
+    }
+
+    breakDomain() {
+        this.isCasting = true;
+        this.stateMachine.lock(1500);
 
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.slowMotion(0.3, 400);
+            this.scene.screenEffects.slowMotion(0.2, 1000);
+            this.scene.screenEffects.flash(0xFFFFFF, 800, 0.6);
         }
 
-        this.scene.time.delayedCall(300, () => {
-            this.spawnPlayfulCloudEffect();
+        // Visual: multiple slashes shattering the screen
+        const g = this.scene.add.graphics().setDepth(100);
+        for(let i=0; i<10; i++) {
+            const x1 = Math.random() * 1280;
+            const y1 = Math.random() * 720;
+            const x2 = x1 + (Math.random() - 0.5) * 800;
+            const y2 = y1 + (Math.random() - 0.5) * 800;
+            g.lineStyle(8, 0x88CCFF, 0.9);
+            g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.strokePath();
+            g.lineStyle(4, 0xFFFFFF, 1);
+            g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.strokePath();
+        }
 
-            if (this.opponent) {
-                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-                if (dist < 180) {
-                    this.opponent.takeDamage(Math.floor(damage * this.power), 600 * this.facing, -400, 800);
-                    this.comboSystem.registerHit('SPECIAL');
-                    if (this.scene.screenEffects) {
-                        this.scene.screenEffects.shake(0.04, 600);
-                        this.scene.screenEffects.hitFreeze(200);
-                    }
-                }
+        this.scene.time.delayedCall(600, () => {
+            g.destroy();
+            // End the domain directly and force fatigue on the owner
+            if (this.scene.domainOwner) {
+                const owner = this.scene.domainOwner;
+                owner.ceSystem.ce = 0;
+                owner.ceSystem.endDomain();
+                this.scene.onDomainEnd(owner);
+                
+                // Stop domain audio
+                try { this.scene.sound.stopAll(); } catch(e) {}
             }
-
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
         });
     }
 
-    // ════════════════════════════════════════════
-    // INVERTED SPEAR OF HEAVEN — Anti-technique lunge
-    // ════════════════════════════════════════════
-    castInvertedSpear() {
-        const damage = 70;
-
-        this.spawnSpearEffect();
-        this.sprite.body.setVelocityX(600 * this.facing);
-
-        this.scene.time.delayedCall(200, () => {
-            this.sprite.body.setVelocityX(0);
-
-            if (this.opponent) {
-                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-                if (dist < 140) {
-                    this.opponent.takeDamage(Math.floor(damage * this.power), 300 * this.facing, -150, 300);
-                    this.comboSystem.registerHit('SPECIAL');
-                    // Inverted Spear nullifies cursed techniques — drain enemy CE
-                    if (this.opponent.ceSystem) {
-                        this.opponent.ceSystem.ce = Math.max(0, this.opponent.ceSystem.ce - 30);
-                    }
-                    if (this.scene.screenEffects) {
-                        this.scene.screenEffects.shake(0.005, 200);
-                    }
-                }
+    showWeaponBuffText(text) {
+        const txt = this.scene.add.text(
+            this.sprite.x, this.sprite.y - 70, 
+            text, {
+                fontSize: '16px', fontFamily: 'Arial Black',
+                color: '#' + this.currentWeapon.color.toString(16).padStart(6, '0'),
+                stroke: '#000000', strokeThickness: 4,
             }
+        ).setOrigin(0.5).setDepth(20);
+
+        this.scene.tweens.add({
+            targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy()
         });
     }
 
-    // ════════════════════════════════════════════
-    // SOUL SPLITTING KATANA — Wide-range soul slash
-    // ════════════════════════════════════════════
-    castSoulKatana() {
-        const damage = 90;
+    // ── Update ──
+    update(time, dt) {
+        super.update(time, dt);
 
-        this.isCasting = true;
-        this.stateMachine.lock(99999);
-        this.sprite.body.setVelocityX(0);
+        if (this.switchCooldown > 0) this.switchCooldown -= dt;
+        
+        // Counter Stance tracking & Projectile collision override
+        if (this.counterTimer > 0) {
+            this.counterTimer -= dt;
+            if (this.stanceAura) {
+                this.stanceAura.setPosition(this.sprite.x, this.sprite.y);
+            }
 
-        this.scene.time.delayedCall(150, () => {
-            this.spawnSoulKatanaEffect();
+            // Check projectile collisions manually to intercept them
+            if (this.scene.projectiles) {
+                for (let i = this.scene.projectiles.length - 1; i >= 0; i--) {
+                    const proj = this.scene.projectiles[i];
+                    if (proj.owner === this) continue; // Ignore own projectiles
 
-            if (this.opponent) {
-                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
-                if (dist < 250) {
-                    this.opponent.takeDamage(Math.floor(damage * this.power), 400 * this.facing, -200, 500);
-                    this.comboSystem.registerHit('SPECIAL');
-                    if (this.scene.screenEffects) {
-                        this.scene.screenEffects.shake(0.01, 300);
+                    // Exclude massive/super projectiles from counter
+                    const isSuper = proj.type === 'fire' || proj.damage > 100 || proj.size.w > 100;
+                    
+                    if (!isSuper) {
+                        const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, proj.sprite.x, proj.sprite.y);
+                        if (dist < 100) {
+                            // Intercepted!
+                            if (this.counterStanceWeapon === 'katana') {
+                                this.triggerKatanaCounter(proj);
+                            } else if (this.counterStanceWeapon === 'spear') {
+                                this.triggerSpearCounter(proj);
+                            }
+                            proj.destroy(); // Destroy it
+                            this.scene.projectiles.splice(i, 1);
+                        }
                     }
                 }
             }
 
-            this.isCasting = false;
-            this.stateMachine.unlock();
-            this.stateMachine.setState('idle');
-        });
-    }
+            if (this.counterTimer <= 0) {
+                if (this.stanceAura) { this.stanceAura.destroy(); this.stanceAura = null; }
+                if (this.stateMachine.is('block')) this.stateMachine.unlock();
+            }
+        } else {
+            if (this.stanceAura) { this.stanceAura.destroy(); this.stanceAura = null; }
+        }
 
-    // ════════════════════════════════════════════
-    // DOMAIN — Toji has none (Heavenly Restriction)
-    // ════════════════════════════════════════════
-    tryActivateDomain() {
-        return; // Zero CE = No domain
+        // Buff timer tracking
+        if (this.buffTimer > 0) {
+            this.buffTimer -= dt;
+            
+            // Draw green flash effect behind
+            if (Math.random() < 0.1) {
+                const g = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0x55FF55, 0.4).setDepth(9);
+                this.scene.tweens.add({ targets: g, scaleX: 1.5, scaleY: 1.5, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+            }
+
+            if (this.buffTimer <= 0) {
+                // Revert buffs
+                this.speed /= 1.4;
+                this.power /= 1.3;
+                this.defense /= 1.2;
+                this.jumpForce /= 1.2;
+            }
+        }
+
+        if (this.katanaLifestealTimer > 0) {
+            this.katanaLifestealTimer -= dt;
+        }
     }
 
     applySureHitTick(opponent) {
-        // No domain
+        // None
     }
 
-    // ════════════════════════════════════════════
-    // UPDATE — Weapon switch cooldown
-    // ════════════════════════════════════════════
-    update(time, dt) {
-        super.update(time, dt);
-        if (this.switchCooldown > 0) {
-            this.switchCooldown -= dt;
-        }
-    }
-
-    // ════════════════════════════════════════════
-    // VFX Helpers
-    // ════════════════════════════════════════════
+    // ── VFX ──
     spawnSpearEffect() {
         const x = this.sprite.x + 30 * this.facing;
         const y = this.sprite.y - 10;
         const g = this.scene.add.graphics().setDepth(15);
         
-        // Spear shaft
         g.lineStyle(3, 0xCCCCCC, 1);
-        g.beginPath();
-        g.moveTo(x, y);
-        g.lineTo(x + 90 * this.facing, y);
-        g.strokePath();
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + 90 * this.facing, y); g.strokePath();
         
-        // Spear tip
         g.fillStyle(0x88CCFF, 1);
         g.beginPath();
         const tipX = x + 90 * this.facing;
-        g.moveTo(tipX, y - 7);
-        g.lineTo(tipX + 18 * this.facing, y);
-        g.lineTo(tipX, y + 7);
-        g.closePath();
-        g.fillPath();
+        g.moveTo(tipX, y - 7); g.lineTo(tipX + 18 * this.facing, y); g.lineTo(tipX, y + 7);
+        g.closePath(); g.fillPath();
 
-        // Anti-technique shimmer
-        g.lineStyle(1, 0xAADDFF, 0.4);
-        g.strokeCircle(tipX + 5 * this.facing, y, 12);
-        
-        this.scene.tweens.add({
-            targets: g,
-            alpha: 0,
-            duration: 250,
-            onComplete: () => g.destroy()
-        });
+        this.scene.tweens.add({ targets: g, alpha: 0, duration: 250, onComplete: () => g.destroy() });
     }
 
-    spawnPlayfulCloudEffect() {
-        const x = this.sprite.x + 40 * this.facing;
+    spawnPlayfulCloudEffect(scale = 1.0) {
+        const x = this.sprite.x + (40 * scale) * this.facing;
         const y = this.sprite.y - 20;
         const g = this.scene.add.graphics().setDepth(16);
         
-        // 3-section staff segments
         for (let s = 0; s < 3; s++) {
-            const sx = x + (s * 25 - 25) * this.facing;
+            const sx = x + (s * 25 - 25) * this.facing * scale;
             g.fillStyle(0x886633, 1);
-            g.fillRect(sx - 3, y - 15, 6, 30);
-            // Joint rings
-            if (s < 2) {
-                g.lineStyle(2, 0x444444, 0.8);
-                g.strokeCircle(sx + 12 * this.facing, y, 4);
-            }
+            g.fillRect(sx - 3, y - 15*scale, 6, 30*scale);
         }
 
-        // Impact shockwave circles
-        for (let i = 0; i < 3; i++) {
-            const r = 40 + i * 30;
-            g.lineStyle(6 - i * 2, 0x55FF55, 0.8 - i * 0.2);
-            g.strokeCircle(x, y, r);
-        }
-        
-        // Impact lines
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI * 2) / 8;
-            const endX = x + Math.cos(angle) * 80;
-            const endY = y + Math.sin(angle) * 60;
-            g.lineStyle(4, 0xFFFFFF, 0.9);
-            g.beginPath(); g.moveTo(x, y); g.lineTo(endX, endY); g.strokePath();
-            g.lineStyle(2, 0x55FF55, 1);
-            g.beginPath(); g.moveTo(x, y); g.lineTo(endX, endY); g.strokePath();
-        }
-        
-        const flash = this.scene.add.circle(x, y, 30, 0xFFFFFF, 0.6).setDepth(17);
-        
+        const flash = this.scene.add.circle(x, y, 30*scale, 0x55FF55, 0.6).setDepth(17);
         this.scene.tweens.add({
-            targets: [g, flash],
-            alpha: 0,
-            scaleX: 1.5,
-            scaleY: 1.5,
-            duration: 400,
-            ease: 'Power2',
+            targets: [g, flash], alpha: 0, scaleX: 1.5, scaleY: 1.5, duration: 300,
             onComplete: () => { g.destroy(); flash.destroy(); }
         });
     }
@@ -312,7 +476,6 @@ export default class Toji extends Fighter {
         const y = this.sprite.y - 15;
         const g = this.scene.add.graphics().setDepth(15);
 
-        // Wide sweeping arc
         const startAngle = this.facing > 0 ? -Math.PI / 3 : Math.PI + Math.PI / 3;
         const sweep = Math.PI * 0.8;
         
@@ -321,27 +484,14 @@ export default class Toji extends Fighter {
             const len = 120 + Math.sin(i * 0.5) * 20;
             const ex = x + Math.cos(angle) * len;
             const ey = y + Math.sin(angle) * len;
-            
-            // Pink soul energy trail
             g.lineStyle(6, 0xFF44AA, 0.8 - (i / 15) * 0.4);
-            g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
-            g.lineStyle(3, 0xFFFFFF, 0.6);
             g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.strokePath();
         }
 
-        // Katana blade line
         const bladeEnd = x + 100 * this.facing;
         g.lineStyle(4, 0xCCCCDD, 1);
         g.beginPath(); g.moveTo(x + 10 * this.facing, y); g.lineTo(bladeEnd, y - 20); g.strokePath();
-        g.lineStyle(2, 0xFF88CC, 0.8);
-        g.beginPath(); g.moveTo(x + 10 * this.facing, y); g.lineTo(bladeEnd, y - 20); g.strokePath();
 
-        this.scene.tweens.add({
-            targets: g,
-            alpha: 0,
-            duration: 300,
-            ease: 'Power2',
-            onComplete: () => g.destroy()
-        });
+        this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
     }
 }
