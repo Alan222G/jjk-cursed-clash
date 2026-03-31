@@ -269,8 +269,8 @@ export default class Sukuna extends Fighter {
         // Stun enemy during cast
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && !target.isDead) {
+            target.stateMachine.unlock();
             target.stateMachine.lock(99999);
-            target.stateMachine.setState('domain_stunned');
             target.sprite.body.setVelocity(0, 0);
         }
 
@@ -298,10 +298,12 @@ export default class Sukuna extends Fighter {
                 this.scene.screenEffects.shake(0.02, 500);
             }
 
-            // Unlock enemy
-            if (target && target.stateMachine.is('domain_stunned')) {
+            // Unlock enemy unconditionally
+            if (target && !target.isDead) {
                 target.stateMachine.unlock();
-                target.stateMachine.setState('idle');
+                if (!target.stateMachine.isAny('idle', 'walk', 'jump', 'fall', 'attack')) {
+                    target.stateMachine.setState('idle');
+                }
             }
 
             this.stateMachine.setState('idle');

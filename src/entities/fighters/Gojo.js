@@ -19,16 +19,188 @@ export default class Gojo extends Fighter {
         this.blueGraphics = null;
     }
 
-    /** Blindfold + Six Eyes glow */
-    drawFace(g, x, y, facing) {
-        // Blindfold
-        g.fillStyle(0x111122, 1);
-        g.fillRect(x - 14, y - 5, 28, 7);
-        // Six Eyes glow (peeking through)
-        const glowPulse = 0.5 + Math.sin(this.animTimer * 0.006) * 0.3;
-        g.fillStyle(0x44CCFF, glowPulse);
-        g.fillCircle(x - 5 * facing, y - 2, 3);
-        g.fillCircle(x + 5 * facing, y - 2, 3);
+    /** 
+     * OVERRIDE: Hyper-Technical Tessellated Geometric Rendering 
+     * Uses polygons, interlocking triangles, and Euclidean shapes to construct Gojo's anatomy.
+     */
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+
+        // Base color override during hit stun flash
+        const uColor = isFlashing ? 0xFFFFFF : 0x111118; // Compression shirt
+        const pColor = isFlashing ? 0xFFFFFF : 0x151520; // Hakama pants
+        const skinColor = isFlashing ? 0xFFFFFF : 0xFFE0CC;
+
+        const armExtend = this.attackSwing * 40;
+
+        // ── 1. LEGS (Hakama Pants) ──
+        // Drawn as overlapping wide trapezoids to simulate folded fabric folds
+        const legY = masterY + 5;
+        let leftKnee = 35;
+        let rightKnee = 35;
+        let pLx = -10, pRx = 10;
+        if (this.stateMachine.is('walk')) {
+            leftKnee += this.walkCycle * 1.5;
+            rightKnee -= this.walkCycle * 1.5;
+        } else if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
+            leftKnee = 20; rightKnee = 20;
+            pLx = -14; pRx = 14;
+        }
+        
+        // Back Leg (Trapezoid)
+        g.fillStyle(pColor, 0.85);
+        g.fillTriangle(x + pLx, legY, x + pLx - 10, legY + leftKnee, x + pLx + 10, legY + leftKnee - 5);
+        // Front Leg (Trapezoid)
+        g.fillStyle(pColor, 1);
+        g.fillTriangle(x + pRx, legY, x + pRx - 12 * f, legY + rightKnee, x + pRx + 12 * f, legY + rightKnee - 2);
+
+        // ── 2. TORSO (Compression Shirt & Musculature via Polygons) ──
+        // Chest and Abdominal muscles depicted through intersecting triangles
+        g.fillStyle(uColor, 1);
+        g.beginPath();
+        g.moveTo(x - 16, masterY - 38); // Shoulders
+        g.lineTo(x + 16, masterY - 38);
+        g.lineTo(x + 12, masterY + 12); // Waist line
+        g.lineTo(x - 12, masterY + 12);
+        g.fillPath();
+
+        // Tessellated Abdominal Muscles (if facing forward, slight visible seams)
+        g.lineStyle(1, 0x222233, 0.4);
+        g.beginPath();
+        g.moveTo(x, masterY - 38); g.lineTo(x, masterY + 10);
+        g.moveTo(x - 8, masterY - 15); g.lineTo(x + 8, masterY - 15);
+        g.moveTo(x - 6, masterY); g.lineTo(x + 6, masterY);
+        g.strokePath();
+
+        // ── 3. BACK ARM ──
+        const armY = masterY - 34;
+        g.lineStyle(10, uColor, 0.8);
+        g.beginPath();
+        g.moveTo(x - 12 * f, armY + 2);
+        g.lineTo(x - 22 * f, armY + 18);
+        g.strokePath();
+
+        // ── 4. HEAD & FACE ──
+        const hx = x;
+        const hy = masterY - 56;
+        
+        // Neck polygon
+        g.fillStyle(skinColor, 1);
+        g.fillRect(hx - 4, hy + 5, 8, 8);
+
+        // Face Base Profile (Euclidean Polygon)
+        g.beginPath();
+        g.moveTo(hx - 12, hy - 10);
+        g.lineTo(hx + 12, hy - 10);
+        g.lineTo(hx + 8, hy + 12);
+        g.lineTo(hx - 8, hy + 12);
+        g.fillPath();
+
+        // Hair (Isosceles Triangles Matrix)
+        g.fillStyle(0xF5F5FF, 1);
+        for(let i = -14; i <= 14; i += 4) {
+            // Math function to define parabolic height of hair spikes
+            const spikeH = 14 + Math.cos((i / 14) * (Math.PI / 2)) * 10;
+            const slant = (i * 0.5) * f;
+            g.fillTriangle(hx + i, hy - 8, hx + i + 2, hy - 8, hx + i + slant, hy - 8 - spikeH);
+        }
+
+        // Eyewear / Blindfold
+        if (this.hitFlash > 0 || this.infinityActive) {
+            // Six Eyes glow (Concentric Circles)
+            const pulse = 0.5 + Math.sin(this.animTimer * 0.006) * 0.5;
+            g.lineStyle(1, 0xFFFFFF, pulse);
+            g.strokeCircle(hx - 5 * f, hy - 2, 4);
+            g.strokeCircle(hx + 5 * f, hy - 2, 4);
+            
+            g.fillStyle(0x44CCFF, pulse);
+            g.fillCircle(hx - 5 * f, hy - 2, 2);
+            g.fillCircle(hx + 5 * f, hy - 2, 2);
+        } else {
+            // Flat geometric blindfold wrap over head
+            g.fillStyle(0x111122, 1);
+            g.fillRect(hx - 14, hy - 6, 28, 8);
+        }
+
+        // ── 5. FRONT ARM ──
+        g.lineStyle(10, uColor, 1);
+        g.beginPath();
+        g.moveTo(hx + 10 * f, armY + 2);
+
+        if (this.stateMachine.is('block')) {
+            // Block (Triangular crossed arms structure)
+            g.lineTo(hx + 20 * f, armY - 5);
+            g.lineTo(hx + 5 * f, armY - 15);
+        } else if (this.attackSwing > 0) {
+            // Geometric extension of punch
+            g.lineTo(hx + (25 + armExtend) * f, armY - 5);
+            g.fillStyle(0x4488FF, 0.8);
+            g.fillCircle(hx + (28 + armExtend) * f, armY - 5, 8);
+        } else {
+            // Idle slope
+            g.lineTo(hx + 16 * f, armY + 20);
+        }
+        g.strokePath();
+
+        // ── 6. VIRTUAL SHIELDS AND AURAS ──
+        if (this.stateMachine.is('infinity')) {
+            const pulse = 0.4 + Math.sin(this.animTimer * 0.008) * 0.2;
+            const shieldR = 60;
+            const cx = x, cy = y - 15;
+
+            // Concentric pure geometric circles
+            g.lineStyle(4, 0x44CCFF, pulse + 0.4);
+            g.strokeCircle(cx, cy, shieldR);
+            g.lineStyle(1, 0x88EEFF, pulse * 0.4);
+            g.strokeCircle(cx, cy, shieldR + 6);
+
+            g.fillStyle(0x44CCFF, pulse * 0.15);
+            g.fillCircle(cx, cy, shieldR);
+
+            // Hexagonal Matrix nodes (Trigonometric functions)
+            for (let i = 0; i < 6; i++) {
+                const a = (i * Math.PI / 3) + this.animTimer * 0.003;
+                const hxx = cx + Math.cos(a) * 42;
+                const hyy = cy + Math.sin(a) * 42;
+                g.fillStyle(0x88EEFF, 0.5);
+                g.fillRect(hxx - 3, hyy - 3, 6, 6); // Cuboids
+                
+                const nextA = ((i + 1) * Math.PI / 3) + this.animTimer * 0.003;
+                g.lineStyle(1, 0x44CCFF, 0.3);
+                g.beginPath(); 
+                g.moveTo(hxx, hyy); 
+                g.lineTo(cx + Math.cos(nextA) * 42, cy + Math.sin(nextA) * 42); 
+                g.strokePath();
+            }
+        }
+
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.2) * 25, y - 55 + Math.sin(angle + 0.2) * 12,
+                    x + Math.cos(angle - 0.2) * 25, y - 55 + Math.sin(angle - 0.2) * 12
+                );
+            }
+        }
     }
 
     trySpecialAttack() {
@@ -208,8 +380,8 @@ export default class Gojo extends Fighter {
         // Stun enemy during cast
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && !target.isDead) {
+            target.stateMachine.unlock();
             target.stateMachine.lock(99999);
-            target.stateMachine.setState('domain_stunned');
             target.sprite.body.setVelocity(0, 0);
         }
 
@@ -241,10 +413,12 @@ export default class Gojo extends Fighter {
                 this.scene.screenEffects.shake(0.04, 800);
             }
 
-            // Unlock enemy
-            if (target && target.stateMachine.is('domain_stunned')) {
+            // Unlock enemy unconditionally
+            if (target && !target.isDead) {
                 target.stateMachine.unlock();
-                target.stateMachine.setState('idle');
+                if (!target.stateMachine.isAny('idle', 'walk', 'jump', 'fall', 'attack')) {
+                    target.stateMachine.setState('idle');
+                }
             }
 
             this.stateMachine.setState('idle');

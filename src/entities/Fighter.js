@@ -685,20 +685,18 @@ export default class Fighter {
         const f = this.facing;
         const colors = this.colors;
 
-        // Hit flash effect
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
         let bodyColor = isFlashing ? 0xFFFFFF : colors.primary;
         let armColor = bodyColor;
         let legColor = bodyColor;
 
         if (this.fighterId === 'gojo' && !isFlashing) {
-            bodyColor = 0x111118; // Dark Navy/Black for uniform
+            bodyColor = 0x111118;
             armColor = 0x111118;
-            legColor = 0x151520;  // Slightly distinct dark tone for pants
+            legColor = 0x151520;
         }
         const outlineColor = colors.secondary;
 
-        // Dead state — simple fallen figure
         if (this.isDead) {
             g.fillStyle(bodyColor, 0.5);
             g.fillEllipse(x, y + 20, 80, 25);
@@ -707,158 +705,249 @@ export default class Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
 
-        // ── BODY OUTLINE GLOW ──
-        g.lineStyle(4, outlineColor, 0.4);
-        // Torso
-        g.strokeRect(x - 14, y - 28 + bobY, 28, 38);
+        // ════════════════════════════════════════════
+        // GEOMETRIC TESSELLATED CHARACTER RENDERING
+        // ════════════════════════════════════════════
 
-        // ── HEAD ──
+        // ── NECK ──
         g.fillStyle(colors.skin, 1);
-        g.fillCircle(x, y - 56 + bobY, 13);
-        // Hair
-        g.fillStyle(colors.hair, 1);
-        g.fillEllipse(x, y - 65 + bobY, 26, 12);
-        // Face
-        this.drawFace(g, x, y - 56 + bobY, f);
+        g.beginPath();
+        g.moveTo(x - 4, y - 42 + bobY);
+        g.lineTo(x + 4, y - 42 + bobY);
+        g.lineTo(x + 5, y - 36 + bobY);
+        g.lineTo(x - 5, y - 36 + bobY);
+        g.fillPath();
 
-        // ── TORSO / CLOTHING ──
+        // ── HEAD (Octagonal polygon) ──
+        const hY = y - 52 + bobY;
+        g.fillStyle(colors.skin, 1);
+        g.beginPath();
+        g.moveTo(x - 6, hY - 12);
+        g.lineTo(x + 6, hY - 12);
+        g.lineTo(x + 11, hY - 6);
+        g.lineTo(x + 11, hY + 4);
+        g.lineTo(x + 8, hY + 10);
+        g.lineTo(x, hY + 12);
+        g.lineTo(x - 8, hY + 10);
+        g.lineTo(x - 11, hY + 4);
+        g.lineTo(x - 11, hY - 6);
+        g.fillPath();
+
+        // ── HAIR (Tessellated spike triangles) ──
         if (this.fighterId === 'gojo') {
-            // Gojo Uniform (Dark Navy/Black) - Trapezoid
-            g.fillStyle(0x1a1a24, 0.95);
+            g.fillStyle(0xF0F0FF, 1);
             g.beginPath();
-            g.moveTo(x - 14, y - 38 + bobY);
-            g.lineTo(x + 14, y - 38 + bobY);
-            g.lineTo(x + 10, y + 10 + bobY);
-            g.lineTo(x - 10, y + 10 + bobY);
+            g.moveTo(x - 12, hY - 10);
+            g.lineTo(x + 12, hY - 10);
+            g.lineTo(x + 10, hY - 16);
+            g.lineTo(x + 4, hY - 20);
+            g.lineTo(x - 2, hY - 22);
+            g.lineTo(x - 8, hY - 19);
+            g.lineTo(x - 12, hY - 14);
             g.fillPath();
-            // Zipper line
-            g.lineStyle(2, 0x05050A, 0.6);
-            g.beginPath();
-            g.moveTo(x, y - 38 + bobY);
-            g.lineTo(x, y + 10 + bobY);
-            g.strokePath();
+            g.fillStyle(0xE8E8FF, 1);
+            for (let i = -2; i <= 2; i++) {
+                const sx = x + i * 5;
+                g.beginPath();
+                g.moveTo(sx - 4, hY - 16);
+                g.lineTo(sx + 4, hY - 16);
+                g.lineTo(sx + i * 1.5, hY - 24 - Math.abs(i) * 2);
+                g.fillPath();
+            }
         } else if (this.fighterId === 'sukuna') {
-            // Sukuna Kimono - Trapezoid
-            g.fillStyle(0xf0f0f5, 0.95);
+            g.fillStyle(0xFF8899, 1);
             g.beginPath();
-            g.moveTo(x - 15, y - 38 + bobY);
-            g.lineTo(x + 15, y - 38 + bobY);
-            g.lineTo(x + 12, y + 12 + bobY);
-            g.lineTo(x - 12, y + 12 + bobY);
+            g.moveTo(x - 12, hY - 10);
+            g.lineTo(x + 12, hY - 10);
+            g.lineTo(x + 14, hY - 14);
+            g.lineTo(x + 6, hY - 18);
+            g.lineTo(x, hY - 20);
+            g.lineTo(x - 6, hY - 18);
+            g.lineTo(x - 14, hY - 14);
             g.fillPath();
-            // Black neck trim (V-neck)
-            g.fillStyle(0x111111, 1);
-            g.beginPath();
-            g.moveTo(x - 8, y - 38 + bobY);
-            g.lineTo(x, y - 10 + bobY);
-            g.lineTo(x + 8, y - 38 + bobY);
-            g.fillPath();
-            // Dark Sash/Belt
-            g.fillStyle(0x111111, 1);
-            g.fillRect(x - 13, y + bobY - 2, 26, 12);
+            g.fillStyle(0xDD6677, 1);
+            for (let i = -1; i <= 1; i++) {
+                const sx = x + i * 7;
+                g.beginPath();
+                g.moveTo(sx - 5, hY - 16);
+                g.lineTo(sx + 5, hY - 16);
+                g.lineTo(sx + i * 3, hY - 26);
+                g.fillPath();
+            }
         } else {
-            // Default generic body
+            g.fillStyle(colors.hair, 1);
+            g.fillEllipse(x, hY - 12, 24, 12);
+        }
+
+        this.drawFace(g, x, hY, f);
+
+        // ── TORSO (Two-panel tessellation) ──
+        const tT = y - 36 + bobY;
+        const tB = y + 10 + bobY;
+        const sW = 14;
+        const wW = 10;
+
+        if (this.fighterId === 'gojo') {
+            g.fillStyle(0x0D0D14, 1);
+            g.beginPath();
+            g.moveTo(x - sW, tT); g.lineTo(x, tT); g.lineTo(x, tB); g.lineTo(x - wW, tB);
+            g.fillPath();
+            g.fillStyle(0x151520, 1);
+            g.beginPath();
+            g.moveTo(x, tT); g.lineTo(x + sW, tT); g.lineTo(x + wW, tB); g.lineTo(x, tB);
+            g.fillPath();
+            g.fillStyle(0x1A1A28, 1);
+            g.beginPath();
+            g.moveTo(x - 8, tT + 4); g.lineTo(x - 2, tT + 4); g.lineTo(x - 5, tT + 14);
+            g.fillPath();
+            g.beginPath();
+            g.moveTo(x + 2, tT + 4); g.lineTo(x + 8, tT + 4); g.lineTo(x + 5, tT + 14);
+            g.fillPath();
+            g.lineStyle(1, 0x05050A, 0.6);
+            g.beginPath(); g.moveTo(x, tT); g.lineTo(x, tB); g.strokePath();
+        } else if (this.fighterId === 'sukuna') {
+            g.fillStyle(0xEEEEF0, 1);
+            g.beginPath();
+            g.moveTo(x - sW, tT); g.lineTo(x, tT); g.lineTo(x, tB); g.lineTo(x - wW, tB);
+            g.fillPath();
+            g.fillStyle(0xE0E0E5, 1);
+            g.beginPath();
+            g.moveTo(x, tT); g.lineTo(x + sW, tT); g.lineTo(x + wW, tB); g.lineTo(x, tB);
+            g.fillPath();
+            g.fillStyle(0x111111, 1);
+            g.beginPath();
+            g.moveTo(x - 7, tT); g.lineTo(x, tT + 20); g.lineTo(x + 7, tT);
+            g.fillPath();
+            g.fillStyle(0x111111, 1);
+            g.fillRect(x - wW, tB - 10, wW * 2, 8);
+            g.lineStyle(1, 0x000000, 0.4);
+            for (let i = 0; i < 3; i++) {
+                g.beginPath(); g.moveTo(x - 3 + i, tT + 6 + i * 5); g.lineTo(x + 3 - i, tT + 6 + i * 5); g.strokePath();
+            }
+        } else {
             g.fillStyle(bodyColor, 0.95);
             g.beginPath();
-            g.moveTo(x - 13, y - 38 + bobY);
-            g.lineTo(x + 13, y - 38 + bobY);
-            g.lineTo(x + 10, y + 10 + bobY);
-            g.lineTo(x - 10, y + 10 + bobY);
+            g.moveTo(x - sW, tT); g.lineTo(x + sW, tT); g.lineTo(x + wW, tB); g.lineTo(x - wW, tB);
             g.fillPath();
         }
 
-        // ── ARMS ──
-        const armY = y - 34 + bobY;
+        // ── ARMS (Segmented: upper + forearm + joint) ──
+        const armY = y - 32 + bobY;
         const armExtend = this.attackSwing * 40;
 
         // Back arm
-        g.lineStyle(11, armColor, 0.7);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY);
-        g.lineTo(x - 22 * f, armY + 18);
-        g.strokePath();
+        const bsx = x - 12 * f;
+        const bex = bsx - 6 * f;
+        const bey = armY + 18;
+        g.lineStyle(7, armColor, 0.7);
+        g.beginPath(); g.moveTo(bsx, armY); g.lineTo(bex, bey); g.strokePath();
+        g.lineStyle(6, armColor, 0.7);
+        g.beginPath(); g.moveTo(bex, bey); g.lineTo(bex - 2 * f, bey + 16); g.strokePath();
+        g.fillStyle(outlineColor, 0.3);
+        g.fillCircle(bex, bey, 3);
 
-        // Front arm (attack arm)
-        g.lineStyle(11, armColor, 1);
-        g.beginPath();
-        g.moveTo(x + 12 * f, armY);
-        
+        // Front arm
+        const fsx = x + 12 * f;
+        let fex, fey, fhx, fhy;
         if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
-            // Normal Fighter Punch
-            g.lineTo(x + (25 + armExtend) * f, armY - 5);
-            g.fillStyle(colors.energy, 0.8);
-            g.fillCircle(x + (28 + armExtend) * f, armY - 5, 8);
+            fex = fsx + (10 + armExtend * 0.4) * f; fey = armY + 4;
+            fhx = fsx + (22 + armExtend) * f; fhy = armY - 2;
+        } else if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
+            fex = fsx + 8 * f; fey = armY + 6;
+            fhx = fsx + (18 + armExtend * 0.7) * f; fhy = armY - 8;
         } else {
-            g.lineTo(x + 18 * f, armY + 22);
+            fex = fsx + 4 * f; fey = armY + 18;
+            fhx = fex + 2 * f; fhy = fey + 16;
         }
-        g.strokePath();
+        g.lineStyle(8, armColor, 1);
+        g.beginPath(); g.moveTo(fsx, armY); g.lineTo(fex, fey); g.strokePath();
+        g.lineStyle(7, armColor, 1);
+        g.beginPath(); g.moveTo(fex, fey); g.lineTo(fhx, fhy); g.strokePath();
+        g.fillStyle(outlineColor, 0.4);
+        g.fillCircle(fex, fey, 3);
 
-        // ── SUKUNA INVISIBLE SLASH FX ──
+        // Fist on punch
+        if (this.attackSwing > 0 && this.fighterId !== 'sukuna') {
+            g.fillStyle(colors.skin, 1);
+            g.beginPath();
+            g.moveTo(fhx - 4 * f, fhy - 5);
+            g.lineTo(fhx + 4 * f, fhy - 6);
+            g.lineTo(fhx + 6 * f, fhy);
+            g.lineTo(fhx + 3 * f, fhy + 5);
+            g.lineTo(fhx - 3 * f, fhy + 4);
+            g.fillPath();
+            g.fillStyle(colors.energy, 0.6);
+            g.fillCircle(fhx + 2 * f, fhy, 6);
+        }
+
+        // Sukuna slash FX
         if (this.attackSwing > 0 && this.fighterId === 'sukuna') {
-            const slashX = x + (25 + armExtend) * f + (15 * f);
-            const slashY = armY - 5;
-            
-            g.lineStyle(14, 0xFFFFFF, 0.9);
-            g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 45);
-            g.lineTo(slashX + 30 * f, slashY - 10);
-            g.lineTo(slashX + 30 * f, slashY + 10);
-            g.lineTo(slashX - 15 * f, slashY + 45);
-            g.strokePath();
-            
-            g.lineStyle(8, 0x000000, 1);
-            g.beginPath();
-            g.moveTo(slashX - 15 * f, slashY - 45);
-            g.lineTo(slashX + 30 * f, slashY - 10);
-            g.lineTo(slashX + 30 * f, slashY + 10);
-            g.lineTo(slashX - 15 * f, slashY + 45);
-            g.strokePath();
+            const slX = fhx + 15 * f;
+            for (let i = 0; i < 3; i++) {
+                g.lineStyle(3 - i * 0.5, i === 1 ? 0x000000 : 0xFFFFFF, 0.9 - i * 0.2);
+                g.beginPath();
+                g.moveTo(slX - 10 * f, fhy - 30 + (i - 1) * 12);
+                g.lineTo(slX + 20 * f, fhy + 30 + (i - 1) * 12);
+                g.strokePath();
+            }
         }
 
-        // ── LEGS ──
-        const legY = y + 8 + bobY;
-        let leftLegX = -7;
-        let rightLegX = 7;
-        let leftKnee = 35;
-        let rightKnee = 35;
-
+        // ── LEGS (Segmented: thigh + shin + foot) ──
+        const hipY = y + 8 + bobY;
+        let lAng = 0, rAng = 0;
         if (this.stateMachine.is('walk')) {
-            leftKnee += this.walkCycle * 1.5;
-            rightKnee -= this.walkCycle * 1.5;
+            lAng = this.walkCycle * 0.06;
+            rAng = -this.walkCycle * 0.06;
         }
         if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-            leftKnee = 20;
-            rightKnee = 20;
-            leftLegX = -10;
-            rightLegX = 10;
+            lAng = -0.3; rAng = 0.3;
         }
 
-        g.lineStyle(12, legColor, 0.9);
-        g.beginPath();
-        g.moveTo(x + leftLegX, legY);
-        g.lineTo(x + leftLegX - 3, legY + leftKnee);
-        g.strokePath();
+        const drawLeg = (hipOffX, ang, alpha) => {
+            const hx = x + hipOffX;
+            const kx = hx + Math.sin(ang) * 20;
+            const ky = hipY + Math.cos(ang) * 20;
+            const fx2 = kx + Math.sin(ang * 0.3) * 18;
+            const fy2 = ky + 18;
+            g.lineStyle(9, legColor, alpha);
+            g.beginPath(); g.moveTo(hx, hipY); g.lineTo(kx, ky); g.strokePath();
+            g.lineStyle(7, legColor, alpha);
+            g.beginPath(); g.moveTo(kx, ky); g.lineTo(fx2, fy2); g.strokePath();
+            g.fillStyle(outlineColor, 0.3);
+            g.fillCircle(kx, ky, 3);
+            g.fillStyle(0x222233, 1);
+            g.beginPath();
+            g.moveTo(fx2 - 4, fy2); g.lineTo(fx2 + 6 * f, fy2);
+            g.lineTo(fx2 + 8 * f, fy2 + 4); g.lineTo(fx2 - 5, fy2 + 4);
+            g.fillPath();
+        };
+        drawLeg(-6, lAng, 0.8);
+        drawLeg(6, rAng, 0.9);
 
-        g.beginPath();
-        g.moveTo(x + rightLegX, legY);
-        g.lineTo(x + rightLegX + 3, legY + rightKnee);
-        g.strokePath();
-
-        // ── BLOCK VISUAL — Crouch + Arms Crossed (no shield) ──
+        // ── BLOCK VISUAL (Hexagonal) ──
         if (this.stateMachine.is('block')) {
-            // Draw crossed arms in front of body
-            g.lineStyle(8, armColor, 1);
-            // Left arm crossed over
-            g.beginPath();
-            g.moveTo(x - 12, armY);
-            g.lineTo(x + 8 * f, armY - 15);
-            g.strokePath();
-            // Right arm crossed over
-            g.beginPath();
-            g.moveTo(x + 12, armY);
-            g.lineTo(x - 8 * f, armY - 10);
-            g.strokePath();
+            g.lineStyle(7, armColor, 1);
+            g.beginPath(); g.moveTo(x - 10, armY + 2); g.lineTo(x + 6 * f, armY - 12); g.strokePath();
+            g.beginPath(); g.moveTo(x + 10, armY + 2); g.lineTo(x - 6 * f, armY - 10); g.strokePath();
+            g.lineStyle(2, outlineColor, 0.4);
+            for (let i = 0; i < 6; i++) {
+                const a1 = i * Math.PI / 3;
+                const a2 = (i + 1) * Math.PI / 3;
+                g.beginPath();
+                g.moveTo(x + 4 * f + Math.cos(a1) * 14, armY - 4 + Math.sin(a1) * 14);
+                g.lineTo(x + 4 * f + Math.cos(a2) * 14, armY - 4 + Math.sin(a2) * 14);
+                g.strokePath();
+            }
         }
+
+        // ── OUTLINE GLOW ──
+        g.lineStyle(1, outlineColor, 0.2);
+        g.beginPath();
+        g.moveTo(x - sW, tT); g.lineTo(x + sW, tT);
+        g.lineTo(x + wW, tB); g.lineTo(x - wW, tB);
+        g.closePath();
+        g.strokePath();
+
 
         // ── INFINITY VISUAL — Round Shield (blocks all damage) ──
         if (this.stateMachine.is('infinity')) {

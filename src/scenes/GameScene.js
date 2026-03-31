@@ -111,25 +111,23 @@ export default class GameScene extends Phaser.Scene {
     onDomainActivated(owner, domainType) {
         if (this.domainActive || this.domainPhase1) return;
         
-        // ── Phase 1: Cinematic Immobilization ──
-        this.domainPhase1 = true;
+        // ── SINGLE PHASE DOMAIN: Cinematic + Effect in one action ──
+        this.domainActive = true;
+        this.domainPhase1 = false; // No separate phases
         this.domainOwner = owner;
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         
-        // Force-unlock opponent
+        // Freeze ONLY enemy during domain
         opp.stateMachine.unlock();
-        
-        // Freeze ONLY enemy
-        opp.stateMachine.setState('domain_stunned');
+        opp.stateMachine.lock(99999);
         opp.sprite.body.setVelocity(0, 0);
 
-        // Pause CE drain during Phase 1
-        owner.ceSystem.isDomainActive = false;
+        // Enable CE drain
+        owner.ceSystem.isDomainActive = true;
+        this.sureHitTimer = 0;
 
-        // Stop BGM to let Domain Voice shine
-        try {
-            this.sound.stopAll();
-        } catch(e) {}
+        // Stop BGM for Domain Voice
+        try { this.sound.stopAll(); } catch(e) {}
 
         const charKey = (owner === this.p1) ? this.p1Key : this.p2Key;
         const voiceKey = (charKey === 'GOJO') ? 'gojo_domain_voice' : 'sukuna_domain_voice';
@@ -137,7 +135,7 @@ export default class GameScene extends Phaser.Scene {
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
-        // Reveal Domain Background immediately (replaces overlay transition freeze)
+        // Domain Background
         const bgKey = owner.charData.domainBg;
         this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
             .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
@@ -147,13 +145,13 @@ export default class GameScene extends Phaser.Scene {
             this.screenEffects.shake(0.04, 800);
         }
 
-        // ── DIAGONAL PARALLEL LINES CINEMATIC (5 Seconds) ──
+        // ── DIAGONAL PARALLEL LINES CINEMATIC ──
         const isP1 = (owner === this.p1);
         const angle = isP1 ? -35 : 35; 
         const angleRad = angle * (Math.PI / 180);
         const stripWidth = 280; 
 
-        // 1. Dark Overlay covering characters
+        // Dark Overlay
         this.domainOverlay = this.add.rectangle(
             GAME_WIDTH / 2, GAME_HEIGHT / 2, 
             GAME_WIDTH, GAME_HEIGHT, 
@@ -167,7 +165,7 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
-        // 2. Mask shape
+        // Mask shape
         const maskGraphics = this.make.graphics();
         maskGraphics.fillStyle(0xffffff, 1);
         
@@ -200,7 +198,7 @@ export default class GameScene extends Phaser.Scene {
 
         const mask = maskGraphics.createGeometryMask();
 
-        // 3. Portrait image
+        // Portrait image
         const startX = isP1 ? -400 : GAME_WIDTH + 400;
         this.domainPortrait = this.add.image(
             startX, GAME_HEIGHT / 2, portraitKey
@@ -228,7 +226,7 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Sine.easeInOut',
         });
 
-        // 4. Parallel diagonal lines
+        // Parallel diagonal lines
         this.domainLines = this.add.graphics();
         this.domainLines.setDepth(52);
         
@@ -261,7 +259,7 @@ export default class GameScene extends Phaser.Scene {
             duration: 600,
         });
 
-        // 5. Text
+        // Domain Name Text
         const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
         const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
         const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
@@ -287,87 +285,27 @@ export default class GameScene extends Phaser.Scene {
         this._domainMask = mask;
         this._domainMaskGraphics = maskGraphics;
 
-        // ── 5 SECOND CINEMATIC TIMER ──
-        // Fade out visual elements exactly at 5 seconds revealing Domain
-        this.time.delayedCall(5000, () => {
-            if (!this.domainPhase1) return;
-            this.tweens.add({
-                targets: [this.domainOverlay, this.domainPortrait, this.domainLines, this.domainText],
-                alpha: 0,
-                duration: 500,
-                onComplete: () => {
-                    if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
-                    if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
-                    if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
-                    if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
-                    if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
-                }
-            });
-        });
+        // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
+        const endDomain = () => {
+            if (!this.domainActive) return;
+            owner.ceSystem.ce = 0;
+            owner.ceSystem.endDomain();
+            this.onDomainEnd(owner);
+        };
 
-        // 6. AUDIO-DRIVEN DOMAIN ACTUAL END
         try {
             let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
             const domainVoice = this.sound.add(voiceKey, { volume: specialVol });
-
-            domainVoice.once('complete', () => {
-                this.transitionToPhase2(owner, domainType);
-            });
-
+            domainVoice.once('complete', endDomain);
             domainVoice.play();
 
             // Safety fallback
-            const maxWait = (owner.charData.stats.domainPhase1 || 20000) + 3000;
-            this.time.delayedCall(maxWait, () => {
-                if (this.domainPhase1) {
-                    this.transitionToPhase2(owner, domainType);
-                }
-            });
-
+            const maxWait = (owner.charData.stats.domainDuration || 20000) + 3000;
+            this.time.delayedCall(maxWait, endDomain);
         } catch (e) {
-            const fallback = owner.charData.stats.domainPhase1 || 10000;
-            this.time.delayedCall(fallback, () => {
-                this.transitionToPhase2(owner, domainType);
-            });
+            const fallback = owner.charData.stats.domainDuration || 15000;
+            this.time.delayedCall(fallback, endDomain);
         }
-    }
-
-    transitionToPhase2(owner, domainType) {
-        if (!this.domainPhase1) return; // Already transitioned
-        this.domainPhase1 = false;
-        this.domainActive = true;
-        const opp = (owner === this.p1) ? this.p2 : this.p1;
-
-        // Re-enable CE drain for combat phase
-        owner.ceSystem.isDomainActive = true;
-
-        // Clean up ALL cinematic elements
-        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
-        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
-        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
-        if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
-        if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
-
-        // Restore visual layers
-        owner.sprite.clearTint();
-        owner.sprite.setDepth(10);
-        if (owner.graphics) owner.graphics.setDepth(10);
-        if (owner.auraGraphics) owner.auraGraphics.setDepth(9);
-
-        // Remove domain stunned from opponent
-        opp.isCasting = false;
-        if (opp.stateMachine.is('domain_stunned')) {
-            opp.stateMachine.unlock();
-            opp.stateMachine.setState('idle');
-        }
-
-        // Domain BG was already loaded at the start of Phase 1.
-        this.sureHitTimer = 0;
-
-        try {
-            const musicVol = (window.gameSettings?.music ?? 50) / 100 * 0.4;
-            this.sound.play('bgm_combat', { volume: musicVol, loop: true });
-        } catch(e) {}
     }
 
     onDomainEnd(owner) {
@@ -386,14 +324,12 @@ export default class GameScene extends Phaser.Scene {
             this.domainBg = null;
         }
 
-        // FORCE-UNLOCK ONLY opponent if they are still stunned or locked
+        // FORCE-UNLOCK opponent unconditionally
         const opp = (owner === this.p1) ? this.p2 : this.p1;
-        if (opp) {
+        if (opp && !opp.isDead) {
             opp.isCasting = false;
-            if (opp.stateMachine.is('domain_stunned') || opp.stateMachine.locked) {
-                opp.stateMachine.unlock();
-                opp.stateMachine.setState('idle');
-            }
+            opp.stateMachine.unlock();
+            opp.stateMachine.setState('idle');
         }
         
         // Stop all audio and resume combat BGM
