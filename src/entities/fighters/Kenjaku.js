@@ -95,7 +95,7 @@ export default class Kenjaku extends Fighter {
         this.spawnWormEffect();
 
         // Fire a large worm projectile
-        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 70, {
+        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 50, {
             owner: this,
             damage: Math.floor(skill.damage * this.power),
             knockbackX: 0,
@@ -140,7 +140,7 @@ export default class Kenjaku extends Fighter {
         this.spiritTarget = target;
 
         const spawnX = this.sprite.x + 80 * this.facing;
-        const spawnY = this.sprite.y - 70;
+        const spawnY = this.sprite.y - 50;
 
         this.summonedSpirit = {
             x: spawnX,
@@ -182,7 +182,7 @@ export default class Kenjaku extends Fighter {
 
         this.scene.time.delayedCall(700, () => {
             // Massive beam projectile spanning screen
-            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 70, {
+            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 50, {
                 owner: this,
                 damage: 0, // Handled continuously
                 knockbackX: 0,
@@ -313,12 +313,14 @@ export default class Kenjaku extends Fighter {
                         w.swallowedTarget.sprite.setPosition(clampedX, w.sprite.y);
                         w.swallowedTarget.sprite.body.setVelocity(w.sprite.body.velocity.x, 0); // nullify gravity
                         w.swallowedTarget.sprite.setAlpha(0); // keep hidden
+                        if (w.swallowedTarget.graphics) w.swallowedTarget.graphics.setAlpha(0); // ocultar hitbox visual
                         w.swallowedTarget.isInvulnerable = true;
                     }
                 } else if (!w.alive && w.swallowedTarget) {
                     // Worm died or expired, pop them out!
                     const t = w.swallowedTarget;
                     t.sprite.setAlpha(1);
+                    if (t.graphics) t.graphics.setAlpha(1); // devolver la hitbox visual
                     t.isInvulnerable = false;
                     t.stateMachine.unlock();
                     t.stateMachine.setState('knockdown');
@@ -498,7 +500,7 @@ export default class Kenjaku extends Fighter {
 
     spawnUzumakiChargeEffect() {
         const x = this.sprite.x;
-        const y = this.sprite.y - 70;
+        const y = this.sprite.y - 50;
         const g = this.scene.add.graphics().setDepth(15);
         
         // Massive swirling pool

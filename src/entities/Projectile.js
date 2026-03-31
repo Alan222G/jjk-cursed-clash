@@ -41,8 +41,8 @@ export default class Projectile {
             if (this.type === 'worm') {
                 this.wormSprite = scene.add.image(x, y, 'sprite_worm_1');
                 this.wormSprite.setDepth(15);
-                this.wormSprite.setFlipX(this.direction > 0);
-                this.wormSprite.setDisplaySize(300, 200); // Haciéndolo tan masivo como un personaje
+                this.wormSprite.setFlipX(this.direction < 0); // El sprite original mira hacia la derecha, entonces se voltea si la dir. es -1
+                this.wormSprite.setScale(1.2); // Escala para que luzca bien y proporcionado a las dimensiones originales
             }
         }
 
