@@ -134,7 +134,7 @@ export default class Toji extends Fighter {
 
         // Weapon indicator in HAND when idle
         const armX = x + 15 * f;
-        const armY = y + 25;
+        const armY = y - 40;
         if (!this.stateMachine.is('attack')) {
             g.fillStyle(this.currentWeapon.color, 0.8);
             g.fillRect(armX - 2, armY - 10, 4, 30);

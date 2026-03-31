@@ -120,7 +120,7 @@ export default class Sukuna extends Fighter {
 
         this.castWithAudio('sfx_slash', () => {
             // Audio finished → fire the slash projectile
-            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
+            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 40, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
                 knockbackX: 150,
@@ -272,7 +272,7 @@ export default class Sukuna extends Fighter {
 
         this.castWithAudio('sfx_fire', () => {
             // Audio finished → fire the Fuga arrow
-            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 15, {
+            const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 40, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
                 knockbackX: 1000,

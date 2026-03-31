@@ -298,7 +298,7 @@ export default class Gojo extends Fighter {
 
         this.castWithAudio('sfx_red', () => {
             // Audio finished → fire the projectile with MASSIVE repulsion
-            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 15, {
+            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 40, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
                 knockbackX: 1800,  // Triple original (600 → 1800)
@@ -391,7 +391,7 @@ export default class Gojo extends Fighter {
             blueC.destroy();
             purpleGlow.destroy();
 
-            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 15, {
+            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 40, {
                 owner: this,
                 damage: Math.floor(skill.damage * this.power),
                 knockbackX: 1200,
