@@ -1,9 +1,17 @@
 // ========================================================
-// DomainClashScene — Rhythm QTE minijuego (Tug-of-War Mashing)
+// DomainClashScene — FNF Style Rhythm Minigame
 // ========================================================
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, DOMAIN_CLASH, KEY_MAPS } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
+
+const BEAT_INTERVAL = 300; // spawn a note every 300ms
+const NOTE_SPEED = 400; // pixels per second
+const HIT_WINDOW = 60; // +/- pixels for a "Hit"
+const MISS_PENALTY = 2.0; // Tug-of-war penalty
+const HIT_REWARD = 2.5; // Tug-of-war reward
+
+const LANE_COLORS = [0xFF00FF, 0x00FFFF, 0x00FF00, 0xFF0000]; // Left, Down, Up, Right
 
 export default class DomainClashScene extends Phaser.Scene {
     constructor() {
@@ -14,128 +22,210 @@ export default class DomainClashScene extends Phaser.Scene {
         this.p1 = data.p1;
         this.p2 = data.p2;
         this.callback = data.callback;
-        
-        // Use their Light attack keys or predefined clash keys
-        this.p1Key = KEY_MAPS.P1.LIGHT || 'J';
-        this.p2Key = KEY_MAPS.P2.LIGHT || 'NUMPAD_1';
-        
-        if (this.p2Key === 'NUMPAD_1') this.p2KeyDisplay = '1';
-        else this.p2KeyDisplay = this.p2Key;
     }
 
     create() {
-        this.timer = DOMAIN_CLASH.TIME_LIMIT;
-        
-        // Clash tug-of-war logic (0 to 100).
-        // 50 is center. >50 means P1 winning. <50 means P2 winning.
         this.clashProgress = 50; 
         this.finished = false;
+        
+        this.timer = 12000; // 12 seconds duration
+        this.spawnTimer = 0;
 
-        // ── Background Overlay ──
-        this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.85).setOrigin(0);
+        // Ensure no previous music overlaps
+        try { this.sound.stopAll(); } catch(e) {}
+        
+        let vol = ((window.gameSettings?.music ?? 50) / 100);
+        try { this.sound.play('battle_music', { volume: vol, loop: true }); } catch(e) {}
 
-        // ── Clash Title Text ──
-        this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 150, 'DOMAIN CLASH!', {
-            fontSize: '64px',
-            fontFamily: 'Arial Black',
-            color: '#FFFFFF',
-            stroke: '#000000',
-            strokeThickness: 8
+        // Background
+        this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0A0A10, 0.95).setOrigin(0);
+
+        // Titles
+        this.add.text(GAME_WIDTH / 2, 50, 'DOMAIN CLASH!', {
+            fontSize: '42px', fontFamily: 'Arial Black', color: '#FFFFFF', stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5);
 
-        // ── Mash Prompts ──
-        // P1 Blue Alert
-        this.p1Prompt = this.add.text(GAME_WIDTH / 4, GAME_HEIGHT / 2 + 80, `[ ${this.p1Key} ]`, {
-            fontSize: '52px',
-            fontFamily: 'Arial Black',
-            color: '#44CCFF',
-            stroke: '#000',
-            strokeThickness: 6
+        this.timerText = this.add.text(GAME_WIDTH / 2, 100, '12.0', {
+            fontSize: '32px', fontFamily: 'Arial Black', color: '#FFD700'
         }).setOrigin(0.5);
-        this.add.text(GAME_WIDTH / 4, GAME_HEIGHT / 2 + 130, 'SPAM!', { fontSize: '24px', color: '#FFF' }).setOrigin(0.5);
-
-        // P2 Red Alert
-        this.p2Prompt = this.add.text((GAME_WIDTH / 4) * 3, GAME_HEIGHT / 2 + 80, `[ ${this.p2KeyDisplay} ]`, {
-            fontSize: '52px',
-            fontFamily: 'Arial Black',
-            color: '#FF2200',
-            stroke: '#000',
-            strokeThickness: 6
-        }).setOrigin(0.5);
-        this.add.text((GAME_WIDTH / 4) * 3, GAME_HEIGHT / 2 + 130, 'SPAM!', { fontSize: '24px', color: '#FFF' }).setOrigin(0.5);
 
         // ── The Tug-of-War Bar ──
         this.barWidth = 600;
-        this.barHeight = 40;
+        this.barHeight = 30;
         this.barX = GAME_WIDTH / 2 - this.barWidth / 2;
-        this.barY = GAME_HEIGHT / 2 - this.barHeight / 2;
+        this.barY = 140;
 
-        this.barOutline = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, this.barWidth + 8, this.barHeight + 8, 0xFFFFFF).setOrigin(0.5);
-        
-        // P2 Red Background (Fills visually behind P1's bar)
+        this.add.rectangle(GAME_WIDTH / 2, this.barY + this.barHeight/2, this.barWidth + 8, this.barHeight + 8, 0xFFFFFF).setOrigin(0.5);
         this.p2Bar = this.add.rectangle(this.barX, this.barY, this.barWidth, this.barHeight, 0xFF2200).setOrigin(0);
-        
-        // P1 Blue Foreground (Scales based on percentage)
         this.p1Bar = this.add.rectangle(this.barX, this.barY, this.barWidth / 2, this.barHeight, 0x44CCFF).setOrigin(0);
 
-        // Center Marker
-        this.centerMarker = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, 6, this.barHeight + 20, 0xFFFFFF).setOrigin(0.5);
+        // ── Lanes Setup ──
+        this.hitY = GAME_HEIGHT - 100;
+        
+        // P1 Lanes: A, S, W, D (Left, Down, Up, Right)
+        this.p1Lanes = [
+            { key: 'A', x: GAME_WIDTH / 4 - 120, keyCode: Phaser.Input.Keyboard.KeyCodes.A },
+            { key: 'S', x: GAME_WIDTH / 4 - 40, keyCode: Phaser.Input.Keyboard.KeyCodes.S },
+            { key: 'W', x: GAME_WIDTH / 4 + 40, keyCode: Phaser.Input.Keyboard.KeyCodes.W },
+            { key: 'D', x: GAME_WIDTH / 4 + 120, keyCode: Phaser.Input.Keyboard.KeyCodes.D },
+        ];
 
-        // ── Input Listeners ──
-        // Support NumPad keys
-        const p1KeyCode = Phaser.Input.Keyboard.KeyCodes[this.p1Key] || this.p1Key.charCodeAt(0);
-        let p2KeyCode = Phaser.Input.Keyboard.KeyCodes[this.p2Key] || this.p2Key.charCodeAt(0);
-        if (this.p2Key === 'NUMPAD_1') p2KeyCode = Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE;
+        // P2 Lanes: LEFT, DOWN, UP, RIGHT
+        this.p2Lanes = [
+            { key: '←', x: GAME_WIDTH * 0.75 - 120, keyCode: Phaser.Input.Keyboard.KeyCodes.LEFT },
+            { key: '↓', x: GAME_WIDTH * 0.75 - 40, keyCode: Phaser.Input.Keyboard.KeyCodes.DOWN },
+            { key: '↑', x: GAME_WIDTH * 0.75 + 40, keyCode: Phaser.Input.Keyboard.KeyCodes.UP },
+            { key: '→', x: GAME_WIDTH * 0.75 + 120, keyCode: Phaser.Input.Keyboard.KeyCodes.RIGHT },
+        ];
 
-        this.key1 = this.input.keyboard.addKey(p1KeyCode);
-        this.key1.on('down', () => this.handleFlash(true));
+        // Draw hit zones
+        this.createHitZones(this.p1Lanes);
+        this.createHitZones(this.p2Lanes);
 
-        this.key2 = this.input.keyboard.addKey(p2KeyCode);
-        this.key2.on('down', () => this.handleFlash(false));
+        // Note groups
+        this.p1Notes = [];
+        this.p2Notes = [];
 
-        // ── Timer Text ──
-        this.timerText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 180, '5.0', {
-            fontSize: '48px',
-            fontFamily: 'Arial Black',
-            color: '#FFFFFF'
-        }).setOrigin(0.5);
+        // Input Setup
+        this.setupInputs();
+
+        // Feedbacks
+        this.p1Feedback = this.add.text(GAME_WIDTH / 4, this.hitY - 80, '', { fontSize: '28px', fontFamily: 'Arial Black' }).setOrigin(0.5);
+        this.p2Feedback = this.add.text(GAME_WIDTH * 0.75, this.hitY - 80, '', { fontSize: '28px', fontFamily: 'Arial Black' }).setOrigin(0.5);
     }
 
-    handleFlash(isP1) {
-        if (this.finished) return;
+    createHitZones(lanes) {
+        lanes.forEach((lane, i) => {
+            // Lane track background
+            this.add.rectangle(lane.x, 0, 60, GAME_HEIGHT, 0xFFFFFF, 0.05).setOrigin(0.5, 0);
+            
+            // Hit box
+            const box = this.add.graphics();
+            box.lineStyle(4, 0x888888, 1);
+            box.strokeRect(lane.x - 30, this.hitY - 30, 60, 60);
+
+            // Label
+            this.add.text(lane.x, this.hitY + 50, lane.key, {
+                fontSize: '20px', fontFamily: 'Arial Black', color: '#FFFFFF'
+            }).setOrigin(0.5);
+        });
+    }
+
+    setupInputs() {
+        this.p1Lanes.forEach((lane, i) => {
+            const keyObj = this.input.keyboard.addKey(lane.keyCode);
+            keyObj.on('down', () => this.handleKeyPress(true, i));
+        });
         
-        if (isP1) {
-            this.clashProgress += 2.5; // Tweaked for balance
-            this.tweens.add({
-                targets: this.p1Prompt,
-                scaleX: 1.3, scaleY: 1.3,
-                yoyo: true, duration: 50
-            });
+        this.p2Lanes.forEach((lane, i) => {
+            const keyObj = this.input.keyboard.addKey(lane.keyCode);
+            keyObj.on('down', () => this.handleKeyPress(false, i));
+        });
+    }
+
+    spawnNotes() {
+        // Pick a random lane (0 to 3)
+        const laneIdx = Phaser.Math.Between(0, 3);
+        
+        // Spawn for P1
+        const p1Note = this.add.rectangle(this.p1Lanes[laneIdx].x, -50, 50, 50, LANE_COLORS[laneIdx]);
+        p1Note.setStrokeStyle(3, 0xFFFFFF);
+        p1Note.laneIdx = laneIdx;
+        this.p1Notes.push(p1Note);
+
+        // Spawn for P2
+        const p2Note = this.add.rectangle(this.p2Lanes[laneIdx].x, -50, 50, 50, LANE_COLORS[laneIdx]);
+        p2Note.setStrokeStyle(3, 0xFFFFFF);
+        p2Note.laneIdx = laneIdx;
+        this.p2Notes.push(p2Note);
+    }
+
+    handleKeyPress(isP1, laneIdx) {
+        if (this.finished) return;
+
+        const notes = isP1 ? this.p1Notes : this.p2Notes;
+        const feedback = isP1 ? this.p1Feedback : this.p2Feedback;
+        
+        // Find the lowest note in this lane
+        let targetNote = null;
+        let targetNoteIdx = -1;
+        let lowestY = -999;
+
+        for (let i = 0; i < notes.length; i++) {
+            if (notes[i].laneIdx === laneIdx) {
+                if (notes[i].y > lowestY) {
+                    lowestY = notes[i].y;
+                    targetNote = notes[i];
+                    targetNoteIdx = i;
+                }
+            }
+        }
+
+        if (targetNote) {
+            const diff = Math.abs(targetNote.y - this.hitY);
+            if (diff <= HIT_WINDOW) {
+                // HIT!
+                this.clashProgress += isP1 ? HIT_REWARD : -HIT_REWARD;
+                this.showFeedback(feedback, 'HIT!', '#44FF44');
+                targetNote.destroy();
+                notes.splice(targetNoteIdx, 1);
+            } else if (targetNote.y > this.hitY - 150) {
+                // Too early (still counts as miss)
+                this.clashProgress += isP1 ? -MISS_PENALTY : MISS_PENALTY;
+                this.showFeedback(feedback, 'MISS', '#FF4444');
+                targetNote.destroy();
+                notes.splice(targetNoteIdx, 1);
+            }
         } else {
-            this.clashProgress -= 2.5;
-            this.tweens.add({
-                targets: this.p2Prompt,
-                scaleX: 1.3, scaleY: 1.3,
-                yoyo: true, duration: 50
-            });
+            // Pressed blank lane (Miss penalty)
+            this.clashProgress += isP1 ? -MISS_PENALTY : MISS_PENALTY;
+            this.showFeedback(feedback, 'MISS', '#FF4444');
+        }
+
+        this.updateBar();
+    }
+
+    showFeedback(labelObj, text, color) {
+        labelObj.setText(text);
+        labelObj.setColor(color);
+        labelObj.setAlpha(1);
+        labelObj.y = this.hitY - 80;
+        
+        this.tweens.add({
+            targets: labelObj,
+            y: this.hitY - 120,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power2'
+        });
+    }
+
+    updateBar() {
+        if (this.clashProgress <= 0) {
+            this.clashProgress = 0;
+            this.checkWin('P2');
+        } else if (this.clashProgress >= 100) {
+            this.clashProgress = 100;
+            this.checkWin('P1');
         }
         
-        // Clamp
-        if (this.clashProgress <= 0) this.clashProgress = 0;
-        if (this.clashProgress >= 100) this.clashProgress = 100;
-
-        // Instant win logic
-        if (this.clashProgress >= 100) this.checkWin('P1');
-        if (this.clashProgress <= 0) this.checkWin('P2');
+        this.p1Bar.width = (this.clashProgress / 100) * this.barWidth;
     }
 
     checkWin(winner) {
         if (this.finished) return;
         this.finished = true;
         
+        try { this.sound.stopAll(); } catch(e) {}
+        
         // Final visual boom
-        this.cameras.main.flash(500, winner === 'P1' ? 68 : 255, winner === 'P1' ? 204 : 34, winner === 'P1' ? 255 : 0);
-        this.time.delayedCall(500, () => {
+        this.cameras.main.flash(800, winner === 'P1' ? 68 : 255, winner === 'P1' ? 204 : 34, winner === 'P1' ? 255 : 0);
+        
+        this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2, `${winner} WINS THE CLASH!`, {
+            fontSize: '56px', fontFamily: 'Arial Black', color: '#FFFFFF', stroke: '#000000', strokeThickness: 8
+        }).setOrigin(0.5).setDepth(100);
+
+        this.time.delayedCall(1500, () => {
              this.callback(winner);
              this.scene.stop();
         });
@@ -143,20 +233,44 @@ export default class DomainClashScene extends Phaser.Scene {
 
     update(time, delta) {
         if (this.finished) return;
-        
+
+        // Timer
         this.timer -= delta;
         this.timerText.setText(Math.max(0, this.timer / 1000).toFixed(1));
 
-        // Update the bar UI
-        const p1Width = (this.clashProgress / 100) * this.barWidth;
-        this.p1Bar.width = p1Width;
-
-        // Move the center marker to follow the clash edge
-        this.centerMarker.x = this.barX + p1Width;
-
         if (this.timer <= 0) {
-            // Time Out - decide winner based on current bar position
-            this.checkWin(this.clashProgress >= 50 ? 'P1' : 'P2');
+            // Time Out - decide winner visually
+            const winner = this.clashProgress >= 50 ? 'P1' : 'P2';
+            this.checkWin(winner);
+            return;
         }
+
+        // Spawner
+        this.spawnTimer += delta;
+        if (this.spawnTimer >= BEAT_INTERVAL && this.timer > 2000) {
+            this.spawnTimer = 0;
+            this.spawnNotes();
+        }
+
+        // Move Notes
+        const moveNotes = (notesList, isP1) => {
+            for (let i = notesList.length - 1; i >= 0; i--) {
+                const note = notesList[i];
+                note.y += (NOTE_SPEED * delta) / 1000;
+
+                // Miss boundary
+                if (note.y > this.hitY + HIT_WINDOW) {
+                    note.destroy();
+                    notesList.splice(i, 1);
+                    // Penalty for not hitting
+                    this.clashProgress += isP1 ? -MISS_PENALTY : MISS_PENALTY;
+                    this.showFeedback(isP1 ? this.p1Feedback : this.p2Feedback, 'MISS', '#FF4444');
+                    this.updateBar();
+                }
+            }
+        };
+
+        moveNotes(this.p1Notes, true);
+        moveNotes(this.p2Notes, false);
     }
 }

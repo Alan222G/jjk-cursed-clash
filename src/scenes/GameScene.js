@@ -159,6 +159,10 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
+        // Mask shape for portrait
+        const maskGraphics = this.make.graphics();
+        maskGraphics.fillStyle(0xffffff, 1);
+        
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;
         const diagLen = GAME_WIDTH * 2; 
@@ -177,6 +181,43 @@ export default class GameScene extends Phaser.Scene {
         const p3y = cy + paraY * diagLen - perpY * halfW;
         const p4x = cx - paraX * diagLen - perpX * halfW;
         const p4y = cy - paraY * diagLen - perpY * halfW;
+
+        maskGraphics.beginPath();
+        maskGraphics.moveTo(p1x, p1y);
+        maskGraphics.lineTo(p2x, p2y);
+        maskGraphics.lineTo(p3x, p3y);
+        maskGraphics.lineTo(p4x, p4y);
+        maskGraphics.closePath();
+        maskGraphics.fillPath();
+
+        const mask = maskGraphics.createGeometryMask();
+
+        // Sign image (Portrait)
+        const startX = isP1 ? -400 : GAME_WIDTH + 400;
+        this.domainPortrait = this.add.image(
+            startX, GAME_HEIGHT / 2, signKey
+        ).setDepth(51).setOrigin(0.5);
+
+        const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
+        this.domainPortrait.setScale(imgScale);
+        this.domainPortrait.setMask(mask);
+
+        this.tweens.add({
+            targets: this.domainPortrait,
+            x: GAME_WIDTH / 2,
+            duration: 1500,
+            ease: 'Power2',
+        });
+
+        this.tweens.add({
+            targets: this.domainPortrait,
+            scaleX: imgScale * 1.03,
+            scaleY: imgScale * 1.03,
+            yoyo: true,
+            repeat: -1,
+            duration: 2500,
+            ease: 'Sine.easeInOut',
+        });
 
         // Parallel diagonal lines
         this.domainLines = this.add.graphics();
@@ -211,6 +252,30 @@ export default class GameScene extends Phaser.Scene {
             duration: 600,
         });
 
+        // Domain Name Text
+        const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
+        const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
+        const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
+        
+        this.domainText = this.add.text(textX, textY, domainName, {
+            fontFamily: 'Arial Black',
+            fontSize: '28px',
+            color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
+            stroke: '#000000',
+            strokeThickness: 5,
+            align: 'center',
+        }).setDepth(53).setOrigin(0.5).setAlpha(0);
+        
+        this.domainText.setRotation(angleRad);
+        this.tweens.add({
+            targets: this.domainText,
+            alpha: 1,
+            duration: 1200,
+            delay: 800,
+        });
+        
+        this._domainMaskGraphics = maskGraphics;
+
         // ── AFTER 3 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
         this.domainPhase1Timer = this.time.delayedCall(3000, () => {
             if (!this.domainPhase1) return; // Was cancelled by a domain clash
@@ -240,38 +305,6 @@ export default class GameScene extends Phaser.Scene {
                     onComplete: () => { this.domainLines.destroy(); this.domainLines = null; }
                 });
             }
-            
-            // Create Domain Portrait and Text NOW (Phase 2)
-            const startX = isP1 ? -400 : GAME_WIDTH + 400;
-            this.domainPortrait = this.add.image(
-                startX, GAME_HEIGHT / 2, signKey
-            ).setDepth(51).setOrigin(0.5);
-
-            const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
-            this.domainPortrait.setScale(imgScale);
-            
-            this.tweens.add({
-                targets: this.domainPortrait,
-                x: GAME_WIDTH / 2,
-                duration: 600,
-                ease: 'Power2',
-            });
-
-            const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
-            const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
-            const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
-            
-            this.domainText = this.add.text(textX, textY, domainName, {
-                fontFamily: 'Arial Black',
-                fontSize: '28px',
-                color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
-                stroke: '#000000',
-                strokeThickness: 5,
-                align: 'center',
-            }).setDepth(53).setOrigin(0.5).setAlpha(0);
-            
-            this.domainText.setRotation(angleRad);
-            this.tweens.add({ targets: this.domainText, alpha: 1, duration: 1200, delay: 400 });
 
             // Domain Background
             const bgKey = owner.charData.domainBg;
