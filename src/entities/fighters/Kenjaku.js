@@ -13,14 +13,30 @@ export default class Kenjaku extends Fighter {
         super(scene, x, y, playerIndex, CHARACTERS.KENJAKU);
         this.isCasting = false;
         
-        // Summoned spirit tracking
-        this.summonedSpirit = null;
-        this.spiritTimer = 0;
-        this.spiritTarget = null;
-        this.spiritGraphics = null;
-
-        // Custom trackers for specialized projectiles
+        // Custom trackers for specialized projectiles and summons
         this.activeWorms = [];
+        this.activeCurses = []; // Array to hold living AI curses
+        
+        this.selectedAICurse = 0; // 0:Dumb, 1:Strong, 2:Distance, 3:Control
+        this.curseNames = ["MALDICIÓN: TONTA", "MALDICIÓN: TANQUE", "MALDICIÓN: DISTANCIA", "MALDICIÓN: CONTROL"];
+    }
+
+    swapAICurse() {
+        this.selectedAICurse = (this.selectedAICurse + 1) % 4;
+        
+        // Show pop-up text
+        const text = this.scene.add.text(this.sprite.x, this.sprite.y - 120, this.curseNames[this.selectedAICurse], {
+            fontFamily: 'Arial Black', fontSize: '16px', color: '#8822CC', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(20);
+
+        this.scene.tweens.add({
+            targets: text,
+            y: this.sprite.y - 150,
+            alpha: 0,
+            duration: 1000,
+            ease: 'Power2',
+            onComplete: () => text.destroy()
+        });
     }
 
     /** Stitched forehead with sinister eyes */
@@ -47,7 +63,6 @@ export default class Kenjaku extends Fighter {
 
     trySpecialAttack() {
         if (this.isCasting) return;
-
         const tier = this.ceSystem.getTier();
 
         if (tier >= 2 && this.input.isDown('DOWN')) {
@@ -56,63 +71,243 @@ export default class Kenjaku extends Fighter {
         } 
         
         if (tier >= 1) {
-            // Invoca diferentes maldiciones dependiendo de la tecla direccional
-            if (this.input.isDown('UP')) {
-                this.castBirdCurse(); // Voladora
-            } else if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
-                this.castSwarmCurse(); // Enjambre rápido
-            } else if (this.input.isDown('DOWN')) {
-                this.castTankCurse(); // Maldición Pesada
+            if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
+                // Hookworm guiado direccionalmente
+                this.castWormProjectile(this.input.isDown('LEFT') ? -1 : 1);
             } else {
-                this.castWormProjectile(); // Gusano (Neutral)
+                // Invoca la maldición seleccionada por la IA
+                this.castAICurse(this.selectedAICurse);
             }
         }
     }
 
-    // ── Helper: Audio-driven cast ──
-    castWithAudio(sfxKey, callback, fallbackMs) {
-        this.isCasting = true;
-        this.stateMachine.lock(99999);
-        this.sprite.body.setVelocityX(0);
+    update(dt) {
+        super.update(dt);
+        this.updateAICurses(dt);
+    }
+    
+    // ════════════════════════════════════════════
+    // AI SUMMONING LOGIC
+    // ════════════════════════════════════════════
+    castAICurse(typeIndex) {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        this.spawnWormEffect();
 
-        let _fired = false;
-        const fireAction = () => {
-            if (_fired) return;
-            _fired = true;
-            this.isCasting = false;
-            this.stateMachine.unlock();
-            callback();
+        const xPos = this.sprite.x + ((typeIndex === 2 || typeIndex === 3) ? -40 * this.facing : 80 * this.facing);
+        const yPos = this.sprite.y - ((typeIndex === 3) ? 150 : 50);
+
+        let newCurse = {
+            type: typeIndex,
+            x: xPos,
+            y: yPos,
+            facing: this.facing,
+            timer: 0,
+            sprite: this.scene.add.rectangle(xPos, yPos, 40, 40, 0xFFFFFF).setDepth(14),
+            alive: true
         };
 
-        try {
-            const vol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
-            const snd = this.scene.sound.add(sfxKey, { volume: vol });
-            snd.once('complete', fireAction);
-            snd.play();
-            this.scene.time.delayedCall(fallbackMs, fireAction);
-        } catch (e) {
-            this.scene.time.delayedCall(fallbackMs, fireAction);
+        if (typeIndex === 0) {
+            // Dumb
+            newCurse.hp = 9999; 
+            newCurse.sprite.fillColor = 0xFF5555;
+            newCurse.sprite.setSize(30, 30);
+            newCurse.target = null; // Decided by AI
+            newCurse.state = 'idle'; 
+        } else if (typeIndex === 1) {
+            // Strong
+            newCurse.hp = 400;
+            newCurse.sprite.fillColor = 0x55FF55;
+            newCurse.sprite.setSize(80, 100);
+            newCurse.state = 'walk';
+        } else if (typeIndex === 2) {
+            // Distance
+            newCurse.hp = 150;
+            newCurse.sprite.fillColor = 0x5555FF;
+            newCurse.sprite.setSize(40, 40);
+        } else if (typeIndex === 3) {
+            // Control
+            newCurse.hp = 150;
+            newCurse.sprite.fillColor = 0xFFFF55;
+            newCurse.sprite.setSize(60, 20);
+        }
+
+        // Add physical hitbox body if mortal to receive damage
+        if (typeIndex !== 0) {
+            this.scene.physics.add.existing(newCurse.sprite);
+            newCurse.sprite.body.setAllowGravity(false);
+            newCurse.sprite.body.setImmovable(true);
+        }
+
+        this.activeCurses.push(newCurse);
+
+        // Flash
+        const flash = this.scene.add.circle(xPos, yPos, 30, 0x111111, 0.8).setDepth(15);
+        this.scene.tweens.add({ targets: flash, alpha: 0, scaleX: 3, scaleY: 3, duration: 400, onComplete: () => flash.destroy() });
+    }
+
+    updateAICurses(dt) {
+        const opp = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        
+        for (let i = this.activeCurses.length - 1; i >= 0; i--) {
+            let curse = this.activeCurses[i];
+            
+            // Vulnerability logic
+            if (curse.invulTimer > 0) curse.invulTimer -= dt;
+
+            // Check mortality
+            if (curse.hp <= 0 && curse.alive) {
+                curse.alive = false;
+                this.scene.tweens.add({
+                    targets: curse.sprite, alpha: 0, scaleX: 2, scaleY: 2, duration: 300, 
+                    onComplete: () => curse.sprite.destroy()
+                });
+                this.activeCurses.splice(i, 1);
+                continue;
+            }
+
+            // Check hit from opponent's physical attacks
+            if (curse.alive && curse.type !== 0 && opp.hitbox.body.enable && (curse.invulTimer || 0) <= 0) {
+                const cb = curse.sprite.getBounds();
+                const ob = opp.hitbox.getBounds();
+                if (Phaser.Geom.Intersects.RectangleToRectangle(cb, ob)) {
+                    curse.sprite.fillColor = 0xFFFFFF; // Flash white
+                    this.scene.time.delayedCall(100, () => {
+                        if (curse.alive) {
+                            if (curse.type===1) curse.sprite.fillColor = 0x55FF55;
+                            if (curse.type===2) curse.sprite.fillColor = 0x5555FF;
+                            if (curse.type===3) curse.sprite.fillColor = 0xFFFF55;
+                        }
+                    });
+                    curse.hp -= (opp.currentAttack?.damage || 20);
+                    curse.invulTimer = 400; // 0.4s iframes
+                    
+                    if (this.scene.spawnDamageNumber) {
+                        this.scene.spawnDamageNumber(curse.sprite.x, curse.sprite.y - 30, (opp.currentAttack?.damage || 20));
+                    }
+                }
+            }
+
+            curse.timer += dt;
+
+            // --- DUMB CURSE AI ---
+            if (curse.type === 0) {
+                // Every 2 seconds decide what to do
+                if (curse.timer > 2000) {
+                    curse.timer -= 2000;
+                    let roll = Math.random();
+                    if (roll < 0.33) {
+                        curse.state = 'attack_opp';
+                        curse.target = opp;
+                    } else if (roll < 0.66) {
+                        curse.state = 'attack_self';
+                        curse.target = this; // Attack Kenjaku!
+                    } else {
+                        curse.state = 'dance';
+                    }
+                }
+                
+                if (curse.state === 'dance') {
+                    curse.sprite.y = this.sprite.y - 50 + Math.sin(this.scene.time.now * 0.01) * 20;
+                } else if (curse.state === 'attack_opp' || curse.state === 'attack_self') {
+                    let tgt = curse.target;
+                    let dir = Math.sign(tgt.sprite.x - curse.sprite.x);
+                    curse.sprite.x += dir * (150 * dt / 1000); // Walk speed
+                    curse.sprite.y = this.sprite.y - 15; // Ground level
+
+                    // Collision check
+                    if (Math.abs(tgt.sprite.x - curse.sprite.x) < 40) {
+                        tgt.takeDamage(15, 200 * dir, -100, 300);
+                        // Stop attacking after hit
+                        curse.state = 'dance';
+                    }
+                }
+            }
+            
+            // --- STRONG CURSE AI ---
+            else if (curse.type === 1) {
+                // Walks slowly towards opponent constantly
+                let dir = Math.sign(opp.sprite.x - curse.sprite.x);
+                curse.sprite.x += dir * (80 * dt / 1000);
+                
+                if (curse.timer > 2500) {
+                    curse.timer -= 2500;
+                    // Try to hit if close
+                    if (Math.abs(opp.sprite.x - curse.sprite.x) < 70) {
+                        curse.sprite.fillColor = 0xFFFFFF; // Flash
+                        this.scene.time.delayedCall(100, () => { if(curse.alive) curse.sprite.fillColor = 0x55FF55; });
+                        opp.takeDamage(50, 450 * dir, -300, 800);
+                    }
+                }
+            }
+
+            // --- DISTANCE CURSE AI ---
+            else if (curse.type === 2) {
+                // Floats behind Kenjaku
+                let targetX = this.sprite.x - 90 * this.facing;
+                curse.sprite.x += (targetX - curse.sprite.x) * 0.1;
+                curse.sprite.y = this.sprite.y - 60 + Math.sin(this.scene.time.now * 0.005) * 10;
+
+                // Shoots every 3s
+                if (curse.timer > 3000) {
+                    curse.timer -= 3000;
+                    const proj = new Projectile(this.scene, curse.sprite.x, curse.sprite.y, {
+                        owner: this, damage: 15, knockbackX: 150 * this.facing, knockbackY: -50,
+                        stunDuration: 300, speed: 600, direction: this.facing,
+                        color: 0x5555FF, size: { w: 20, h: 20 }, lifetime: 2000, type: 'circle'
+                    });
+                    if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                }
+            }
+
+            // --- CONTROL CURSE AI ---
+            else if (curse.type === 3) {
+                // Floats high above Kenjaku
+                let targetX = this.sprite.x;
+                curse.sprite.x += (targetX - curse.sprite.x) * 0.05;
+                curse.sprite.y = this.sprite.y - 180 + Math.sin(this.scene.time.now * 0.003) * 15;
+
+                // Sky beam every 4s
+                if (curse.timer > 4000) {
+                    curse.timer -= 4000;
+                    let dropX = opp.sprite.x;
+                    
+                    // Warning marker
+                    const warn = this.scene.add.rectangle(dropX, this.sprite.y, 60, 400, 0xFFFF00, 0.2).setOrigin(0.5, 1);
+                    this.scene.time.delayedCall(600, () => {
+                        warn.destroy();
+                        const beam = this.scene.add.rectangle(dropX, this.sprite.y, 60, 400, 0xFFFF55, 1).setOrigin(0.5, 1);
+                        this.scene.tweens.add({ targets: beam, alpha: 0, scaleX: 1.5, duration: 300, onComplete: () => beam.destroy() });
+                        
+                        // Hit check
+                        if (Math.abs(opp.sprite.x - dropX) < 40) {
+                            opp.takeDamage(10, 0, 0, 1500); // 1.5s Stun!
+                        }
+                    });
+                }
+            }
         }
     }
 
     // ════════════════════════════════════════════
     // SKILL 1: WORM PROJECTILE — Giant dragging worm
     // ════════════════════════════════════════════
-    castWormProjectile() {
+    castWormProjectile(directionOverride = null) {
         if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
         const skill = this.charData.skills.skill1;
 
         this.spawnWormEffect();
 
+        const castDir = directionOverride !== null ? directionOverride : this.facing;
+
         // Fire a large worm projectile
-        const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 50, {
+        const proj = new Projectile(this.scene, this.sprite.x + 50 * castDir, this.sprite.y - 50, {
             owner: this,
             damage: Math.floor(skill.damage * this.power),
             knockbackX: 0,
             knockbackY: 0,
             stunDuration: 1000,
             speed: 500,
-            direction: this.facing,
+            direction: castDir,
             color: 0x3B2043,
             size: { w: 180, h: 80 },
             lifetime: 2500,

@@ -389,13 +389,25 @@ export default class Fighter {
 
     handleBlockInput() {
         if (this.stateMachine.isAny('idle', 'walk', 'block')) {
-            // Infinity Toggle (Gojo only: SHIFT + DOWN/S)
-            if (this.input.isDown('BLOCK') && this.input.isDown('DOWN') && this.fighterId === 'gojo') {
-                if (this.ceSystem.ce > 0 && !this.stateMachine.is('infinity')) {
-                    this.stateMachine.setState('infinity');
+            // Special modifiers on Shift+Down
+            if (this.input.isDown('BLOCK') && this.input.isDown('DOWN')) {
+                if (this.fighterId === 'gojo') {
+                    if (this.ceSystem.ce > 0 && !this.stateMachine.is('infinity')) {
+                        this.stateMachine.setState('infinity');
+                        return;
+                    }
+                } else if (this.fighterId === 'kenjaku' && this.swapAICurse) {
+                    // Only trigger once per press
+                    if (!this._blockDownHandled) {
+                        this.swapAICurse();
+                        this._blockDownHandled = true;
+                    }
                     return;
                 }
+            } else {
+                this._blockDownHandled = false;
             }
+            
             // Normal block (any character)
             if (this.input.isDown('BLOCK') && !this.stateMachine.is('block') && !this.stateMachine.is('infinity')) {
                 this.stateMachine.setState('block');
