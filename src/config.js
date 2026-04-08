@@ -217,7 +217,7 @@ export const CHARACTERS = {
             hair: 0x222222,
         },
         stats: {
-            maxHp: 4800,
+            maxHp: 4200,
             speed: 400,
             power: 1.4,
             defense: 0.85,
@@ -248,7 +248,7 @@ export const CHARACTERS = {
             hair: 0x111111,
         },
         stats: {
-            maxHp: 4200,
+            maxHp: 4800,
             speed: 310,
             power: 1.0,
             defense: 1.1,

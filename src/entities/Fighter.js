@@ -238,8 +238,8 @@ export default class Fighter {
                 this.infinityActive = true;
             },
             onUpdate: function (dt) {
-                // Drain CE while active (15 CE per second — very notable)
-                const drain = 15 * (dt / 1000);
+                // Drain CE while active (25 CE per second — very costly)
+                const drain = 25 * (dt / 1000);
                 this.ceSystem.ce -= drain;
                 if (this.ceSystem.ce <= 0) {
                     this.ceSystem.ce = 0;
@@ -248,8 +248,8 @@ export default class Fighter {
                     return;
                 }
                 
-                // Toggle OFF if they press I again or let go of shift
-                if (this.input.justPressed('DOMAIN')) {
+                // Toggle OFF if they release BLOCK or DOWN
+                if (!this.input.isDown('BLOCK') || !this.input.isDown('DOWN')) {
                     this.infinityActive = false;
                     this.stateMachine.setState('idle');
                 }
@@ -368,10 +368,6 @@ export default class Fighter {
         if (!attackAction) return;
 
         if (attackAction === 'DOMAIN') {
-            // Ignore Domain cast if they are trying to toggle Infinity (holding BLOCK)
-            if (this.input.isDown('BLOCK') && this.fighterId === 'gojo') {
-                return; 
-            }
             this.tryActivateDomain();
             return;
         }
@@ -393,14 +389,14 @@ export default class Fighter {
 
     handleBlockInput() {
         if (this.stateMachine.isAny('idle', 'walk', 'block')) {
-            // Check for Infinity Toggle (Gojo only: SHIFT + I/DOMAIN)
-            if (this.input.isDown('BLOCK') && this.input.justPressed('DOMAIN') && this.fighterId === 'gojo') {
-                if (this.ceSystem.ce > 0) {
+            // Infinity Toggle (Gojo only: SHIFT + DOWN/S)
+            if (this.input.isDown('BLOCK') && this.input.isDown('DOWN') && this.fighterId === 'gojo') {
+                if (this.ceSystem.ce > 0 && !this.stateMachine.is('infinity')) {
                     this.stateMachine.setState('infinity');
                     return;
                 }
             }
-            // Normal block
+            // Normal block (any character)
             if (this.input.isDown('BLOCK') && !this.stateMachine.is('block') && !this.stateMachine.is('infinity')) {
                 this.stateMachine.setState('block');
             }
@@ -499,6 +495,15 @@ export default class Fighter {
         if (!this.currentAttack) return;
         if (opponent.isInvulnerable) return;
 
+        // Infinity absorbs the hit — attacker recovers normally
+        if (opponent.infinityActive) {
+            this.hitConnected = true;
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.003, 100);
+            }
+            return;
+        }
+
         this.hitConnected = true;
         const atk = this.currentAttack;
         let dmg = Math.floor(atk.damage * this.power);
@@ -525,6 +530,7 @@ export default class Fighter {
 
         if (isBlackFlash) {
             dmg = Math.floor(dmg * 2.5);
+            this.ceSystem.gain(30); // CE boost on Black Flash
             try {
                 this.scene.sound.play('black_flash_sfx', { volume: 1.0 });
             } catch(e) {}

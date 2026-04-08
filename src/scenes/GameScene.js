@@ -115,22 +115,17 @@ export default class GameScene extends Phaser.Scene {
     onDomainActivated(owner, domainType) {
         if (this.domainActive || this.domainPhase1) return;
         
-        // ── SINGLE PHASE DOMAIN: Cinematic + Effect in one action ──
-        this.domainActive = true;
-        this.domainPhase1 = false; // No separate phases
+        // ── PHASE 1: Cinematic Lines (3s) — Domain NOT active yet ──
+        this.domainPhase1 = true;
+        this.domainActive = false;
         this.domainOwner = owner;
         this.domainCastTime = this.time.now;
-        const opp = (owner === this.p1) ? this.p2 : this.p1;
         
-        // Freeze ONLY enemy during domain
-        opp.stateMachine.unlock();
-        opp.stateMachine.lock(99999);
-        opp.sprite.body.setVelocity(0, 0);
-
-        // Enable CE drain
-        owner.ceSystem.isDomainActive = true;
-        this.sureHitTimer = 0;
-
+        // Owner enters casting state (frozen)
+        owner.stateMachine.unlock();
+        owner.stateMachine.lock(99999);
+        owner.sprite.body.setVelocity(0, 0);
+        
         // Stop BGM for Domain Voice
         try { this.sound.stopAll(); } catch(e) {}
 
@@ -290,8 +285,32 @@ export default class GameScene extends Phaser.Scene {
         this._domainMask = mask;
         this._domainMaskGraphics = maskGraphics;
 
-        // ── FADE OUT CINEMATIC after 3 seconds (domain stays active!) ──
-        this.time.delayedCall(3000, () => {
+        // ── AFTER 3 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
+        this.domainPhase1Timer = this.time.delayedCall(3000, () => {
+            if (!this.domainPhase1) return; // Was cancelled by a domain clash
+            
+            this.domainPhase1 = false;
+            this.domainActive = true;
+            
+            // NOW freeze the opponent
+            const opp = (owner === this.p1) ? this.p2 : this.p1;
+            opp.stateMachine.unlock();
+            opp.stateMachine.lock(99999);
+            opp.sprite.body.setVelocity(0, 0);
+            
+            // Enable CE drain
+            owner.ceSystem.isDomainActive = true;
+            this.sureHitTimer = 0;
+
+            // Domain Background
+            const bgKey = owner.charData.domainBg;
+            if (bgKey && this.textures.exists(bgKey)) {
+                this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
+                    .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+                    .setDepth(-5);
+            }
+
+            // Fade out cinematic visuals
             const fadeTargets = [this.domainOverlay, this.domainPortrait, this.domainText, this.domainLines].filter(Boolean);
             if (fadeTargets.length > 0) {
                 this.tweens.add({
@@ -308,46 +327,41 @@ export default class GameScene extends Phaser.Scene {
                     }
                 });
             }
+
+            // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
+            const endDomain = () => {
+                if (!this.domainActive) return;
+                owner.ceSystem.ce = 0;
+                owner.ceSystem.endDomain();
+                this.onDomainEnd(owner);
+            };
+
+            try {
+                let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
+                const domainVoice = this.sound.add(voiceKey, { volume: specialVol });
+                domainVoice.once('complete', endDomain);
+                domainVoice.play();
+
+                const maxWait = owner.charData.stats.domainDuration + 5000;
+                this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
+            } catch (e) {
+                const fallback = owner.charData.stats.domainDuration || 15000;
+                this.domainTimeout = this.time.delayedCall(fallback, endDomain);
+            }
         });
-
-        // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
-        const endDomain = () => {
-            if (!this.domainActive) return;
-            owner.ceSystem.ce = 0;
-            owner.ceSystem.endDomain();
-            this.onDomainEnd(owner);
-        };
-
-        try {
-            let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
-            const domainVoice = this.sound.add(voiceKey, { volume: specialVol });
-            domainVoice.once('complete', endDomain);
-            domainVoice.play();
-
-            // Safety fallback — only if audio totally fails to fire 'complete'
-            const maxWait = owner.charData.stats.domainDuration + 5000;
-            this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
-        } catch (e) {
-            const fallback = owner.charData.stats.domainDuration || 15000;
-            this.domainTimeout = this.time.delayedCall(fallback, endDomain);
-        }
     }
 
     attemptDomainClash(triggeringPlayer) {
-        if (!this.domainActive || !this.domainOwner) return false;
+        // En la nueva lógica, el choque SÓLO se puede hacer durante la Phase 1 
+        // (las líneas diagonales iniciales)
+        if (!this.domainPhase1 || !this.domainOwner) return false;
         
-        // Check window
-        const timeSince = this.time.now - this.domainCastTime;
-        if (timeSince > DOMAIN.CLASH_WINDOW) {
-            return false; // Too late!
-        }
-
         // It's a valid clash!
         console.log("DOMAIN CLASH TRIGGERED!");
         
         // 1. Stop current domain progression
         try { this.sound.stopAll(); } catch(e) {}
-        if (this.domainTimeout) { this.domainTimeout.remove(); }
+        if (this.domainPhase1Timer) { this.domainPhase1Timer.remove(); }
         
         // We leave the visual overlays as is, but pause physics
         this.physics.pause();
@@ -556,6 +570,16 @@ export default class GameScene extends Phaser.Scene {
             // Collision check
             const target = p.owner === this.p1 ? this.p2 : this.p1;
             if (this.physics.overlap(p.getBody(), target.sprite)) {
+                // Small projectiles bounce off Infinity
+                const bigTypes = ['fire_arrow', 'beam', 'uzumaki', 'worm'];
+                if (target.infinityActive && !bigTypes.includes(p.type)) {
+                    // Reflect the projectile back
+                    p.direction *= -1;
+                    p.sprite.body.setVelocityX(p.speed * p.direction);
+                    p.owner = target; // Now it belongs to the reflector
+                    if (this.screenEffects) this.screenEffects.shake(0.003, 80);
+                    return true;
+                }
                 p.onHit(target);
                 return p.isAlive();
             }
