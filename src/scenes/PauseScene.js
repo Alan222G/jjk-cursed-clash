@@ -9,7 +9,7 @@ export default class PauseScene extends Phaser.Scene {
     create() {
         this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0);
         
-        // Pause all ongoing BGM (like DEATHMATCH combat bgm)
+        // Pause all ongoing BGM
         try { this.sound.pauseAll(); } catch(e) {}
         
         // Play Pause Music
@@ -18,38 +18,107 @@ export default class PauseScene extends Phaser.Scene {
         } catch(e) { console.warn('Pause music error', e); }
 
         const cx = GAME_WIDTH / 2;
-        let cy = 80;
+        const cy = GAME_HEIGHT / 2;
 
-        this.add.text(cx, cy, 'PAUSA', {
-            fontFamily: 'Arial Black',
-            fontSize: '52px',
-            color: '#FFFFFF'
-        }).setOrigin(0.5);
+        // Big Main Panel
+        const panelW = 900;
+        const panelH = 500;
+        const py = cy + 20;
+        
+        const g = this.add.graphics().setDepth(5);
+        g.fillStyle(0x0A0A14, 0.95);
+        g.fillRoundedRect(cx - panelW/2, py - panelH/2, panelW, panelH, 12);
+        g.lineStyle(3, 0xD4A843, 0.8); // Golden border
+        g.strokeRoundedRect(cx - panelW/2, py - panelH/2, panelW, panelH, 12);
 
-        cy += 90;
-
-        // Music Volume
-        this.add.text(cx - 100, cy, 'Música:', { fontFamily: 'Arial', fontSize: '22px', color: '#FFF' }).setOrigin(1, 0.5);
-        this.musicText = this.add.text(cx + 100, cy, `${window.gameSettings.music ?? 50}%`, { fontFamily: 'Arial', fontSize: '22px', color: '#FFF' }).setOrigin(0, 0.5);
-        this.createSlider(cx + 200, cy, 'music');
-
-        cy += 60;
-
-        // SFX Volume
-        this.add.text(cx - 100, cy, 'Efectos (SFX):', { fontFamily: 'Arial', fontSize: '22px', color: '#FFF' }).setOrigin(1, 0.5);
-        this.sfxText = this.add.text(cx + 100, cy, `${window.gameSettings.sfx ?? 50}%`, { fontFamily: 'Arial', fontSize: '22px', color: '#FFF' }).setOrigin(0, 0.5);
-        this.createSlider(cx + 200, cy, 'sfx');
-
-        cy += 70;
+        // Header
+        this.add.text(cx, py - panelH/2 - 40, 'PAUSA', {
+            fontFamily: 'Arial Black, Impact, sans-serif',
+            fontSize: '56px',
+            color: '#FFFFFF',
+            stroke: '#D4A843',
+            strokeThickness: 6,
+            letterSpacing: 4
+        }).setOrigin(0.5).setDepth(6);
 
         // ════════════════════════════════════════════
-        // CONTROLS SECTION
+        // SECTION: SETTINGS (Top Half)
         // ════════════════════════════════════════════
-        this.drawControlsPanel(cx, cy);
+        const setY = py - panelH/2 + 50;
 
-        cy += 200;
+        this.add.text(cx, setY, '— AJUSTES DE AUDIO —', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#8888AA', letterSpacing: 2
+        }).setOrigin(0.5).setDepth(6);
 
-        this.createMenuButton(cx, cy, 'REANUDAR', () => {
+        let sliderY = setY + 50;
+        // Music
+        this.add.text(cx - 50, sliderY, 'MÚSICA:', { fontFamily: 'Arial Black', fontSize: '20px', color: '#FFF' }).setOrigin(1, 0.5).setDepth(6);
+        this.musicText = this.add.text(cx + 170, sliderY, `${window.gameSettings.music ?? 50}%`, { fontFamily: 'Arial Black', fontSize: '20px', color: '#D4A843' }).setOrigin(0, 0.5).setDepth(6);
+        this.createSlider(cx - 30, sliderY, 'music');
+
+        sliderY += 50;
+        // SFX
+        this.add.text(cx - 50, sliderY, 'EFECTOS:', { fontFamily: 'Arial Black', fontSize: '20px', color: '#FFF' }).setOrigin(1, 0.5).setDepth(6);
+        this.sfxText = this.add.text(cx + 170, sliderY, `${window.gameSettings.sfx ?? 50}%`, { fontFamily: 'Arial Black', fontSize: '20px', color: '#D4A843' }).setOrigin(0, 0.5).setDepth(6);
+        this.createSlider(cx - 30, sliderY, 'sfx');
+
+        // Divider
+        g.lineStyle(1, 0x444466, 0.5);
+        g.lineBetween(cx - panelW/2 + 40, sliderY + 40, cx + panelW/2 - 40, sliderY + 40);
+
+        // ════════════════════════════════════════════
+        // SECTION: CONTROLS (Bottom Half)
+        // ════════════════════════════════════════════
+        const ctrlY = sliderY + 70;
+
+        this.add.text(cx, ctrlY, '— CONTROLES DE COMBATE —', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#8888AA', letterSpacing: 2
+        }).setOrigin(0.5).setDepth(6);
+
+        const p1X = cx - 220;
+        const p2X = cx + 220;
+        const listY = ctrlY + 40;
+        const lh = 22;
+
+        this.add.text(p1X, listY, 'JUGADOR 1', { fontFamily: 'Arial Black', fontSize: '16px', color: '#4488FF' }).setOrigin(0.5).setDepth(6);
+        this.add.text(p2X, listY, 'JUGADOR 2', { fontFamily: 'Arial Black', fontSize: '16px', color: '#FF4444' }).setOrigin(0.5).setDepth(6);
+
+        const p1Controls = [
+            'A / D — Moverse',
+            'W — Saltar  |  S — Agacharse',
+            'J — Ligero  |  K — Medio  |  L — Fuerte',
+            'U — Especial  |  U+Dir — Variante',
+            'I — DOMINIO EXPANDIDO',
+            'Shift — Bloquear  |  Shift+S — INFINTY (Gojo)',
+        ];
+
+        const p2Controls = [
+            '← / → — Moverse',
+            '↑ — Saltar  |  ↓ — Agacharse',
+            'Num1 — Ligero  |  Num2 — Medio  |  Num3 — Fuerte',
+            'Num4 — Especial  |  Num4+Dir — Variante',
+            'Num5 — DOMINIO EXPANDIDO',
+            'Num0 — Bloquear',
+        ];
+
+        p1Controls.forEach((line, i) => {
+            this.add.text(p1X, listY + 30 + i * lh, line, {
+                fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#AACCFF',
+            }).setOrigin(0.5).setDepth(6);
+        });
+
+        p2Controls.forEach((line, i) => {
+            this.add.text(p2X, listY + 30 + i * lh, line, {
+                fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#FFAACC',
+            }).setOrigin(0.5).setDepth(6);
+        });
+
+        // ════════════════════════════════════════════
+        // SECTION: BUTTONS (Below Panel)
+        // ════════════════════════════════════════════
+        const btnY = py + panelH/2 + 50;
+
+        this.createMenuButton(cx - 200, btnY, 'REANUDAR', () => {
             this.sound.stopByKey('musica_pausa');
             this.sound.resumeAll();
             
@@ -61,7 +130,7 @@ export default class PauseScene extends Phaser.Scene {
             this.scene.stop();
         });
 
-        this.createMenuButton(cx, cy + 65, 'ABANDONAR PARTIDA', () => {
+        this.createMenuButton(cx + 200, btnY, 'ABANDONAR PARTIDA', () => {
             this.sound.stopAll();
             this.scene.stop('GameScene');
             this.scene.start('MenuScene');
@@ -81,89 +150,28 @@ export default class PauseScene extends Phaser.Scene {
         });
     }
 
-    drawControlsPanel(cx, startY) {
-        const panelW = 700;
-        const panelH = 170;
-        const px = cx - panelW / 2;
-        const py = startY;
-
-        // Panel background
-        const g = this.add.graphics().setDepth(5);
-        g.fillStyle(0x0E0E1A, 0.9);
-        g.fillRoundedRect(px, py, panelW, panelH, 8);
-        g.lineStyle(2, 0xD4A843, 0.4);
-        g.strokeRoundedRect(px, py, panelW, panelH, 8);
-
-        // Title
-        this.add.text(cx, py + 18, '⌨ CONTROLES', {
-            fontFamily: 'Arial Black, sans-serif',
-            fontSize: '16px',
-            color: '#D4A843',
-        }).setOrigin(0.5).setDepth(6);
-
-        // Separator
-        g.lineStyle(1, 0xD4A843, 0.3);
-        g.lineBetween(px + 20, py + 34, px + panelW - 20, py + 34);
-
-        // P1 Controls (left column)
-        const p1X = px + 30;
-        const p2X = px + panelW / 2 + 20;
-        let ly = py + 45;
-        const lh = 17;
-
-        this.add.text(p1X, ly, 'JUGADOR 1', {
-            fontFamily: 'Arial Black', fontSize: '13px', color: '#4488FF',
-        }).setDepth(6);
-        this.add.text(p2X, ly, 'JUGADOR 2', {
-            fontFamily: 'Arial Black', fontSize: '13px', color: '#FF4444',
-        }).setDepth(6);
-
-        ly += lh + 4;
-
-        const p1Controls = [
-            'A / D — Mover',
-            'W — Saltar  |  S — Agachar',
-            'J — Golpe Ligero  |  K — Medio  |  L — Fuerte',
-            'U — Especial  |  U+Dir — Variante',
-            'I — Dominio  |  Shift — Bloquear',
-            'ESC — Pausar',
-        ];
-
-        const p2Controls = [
-            '← / → — Mover',
-            '↑ — Saltar  |  ↓ — Agachar',
-            'Num1 — Ligero  |  Num2 — Medio  |  Num3 — Fuerte',
-            'Num4 — Especial  |  Num4+Dir — Variante',
-            'Num5 — Dominio  |  Num0 — Bloquear',
-            'ESC — Pausar',
-        ];
-
-        p1Controls.forEach((line, i) => {
-            this.add.text(p1X, ly + i * lh, line, {
-                fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#8899BB',
-            }).setDepth(6);
-        });
-
-        p2Controls.forEach((line, i) => {
-            this.add.text(p2X, ly + i * lh, line, {
-                fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#BB8899',
-            }).setDepth(6);
-        });
-    }
-
     createSlider(x, y, type) {
         let currentVal = window.gameSettings[type] ?? 50;
-        const bg = this.add.rectangle(x, y, 100, 10, 0x444444).setOrigin(0, 0.5);
-        const fill = this.add.rectangle(x, y, currentVal, 10, 0xD4A843).setOrigin(0, 0.5);
-        const knob = this.add.circle(x + currentVal, y, 10, 0xFFFFFF).setInteractive({ useHandCursor: true });
+        const sliderW = 180;
+        // Background track
+        const bg = this.add.rectangle(x, y, sliderW, 14, 0x222233).setOrigin(0, 0.5).setDepth(6);
+        bg.setStrokeStyle(2, 0x444455);
+        // Fill track
+        const fillW = (currentVal / 100) * sliderW;
+        const fill = this.add.rectangle(x, y, fillW, 14, 0xD4A843).setOrigin(0, 0.5).setDepth(7);
+        // Knob
+        const knob = this.add.circle(x + fillW, y, 12, 0xFFFFFF).setInteractive({ useHandCursor: true }).setDepth(8);
+        knob.setStrokeStyle(3, 0x886611);
+
         this.input.setDraggable(knob);
 
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
             if (gameObject !== knob) return;
-            const newX = Phaser.Math.Clamp(dragX, x, x + 100);
+            const newX = Phaser.Math.Clamp(dragX, x, x + sliderW);
             knob.x = newX;
-            const val = Math.round(newX - x);
-            fill.width = val;
+            const percentage = (newX - x) / sliderW;
+            fill.width = percentage * sliderW;
+            const val = Math.round(percentage * 100);
             window.gameSettings[type] = val;
             
             if (type === 'music') {
@@ -191,46 +199,47 @@ export default class PauseScene extends Phaser.Scene {
     }
 
     createMenuButton(x, y, label, callback) {
-        const container = this.add.container(x, y).setDepth(5);
+        const container = this.add.container(x, y).setDepth(10);
+        const btnW = 340;
+        const btnH = 60;
 
         const bg = this.add.graphics();
-        bg.fillStyle(0x1A1A2E, 0.8);
-        bg.fillRoundedRect(-160, -25, 320, 50, 8);
-        bg.lineStyle(2, 0xD4A843, 0.6);
-        bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+        bg.fillStyle(0x1A1A2E, 0.9);
+        bg.fillRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
+        bg.lineStyle(3, 0xD4A843, 0.8);
+        bg.strokeRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
         container.add(bg);
 
         const text = this.add.text(0, 0, label, {
             fontFamily: 'Arial Black, Impact, sans-serif',
             fontSize: '24px',
-            color: '#CCCCDD',
-            letterSpacing: 4,
+            color: '#FFFFFF',
+            letterSpacing: 2,
         }).setOrigin(0.5);
         container.add(text);
 
-        const zone = this.add.zone(0, 0, 320, 50).setInteractive({ useHandCursor: true });
+        const zone = this.add.zone(0, 0, btnW, btnH).setInteractive({ useHandCursor: true });
         container.add(zone);
 
         zone.on('pointerover', () => {
-            text.setColor('#FFFFFF');
+            text.setColor('#FFD700');
             bg.clear();
-            bg.fillStyle(0x7722CC, 0.4);
-            bg.fillRoundedRect(-160, -25, 320, 50, 8);
-            bg.lineStyle(2, 0xD4A843, 1);
-            bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+            bg.fillStyle(0x4A2288, 0.9); // Highlight color
+            bg.fillRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
+            bg.lineStyle(4, 0xFFE066, 1);
+            bg.strokeRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
         });
 
         zone.on('pointerout', () => {
-            text.setColor('#CCCCDD');
+            text.setColor('#FFFFFF');
             bg.clear();
-            bg.fillStyle(0x1A1A2E, 0.8);
-            bg.fillRoundedRect(-160, -25, 320, 50, 8);
-            bg.lineStyle(2, 0xD4A843, 0.6);
-            bg.strokeRoundedRect(-160, -25, 320, 50, 8);
+            bg.fillStyle(0x1A1A2E, 0.9);
+            bg.fillRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
+            bg.lineStyle(3, 0xD4A843, 0.8);
+            bg.strokeRoundedRect(-btnW/2, -btnH/2, btnW, btnH, 10);
         });
 
         zone.on('pointerdown', callback);
-
         return container;
     }
 }

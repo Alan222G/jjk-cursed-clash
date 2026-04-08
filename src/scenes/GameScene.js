@@ -135,12 +135,6 @@ export default class GameScene extends Phaser.Scene {
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
-        // Domain Background
-        const bgKey = owner.charData.domainBg;
-        this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
-            .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-            .setDepth(-5);
-        
         if (this.screenEffects) {
             this.screenEffects.shake(0.04, 800);
         }
@@ -165,10 +159,6 @@ export default class GameScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
-        // Mask shape
-        const maskGraphics = this.make.graphics();
-        maskGraphics.fillStyle(0xffffff, 1);
-        
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;
         const diagLen = GAME_WIDTH * 2; 
@@ -187,44 +177,6 @@ export default class GameScene extends Phaser.Scene {
         const p3y = cy + paraY * diagLen - perpY * halfW;
         const p4x = cx - paraX * diagLen - perpX * halfW;
         const p4y = cy - paraY * diagLen - perpY * halfW;
-
-        maskGraphics.beginPath();
-        maskGraphics.moveTo(p1x, p1y);
-        maskGraphics.lineTo(p2x, p2y);
-        maskGraphics.lineTo(p3x, p3y);
-        maskGraphics.lineTo(p4x, p4y);
-        maskGraphics.closePath();
-        maskGraphics.fillPath();
-
-        const mask = maskGraphics.createGeometryMask();
-
-        // Sign image (replaces portrait)
-        const startX = isP1 ? -400 : GAME_WIDTH + 400;
-        this.domainPortrait = this.add.image(
-            startX, GAME_HEIGHT / 2, signKey
-        ).setDepth(51).setOrigin(0.5);
-
-        // FIT scaling so the entire hand sign is visible inside the screen
-        const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
-        this.domainPortrait.setScale(imgScale);
-        this.domainPortrait.setMask(mask);
-
-        this.tweens.add({
-            targets: this.domainPortrait,
-            x: GAME_WIDTH / 2,
-            duration: 1500,
-            ease: 'Power2',
-        });
-
-        this.tweens.add({
-            targets: this.domainPortrait,
-            scaleX: imgScale * 1.03,
-            scaleY: imgScale * 1.03,
-            yoyo: true,
-            repeat: -1,
-            duration: 2500,
-            ease: 'Sine.easeInOut',
-        });
 
         // Parallel diagonal lines
         this.domainLines = this.add.graphics();
@@ -259,32 +211,6 @@ export default class GameScene extends Phaser.Scene {
             duration: 600,
         });
 
-        // Domain Name Text
-        const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
-        const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
-        const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
-        
-        this.domainText = this.add.text(textX, textY, domainName, {
-            fontFamily: 'Arial Black',
-            fontSize: '28px',
-            color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
-            stroke: '#000000',
-            strokeThickness: 5,
-            align: 'center',
-        }).setDepth(53).setOrigin(0.5).setAlpha(0);
-        
-        this.domainText.setRotation(angleRad);
-
-        this.tweens.add({
-            targets: this.domainText,
-            alpha: 1,
-            duration: 1200,
-            delay: 800,
-        });
-
-        this._domainMask = mask;
-        this._domainMaskGraphics = maskGraphics;
-
         // ── AFTER 3 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
         this.domainPhase1Timer = this.time.delayedCall(3000, () => {
             if (!this.domainPhase1) return; // Was cancelled by a domain clash
@@ -292,15 +218,60 @@ export default class GameScene extends Phaser.Scene {
             this.domainPhase1 = false;
             this.domainActive = true;
             
-            // NOW freeze the opponent
+            // NOW Unlock the caster!
+            owner.stateMachine.unlock();
+            
+            // Freeze the opponent ONLY if it's Gojo's Domain (Sukuna's allows movement)
             const opp = (owner === this.p1) ? this.p2 : this.p1;
-            opp.stateMachine.unlock();
-            opp.stateMachine.lock(99999);
-            opp.sprite.body.setVelocity(0, 0);
+            if (charKey === 'GOJO') {
+                opp.stateMachine.unlock();
+                opp.stateMachine.lock(99999);
+                opp.sprite.body.setVelocity(0, 0);
+            }
             
             // Enable CE drain
             owner.ceSystem.isDomainActive = true;
             this.sureHitTimer = 0;
+
+            // Fade out the lines
+            if (this.domainLines) {
+                this.tweens.add({
+                    targets: this.domainLines, alpha: 0, duration: 400,
+                    onComplete: () => { this.domainLines.destroy(); this.domainLines = null; }
+                });
+            }
+            
+            // Create Domain Portrait and Text NOW (Phase 2)
+            const startX = isP1 ? -400 : GAME_WIDTH + 400;
+            this.domainPortrait = this.add.image(
+                startX, GAME_HEIGHT / 2, signKey
+            ).setDepth(51).setOrigin(0.5);
+
+            const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
+            this.domainPortrait.setScale(imgScale);
+            
+            this.tweens.add({
+                targets: this.domainPortrait,
+                x: GAME_WIDTH / 2,
+                duration: 600,
+                ease: 'Power2',
+            });
+
+            const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
+            const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
+            const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
+            
+            this.domainText = this.add.text(textX, textY, domainName, {
+                fontFamily: 'Arial Black',
+                fontSize: '28px',
+                color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
+                stroke: '#000000',
+                strokeThickness: 5,
+                align: 'center',
+            }).setDepth(53).setOrigin(0.5).setAlpha(0);
+            
+            this.domainText.setRotation(angleRad);
+            this.tweens.add({ targets: this.domainText, alpha: 1, duration: 1200, delay: 400 });
 
             // Domain Background
             const bgKey = owner.charData.domainBg;
@@ -308,25 +279,24 @@ export default class GameScene extends Phaser.Scene {
                 this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
                     .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
                     .setDepth(-5);
+                this.domainBg.setAlpha(0);
+                this.tweens.add({ targets: this.domainBg, alpha: 1, duration: 800 });
             }
 
-            // Fade out cinematic visuals
-            const fadeTargets = [this.domainOverlay, this.domainPortrait, this.domainText, this.domainLines].filter(Boolean);
-            if (fadeTargets.length > 0) {
-                this.tweens.add({
-                    targets: fadeTargets,
-                    alpha: 0,
-                    duration: 800,
-                    ease: 'Power2',
-                    onComplete: () => {
-                        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
-                        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
-                        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
-                        if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
-                        if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
-                    }
-                });
-            }
+            // Clean up portrait and overlay after 3 seconds of showing off
+            this.time.delayedCall(3000, () => {
+                const fadeTargets = [this.domainOverlay, this.domainPortrait, this.domainText].filter(Boolean);
+                if (fadeTargets.length > 0) {
+                    this.tweens.add({
+                        targets: fadeTargets, alpha: 0, duration: 800, ease: 'Power2',
+                        onComplete: () => {
+                            if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+                            if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+                            if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+                        }
+                    });
+                }
+            });
 
             // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
             const endDomain = () => {
