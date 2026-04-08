@@ -135,6 +135,14 @@ export default class GameScene extends Phaser.Scene {
         const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
         const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
 
+        // Reproduce el audio INMEDIATAMENTE en la Fase 1
+        try {
+            let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
+            if (this.currentDomainVoice) this.currentDomainVoice.stop();
+            this.currentDomainVoice = this.sound.add(voiceKey, { volume: specialVol });
+            this.currentDomainVoice.play();
+        } catch(e) { console.warn("Error playing domain voice", e); }
+
         if (this.screenEffects) {
             this.screenEffects.shake(0.04, 800);
         }
@@ -331,7 +339,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
 
-            // ── AUDIO-DRIVEN: Domain lasts as long as the voice ──
+            // ── Domain ends when the voice finishes ──
             const endDomain = () => {
                 if (!this.domainActive) return;
                 owner.ceSystem.ce = 0;
@@ -339,15 +347,12 @@ export default class GameScene extends Phaser.Scene {
                 this.onDomainEnd(owner);
             };
 
-            try {
-                let specialVol = ((window.gameSettings?.sfx ?? 50) / 100) * 2.0;
-                const domainVoice = this.sound.add(voiceKey, { volume: specialVol });
-                domainVoice.once('complete', endDomain);
-                domainVoice.play();
-
+            if (this.currentDomainVoice && this.currentDomainVoice.isPlaying) {
+                this.currentDomainVoice.once('complete', endDomain);
+                // Fallback max wait
                 const maxWait = owner.charData.stats.domainDuration + 5000;
                 this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
-            } catch (e) {
+            } else {
                 const fallback = owner.charData.stats.domainDuration || 15000;
                 this.domainTimeout = this.time.delayedCall(fallback, endDomain);
             }

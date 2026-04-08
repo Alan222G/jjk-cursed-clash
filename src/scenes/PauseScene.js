@@ -75,42 +75,65 @@ export default class PauseScene extends Phaser.Scene {
             fontFamily: 'Arial Black', fontSize: '18px', color: '#8888AA', letterSpacing: 2
         }).setOrigin(0.5).setDepth(6);
 
+        const listY = ctrlY + 40;
+        const lh = 18; // Line height
+        
         const p1X = cx - 220;
         const p2X = cx + 220;
-        const listY = ctrlY + 40;
-        const lh = 22;
 
         this.add.text(p1X, listY, 'JUGADOR 1', { fontFamily: 'Arial Black', fontSize: '16px', color: '#4488FF' }).setOrigin(0.5).setDepth(6);
         this.add.text(p2X, listY, 'JUGADOR 2', { fontFamily: 'Arial Black', fontSize: '16px', color: '#FF4444' }).setOrigin(0.5).setDepth(6);
 
-        const p1Controls = [
-            'A / D — Moverse',
-            'W — Saltar  |  S — Agacharse',
-            'J — Ligero  |  K — Medio  |  L — Fuerte',
-            'U — Especial  |  U+Dir — Variante',
-            'I — DOMINIO EXPANDIDO',
-            'Shift — Bloquear  |  Shift+S — INFINTY (Gojo)',
+        const controlSections = [
+            {
+                title: 'MOVIMIENTO',
+                p1: ['A / D — Caminar', 'W — Saltar', 'S — Agacharse'],
+                p2: ['← / → — Caminar', '↑ — Saltar', '↓ — Agacharse']
+            },
+            {
+                title: 'GOLPES BÁSICOS',
+                p1: ['J — Golpe Ligero', 'K — Golpe Medio', 'L — Golpe Fuerte'],
+                p2: ['Num1 — Ligero', 'Num2 — Medio', 'Num3 — Fuerte']
+            },
+            {
+                title: 'HABILIDADES DEFINITIVAS',
+                p1: ['U — Especial  |  U+Dir — Variante', 'Shift — Bloquear  |  Shift+S — INFINTIY'],
+                p2: ['Num4 — Especial  |  Num4+Dir', 'Num0 — Bloquear']
+            },
+            {
+                title: 'DOMINIO EXPANDIDO',
+                p1: ['I — ACTIVAR DOMINIO'],
+                p2: ['Num5 — ACTIVAR DOMINIO']
+            }
         ];
 
-        const p2Controls = [
-            '← / → — Moverse',
-            '↑ — Saltar  |  ↓ — Agacharse',
-            'Num1 — Ligero  |  Num2 — Medio  |  Num3 — Fuerte',
-            'Num4 — Especial  |  Num4+Dir — Variante',
-            'Num5 — DOMINIO EXPANDIDO',
-            'Num0 — Bloquear',
-        ];
+        let currentY = listY + 20;
 
-        p1Controls.forEach((line, i) => {
-            this.add.text(p1X, listY + 30 + i * lh, line, {
-                fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#AACCFF',
+        controlSections.forEach(section => {
+            // Category Title
+            this.add.text(cx, currentY, section.title, {
+                fontFamily: 'Arial Black', fontSize: '13px', color: '#D4A843'
             }).setOrigin(0.5).setDepth(6);
-        });
-
-        p2Controls.forEach((line, i) => {
-            this.add.text(p2X, listY + 30 + i * lh, line, {
-                fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#FFAACC',
-            }).setOrigin(0.5).setDepth(6);
+            
+            currentY += 20;
+            
+            // P1 Lines
+            section.p1.forEach((line, idx) => {
+                this.add.text(p1X, currentY + idx * lh, line, {
+                    fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#AACCFF',
+                }).setOrigin(0.5).setDepth(6);
+            });
+            
+            // P2 Lines
+            section.p2.forEach((line, idx) => {
+                this.add.text(p2X, currentY + idx * lh, line, {
+                    fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#FFAACC',
+                }).setOrigin(0.5).setDepth(6);
+            });
+            
+            // Increment Y based on max lines in section
+            const maxLines = Math.max(section.p1.length, section.p2.length);
+            currentY += (maxLines * lh) + 15; // spacing below section
         });
 
         // ════════════════════════════════════════════
