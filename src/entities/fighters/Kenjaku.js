@@ -52,10 +52,20 @@ export default class Kenjaku extends Fighter {
 
         if (tier >= 2 && this.input.isDown('DOWN')) {
             this.castUzumaki();
-        } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            this.castWormProjectile();
-        } else if (tier >= 1) {
-            this.castSummonSpirit();
+            return;
+        } 
+        
+        if (tier >= 1) {
+            // Invoca diferentes maldiciones dependiendo de la tecla direccional
+            if (this.input.isDown('UP')) {
+                this.castBirdCurse(); // Voladora
+            } else if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
+                this.castSwarmCurse(); // Enjambre rápido
+            } else if (this.input.isDown('DOWN')) {
+                this.castTankCurse(); // Maldición Pesada
+            } else {
+                this.castWormProjectile(); // Gusano (Neutral)
+            }
         }
     }
 
@@ -130,36 +140,85 @@ export default class Kenjaku extends Fighter {
     }
 
     // ════════════════════════════════════════════
-    // SKILL 2: SUMMON CURSED SPIRIT — 4-Armed Beast
+    // SKILL 2 (DOWN): TANK CURSE — Slow, heavy damage
     // ════════════════════════════════════════════
-    castSummonSpirit() {
-        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
-        if (this.summonedSpirit) return; // Only one at a time
+    castTankCurse() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        const skill = this.charData.skills.skill1;
+        this.spawnWormEffect(); 
 
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        this.spiritTarget = target;
-
-        const spawnX = this.sprite.x + 80 * this.facing;
-        const spawnY = this.sprite.y - 50;
-
-        this.summonedSpirit = {
-            x: spawnX,
-            y: spawnY,
-            facing: this.facing,
-            hp: 300,
-            attackCooldown: 0,
-            moveTimer: 0,
-            state: 'idle', // idle, walk, attack
-            animTimer: 0
-        };
-        this.spiritTimer = 10000; // Lives for 10 seconds
-        this.spiritGraphics = this.scene.add.graphics().setDepth(14);
-
-        // Summon flash
-        const flash = this.scene.add.circle(spawnX, spawnY, 30, 0x111111, 0.8).setDepth(15);
-        this.scene.tweens.add({
-            targets: flash, alpha: 0, scaleX: 3, scaleY: 3, duration: 400, onComplete: () => flash.destroy()
+        const proj = new Projectile(this.scene, this.sprite.x + 80 * this.facing, this.sprite.y - 20, {
+            owner: this,
+            damage: Math.floor(skill.damage * this.power * 1.5),
+            knockbackX: 400 * this.facing,
+            knockbackY: -300,
+            stunDuration: 1200,
+            speed: 250, // Very slow
+            direction: this.facing,
+            color: 0x4B5320, // Army green
+            size: { w: 120, h: 120 },
+            lifetime: 4000,
+            type: 'heavy'
         });
+
+        if (this.scene.projectiles) this.scene.projectiles.push(proj);
+    }
+
+    // ════════════════════════════════════════════
+    // SKILL 3 (LEFT/RIGHT): SWARM CURSE — Fast multi-hits
+    // ════════════════════════════════════════════
+    castSwarmCurse() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        const skill = this.charData.skills.skill1;
+        this.spawnWormEffect(); 
+
+        for (let i = 0; i < 3; i++) {
+            this.scene.time.delayedCall(i * 150, () => {
+                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 40 - (i * 20), {
+                    owner: this,
+                    damage: Math.floor(skill.damage * this.power * 0.3),
+                    knockbackX: 100 * this.facing,
+                    knockbackY: -50,
+                    stunDuration: 300,
+                    speed: 800 + (Math.random() * 200), // Very fast
+                    direction: this.facing,
+                    color: 0x8822CC,
+                    size: { w: 25, h: 25 },
+                    lifetime: 1500,
+                    type: 'circle'
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+            });
+        }
+    }
+
+    // ════════════════════════════════════════════
+    // SKILL 4 (UP): BIRD CURSE — Airborne diagonal
+    // ════════════════════════════════════════════
+    castBirdCurse() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        const skill = this.charData.skills.skill1;
+        this.spawnWormEffect(); 
+
+        // Spawns high up
+        const proj = new Projectile(this.scene, this.sprite.x, this.sprite.y - 250, {
+            owner: this,
+            damage: Math.floor(skill.damage * this.power * 0.8),
+            knockbackX: 200 * this.facing,
+            knockbackY: 0,
+            stunDuration: 600,
+            speed: 550, 
+            direction: this.facing,
+            color: 0x33AADD,
+            size: { w: 60, h: 40 },
+            lifetime: 2000,
+            type: 'slash'
+        });
+        
+        // Add downward velocity logic to projectile
+        proj.sprite.body.setVelocityY(250);
+
+        if (this.scene.projectiles) this.scene.projectiles.push(proj);
     }
 
     // ════════════════════════════════════════════

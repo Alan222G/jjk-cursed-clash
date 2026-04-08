@@ -121,15 +121,29 @@ export default class BootScene extends Phaser.Scene {
     }
 
     create() {
-        // Generate 1x1 pixel texture for reuse
-        const pixel = this.add.graphics();
-        pixel.fillStyle(0xFFFFFF, 1);
-        pixel.fillRect(0, 0, 1, 1);
-        pixel.generateTexture('pixel', 1, 1);
-        pixel.destroy();
-
         // Transition to menu after brief delay
         this.time.delayedCall(600, () => {
+            // Generate 1x1 pixel texture for reuse
+            const pixel = this.add.graphics();
+            pixel.fillStyle(0xFFFFFF, 1);
+            pixel.fillRect(0, 0, 1, 1);
+            pixel.generateTexture('pixel', 1, 1);
+            pixel.destroy();
+
+            // Create Worm Animation
+            this.anims.create({
+                key: 'anim_worm',
+                frames: [
+                    { key: 'sprite_worm_1' },
+                    { key: 'sprite_worm_2' },
+                    { key: 'sprite_worm_3' },
+                    { key: 'sprite_worm_4' },
+                    { key: 'sprite_worm_5' }
+                ],
+                frameRate: 20, // Faster and smoother
+                repeat: -1
+            });
+
             this.scene.start('MenuScene');
         });
     }

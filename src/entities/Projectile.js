@@ -36,13 +36,13 @@ export default class Projectile {
             const alpha = (this.type === 'slash' || this.type === 'fire_arrow' || this.type === 'worm') ? 0 : 0.9;
             this.sprite = scene.add.rectangle(x, y, this.size.w, this.size.h, this.color, alpha);
             this.glow = scene.add.rectangle(x, y, this.size.w + 12, this.size.h + 12, this.color, alpha === 0 ? 0 : 0.3);
-            
             // Si es el gusano, inicializar el Sprite visual de Phaser que va a seguir a la hitbox
             if (this.type === 'worm') {
-                this.wormSprite = scene.add.image(x, y, 'sprite_worm_1');
+                this.wormSprite = scene.add.sprite(x, y, 'sprite_worm_1');
                 this.wormSprite.setDepth(15);
                 this.wormSprite.setFlipX(this.direction < 0); // El sprite original mira hacia la derecha, entonces se voltea si la dir. es -1
                 this.wormSprite.setScale(1.2); // Escala para que luzca bien y proporcionado a las dimensiones originales
+                this.wormSprite.play('anim_worm');
             }
         }
 
