@@ -59,7 +59,7 @@ export default class HUD {
         this._drawPauseButton(false);
         
         // ‖ symbol + text
-        this.pauseBtn = scene.add.text(btnX, btnY + btnH / 2, '❚❚ PAUSA', {
+        this.pauseBtn = scene.add.text(btnX, btnY + btnH / 2, 'II PAUSA', {
             fontFamily: 'Arial Black, Impact, sans-serif',
             fontSize: '14px',
             color: '#D4A843',

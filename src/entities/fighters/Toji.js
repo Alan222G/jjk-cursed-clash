@@ -235,7 +235,7 @@ export default class Toji extends Fighter {
         if (this.weaponSwitchText) this.weaponSwitchText.destroy();
         this.weaponSwitchText = this.scene.add.text(
             this.sprite.x, this.sprite.y - 70, 
-            `⚔ ${this.currentWeapon.name}`, {
+            `[ARMA] ${this.currentWeapon.name}`, {
                 fontSize: '14px', fontFamily: 'Arial Black',
                 color: '#' + this.currentWeapon.color.toString(16).padStart(6, '0'),
                 stroke: '#000000', strokeThickness: 3,

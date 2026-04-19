@@ -96,7 +96,7 @@ export default class GameScene extends Phaser.Scene {
             if (this.matchEnded) return;
             this.physics.pause();
             this.scene.pause();
-            this.scene.launch('PauseScene');
+            this.scene.launch('PauseScene', { p1Key: this.p1Key, p2Key: this.p2Key });
         });
     }
 
@@ -360,25 +360,42 @@ export default class GameScene extends Phaser.Scene {
     }
 
     attemptDomainClash(triggeringPlayer) {
-        // En la nueva lógica, el choque SÓLO se puede hacer durante la Phase 1 
-        // (las líneas diagonales iniciales)
+        // Domain Clash ONLY during Phase 1 (the 3-second cinematic window)
         if (!this.domainPhase1 || !this.domainOwner) return false;
         
-        // It's a valid clash!
         console.log("DOMAIN CLASH TRIGGERED!");
         
         // 1. Stop current domain progression
         try { this.sound.stopAll(); } catch(e) {}
         if (this.domainPhase1Timer) { this.domainPhase1Timer.remove(); }
+        if (this.currentDomainVoice) {
+            try { this.currentDomainVoice.stop(); } catch(e) {}
+        }
         
-        // We leave the visual overlays as is, but pause physics
+        // 2. Clean up existing Phase 1 visuals before launching clash
+        if (this.domainOverlay) { this.domainOverlay.destroy(); this.domainOverlay = null; }
+        if (this.domainPortrait) { this.domainPortrait.destroy(); this.domainPortrait = null; }
+        if (this.domainText) { this.domainText.destroy(); this.domainText = null; }
+        if (this.domainLines) { this.domainLines.destroy(); this.domainLines = null; }
+        if (this._domainMaskGraphics) { this._domainMaskGraphics.destroy(); this._domainMaskGraphics = null; }
+        
+        // 3. Unlock the original caster so they're not frozen
+        if (this.domainOwner) {
+            this.domainOwner.stateMachine.unlock();
+        }
+        
+        // 4. Store who triggered the clash (to know domain types)
+        this.clashTriggerPlayer = triggeringPlayer;
+        
+        // 5. Pause physics and launch clash scene
         this.physics.pause();
         this.scene.pause();
         
-        // 2. Launch Clash Scene
         this.scene.launch('DomainClashScene', {
             p1: this.p1,
             p2: this.p2,
+            p1Key: this.p1Key,
+            p2Key: this.p2Key,
             callback: (winnerId) => this.resolveDomainClash(winnerId)
         });
         
@@ -391,20 +408,53 @@ export default class GameScene extends Phaser.Scene {
         
         const winner = (winnerId === 'P1') ? this.p1 : this.p2;
         const loser = (winnerId === 'P1') ? this.p2 : this.p1;
+        const winnerKey = (winnerId === 'P1') ? this.p1Key : this.p2Key;
 
-        // Clean up current domain visuals
-        this.onDomainEnd(this.domainOwner);
+        // ── Clean up any leftover domain state ──
+        this.domainActive = false;
+        this.domainPhase1 = false;
+        this.domainOwner = null;
+        if (this.domainBg) { this.domainBg.destroy(); this.domainBg = null; }
 
-        // Loser gets punished
+        // ── LOSER: Loses all CE, enters fatigue, NO extra stun/damage ──
+        loser.domainActive = false;
         loser.ceSystem.ce = 0;
-        loser.ceSystem.endDomain(); // forces fatigue
-        loser.stateMachine.setState('hitstun');
-        loser.stunTimer = 2000; // Big stun
+        loser.ceSystem.isDomainActive = false;
+        loser.ceSystem.isFatigued = true;
+        loser.ceSystem.fatigueTimer = DOMAIN.FATIGUE_DURATION;
+        loser.stateMachine.unlock();
+        loser.stateMachine.setState('idle');
 
-        // Winner gets to cast freely!
-        winner.ceSystem.ce = 100; // Refill so they can cast
-        winner.domainActive = false; // Reset their own lock
-        winner.tryActivateDomain();
+        // ── WINNER: Activates their domain directly (without re-spending CE) ──
+        winner.domainActive = true;
+        winner.ceSystem.isDomainActive = true;
+        
+        // Determine domain type from character
+        let domainType = 'unknown';
+        if (winnerKey === 'GOJO') domainType = 'unlimited_void';
+        else if (winnerKey === 'SUKUNA') domainType = 'malevolent_shrine';
+        else if (winnerKey === 'KENJAKU') domainType = 'womb_profusion';
+
+        // Activate the winner's domain cinematic through the normal flow
+        this.onDomainActivated(winner, domainType);
+    }
+
+    cancelDomain(owner) {
+        if (!this.domainPhase1 || this.domainOwner !== owner) return;
+        console.log("DOMAIN CANCELED!");
+        
+        // Remove timer
+        if (this.domainPhase1Timer) {
+            this.domainPhase1Timer.remove();
+        }
+
+        // Cleanup audio
+        if (this.currentDomainVoice) {
+            this.currentDomainVoice.stop();
+        }
+        
+        // Clean up UI precisely
+        this.onDomainEnd(owner);
     }
 
     onDomainEnd(owner) {

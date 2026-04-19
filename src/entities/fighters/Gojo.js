@@ -467,7 +467,7 @@ export default class Gojo extends Fighter {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
         
-        if (this.scene.domainActive) {
+        if (this.scene.domainActive || this.scene.domainPhase1) {
             if (this.scene.domainOwner !== this) {
                 const clashPossible = this.scene.attemptDomainClash(this);
                 if (!clashPossible) return;
@@ -512,7 +512,7 @@ export default class Gojo extends Fighter {
         for (let i = 0; i < 2; i++) {
             const px = ox + (Math.random() - 0.5) * 60;
             const py = oy + (Math.random() - 0.5) * 80 - 20;
-            const info = this.scene.add.text(px, py, '∞', {
+            const info = this.scene.add.text(px, py, 'VOID', {
                 fontSize: '12px',
                 color: '#44CCFF',
             }).setDepth(15).setAlpha(0.8);

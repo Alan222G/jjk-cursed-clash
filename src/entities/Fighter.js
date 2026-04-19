@@ -238,21 +238,7 @@ export default class Fighter {
                 this.infinityActive = true;
             },
             onUpdate: function (dt) {
-                // Drain CE while active (25 CE per second — very costly)
-                const drain = 25 * (dt / 1000);
-                this.ceSystem.ce -= drain;
-                if (this.ceSystem.ce <= 0) {
-                    this.ceSystem.ce = 0;
-                    this.infinityActive = false;
-                    this.stateMachine.setState('idle');
-                    return;
-                }
-                
-                // Toggle OFF if they release BLOCK or DOWN
-                if (!this.input.isDown('BLOCK') || !this.input.isDown('DOWN')) {
-                    this.infinityActive = false;
-                    this.stateMachine.setState('idle');
-                }
+                this.stateMachine.setState('idle');
             },
             onExit: function () {
                 this.infinityActive = false;
@@ -305,13 +291,11 @@ export default class Fighter {
 
         sm.addState('casting_domain', {
             onEnter: function () {
-                this.isInvulnerable = true;
                 this.sprite.body.setVelocity(0, 0);
                 this.sprite.body.setAllowGravity(false);
             },
             onUpdate: function () {},
             onExit: function () {
-                this.isInvulnerable = false;
                 this.sprite.body.setAllowGravity(true);
             },
         });
@@ -379,10 +363,25 @@ export default class Fighter {
 
         // Normal attacks
         if (this.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
-            const atkData = this.getBasicAttackData(attackAction);
-            if (atkData) {
-                this.currentAttack = { ...atkData, type: attackAction };
+            if (attackAction === 'LIGHT') {
+                this.comboStep = (this.comboStep || 0) + 1;
+                if (this.comboStep > 4) this.comboStep = 1;
+                
+                let atkData;
+                if (this.comboStep < 4) {
+                    atkData = { ...this.getBasicAttackData('LIGHT') };
+                    atkData.damage = 15;
+                    atkData.knockbackX = 0; // Sin empuje
+                    atkData.knockbackY = 0;
+                    atkData.stunDuration = 300; // Solo stun
+                } else {
+                    atkData = { ...this.getBasicAttackData('HEAVY') };
+                    atkData.damage = 60; // Daño aumentado
+                }
+                
+                this.currentAttack = { ...atkData, type: 'COMBO' };
                 this.stateMachine.setState('attack');
+                this.comboResetTimer = 1500;
             }
         }
     }
@@ -392,10 +391,11 @@ export default class Fighter {
             // Special modifiers on Shift+Down
             if (this.input.isDown('BLOCK') && this.input.isDown('DOWN')) {
                 if (this.fighterId === 'gojo') {
-                    if (this.ceSystem.ce > 0 && !this.stateMachine.is('infinity')) {
-                        this.stateMachine.setState('infinity');
-                        return;
+                    if (!this._blockDownHandled) {
+                        this.infinityActive = !this.infinityActive;
+                        this._blockDownHandled = true;
                     }
+                    return;
                 } else if (this.fighterId === 'kenjaku' && this.swapAICurse) {
                     // Only trigger once per press
                     if (!this._blockDownHandled) {
@@ -493,6 +493,12 @@ export default class Fighter {
         // Stun (only if not blocking)
         if (!this.stateMachine.is('block')) {
             this.stunTimer = stunDuration;
+            
+            // Domain Cancel check
+            if (this.scene.domainPhase1 && this.scene.domainOwner === this && this.scene.cancelDomain) {
+                this.scene.cancelDomain(this);
+            }
+            
             if (damage >= 40) {
                 this.stateMachine.setState('knockdown');
             } else if (stunDuration > 0) {
@@ -670,6 +676,23 @@ export default class Fighter {
         this.stateMachine.update(dt);
         this.ceSystem.update(dt);
         this.comboSystem.update(dt);
+
+        if (this.comboResetTimer > 0) {
+            this.comboResetTimer -= dt;
+            if (this.comboResetTimer <= 0) {
+                this.comboStep = 0;
+            }
+        }
+
+        // Infinity Drain
+        if (this.fighterId === 'gojo' && this.infinityActive) {
+            const drain = 25 * (dt / 1000);
+            this.ceSystem.ce -= drain;
+            if (this.ceSystem.ce <= 0) {
+                this.ceSystem.ce = 0;
+                this.infinityActive = false;
+            }
+        }
 
         // Burn DoT
         if (this.burnTimer > 0) {

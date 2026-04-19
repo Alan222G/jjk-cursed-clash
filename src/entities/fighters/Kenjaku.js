@@ -484,7 +484,7 @@ export default class Kenjaku extends Fighter {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
         
-        if (this.scene.domainActive) {
+        if (this.scene.domainActive || this.scene.domainPhase1) {
             if (this.scene.domainOwner !== this) {
                 const clashPossible = this.scene.attemptDomainClash(this);
                 if (!clashPossible) return;
