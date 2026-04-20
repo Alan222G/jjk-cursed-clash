@@ -61,8 +61,13 @@ export default class DomainClashScene extends Phaser.Scene {
         this.p1Index = 0; // Current position in P1's sequence
         this.p2Index = 0; // Current position in P2's sequence
 
-        // ── Stop all sounds ──
-        try { this.sound.stopAll(); } catch(e) {}
+        // ── Stop all sounds and play Clash BGM ──
+        try { 
+            this.sound.stopAll(); 
+            const targetVol = (window.gameSettings?.music ?? 50) / 100 * 0.6;
+            this.clashBgm = this.sound.add('bgm_domain_clash', { volume: targetVol, loop: true });
+            this.clashBgm.play();
+        } catch(e) { console.warn("Error playing clash bgm", e); }
 
         // ── Background ──
         this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050510, 0.98).setOrigin(0).setDepth(0);

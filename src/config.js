@@ -89,7 +89,7 @@ export const CE_COSTS = {
 // ── Domain Expansion ─────────────────────────────────────
 export const DOMAIN = {
     DURATION: 15000,            // default baseline
-    CE_DRAIN_RATE: 13.33,       // replaced with dynamic calculated drain rate per character
+    CE_DRAIN_RATE: 4,           // VERY slow drain so domain lasts long as requested
     SURE_HIT_DPS: 50,          // Damage per tick
     SURE_HIT_INTERVAL: 1000,   // ms between Sure-Hit ticks
     CLASH_WINDOW: 1200,        // ms window to counter-domain
@@ -99,7 +99,7 @@ export const DOMAIN = {
 
 // ── Domain Clash QTE ─────────────────────────────────────
 export const DOMAIN_CLASH = {
-    TIME_LIMIT: 12000,          // 12 seconds for sequence QTE
+    TIME_LIMIT: 16000,          // 16 seconds for sequence QTE
     PROGRESS_PER_HIT: 2.5,     // Tug-of-war progress per correct key
     P1_SEQUENCE: ['U', 'I', 'J', 'A', 'S', 'D', 'W'],
     P2_SEQUENCE: ['UP', 'DOWN', 'LEFT', 'RIGHT', 'NUMPAD_ONE'],
