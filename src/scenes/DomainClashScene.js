@@ -1,15 +1,38 @@
 // ========================================================
-// DomainClashScene — QTE Button-Mashing Tug-of-War
-// When both players expand domains simultaneously, they
-// clash in a mashing contest. Winner expands, loser loses CE.
+// DomainClashScene — Sequence QTE Tug-of-War
+// Both players must follow a displayed key sequence.
+// Each correct press pushes the bar in their favor.
+// Wrong keys do nothing. The sequence loops infinitely.
+// Duration: 12 seconds.
 // ========================================================
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, DOMAIN_CLASH } from '../config.js';
 
-const MASH_POWER = 1.8;       // Progress per key press
-const DECAY_RATE = 0.3;       // Passive decay toward center per second
-const PULSE_INTERVAL = 80;    // Minimum ms between valid presses (anti-spam)
+// ── Key Display Labels ──
+// Maps internal key names to what we show on screen
+const KEY_LABELS = {
+    // P1 keys (letters)
+    'U': 'U',
+    'I': 'I',
+    'J': 'J',
+    'A': 'A',
+    'S': 'S',
+    'D': 'D',
+    'W': 'W',
+    // P2 keys (arrows + numpad)
+    'UP': '▲',
+    'DOWN': '▼',
+    'LEFT': '◀',
+    'RIGHT': '▶',
+    'NUMPAD_ONE': '1',
+};
+
+// Map Phaser keycode events to our sequence key names
+const PHASER_KEY_TO_NAME = {
+    'U': 'U', 'I': 'I', 'J': 'J', 'A': 'A', 'S': 'S', 'D': 'D', 'W': 'W',
+    'UP': 'UP', 'DOWN': 'DOWN', 'LEFT': 'LEFT', 'RIGHT': 'RIGHT',
+};
 
 export default class DomainClashScene extends Phaser.Scene {
     constructor() {
@@ -28,11 +51,15 @@ export default class DomainClashScene extends Phaser.Scene {
         // ── State ──
         this.clashProgress = 50;  // 0 = P2 wins, 100 = P1 wins
         this.finished = false;
-        this.timer = DOMAIN_CLASH.TIME_LIMIT || 6000;
-        this.p1LastPress = 0;
-        this.p2LastPress = 0;
-        this.p1Presses = 0;
-        this.p2Presses = 0;
+        this.timer = DOMAIN_CLASH.TIME_LIMIT;
+        this.p1Hits = 0;
+        this.p2Hits = 0;
+
+        // ── Sequences ──
+        this.p1Sequence = DOMAIN_CLASH.P1_SEQUENCE;
+        this.p2Sequence = DOMAIN_CLASH.P2_SEQUENCE;
+        this.p1Index = 0; // Current position in P1's sequence
+        this.p2Index = 0; // Current position in P2's sequence
 
         // ── Stop all sounds ──
         try { this.sound.stopAll(); } catch(e) {}
@@ -100,37 +127,16 @@ export default class DomainClashScene extends Phaser.Scene {
             color: '#FF2200', stroke: '#000000', strokeThickness: 3
         }).setOrigin(1, 0).setDepth(15);
 
-        // ── Mashing Prompts ──
-        const mashKeyP1 = DOMAIN_CLASH.P1_MASH_KEY || 'J';
-        const mashKeyP2 = DOMAIN_CLASH.P2_MASH_KEY || '1';
+        // ── QTE Key Display ──
+        this.createKeyDisplays();
 
-        this.p1Prompt = this.add.text(GAME_WIDTH / 4, GAME_HEIGHT - 140, `¡MACHACA [${mashKeyP1}]!`, {
-            fontSize: '36px', fontFamily: 'Arial Black',
-            color: '#44CCFF', stroke: '#000000', strokeThickness: 6
-        }).setOrigin(0.5).setDepth(20);
-
-        this.p2Prompt = this.add.text(GAME_WIDTH * 0.75, GAME_HEIGHT - 140, `¡MACHACA [${mashKeyP2}]!`, {
-            fontSize: '36px', fontFamily: 'Arial Black',
-            color: '#FF2200', stroke: '#000000', strokeThickness: 6
-        }).setOrigin(0.5).setDepth(20);
-
-        // Pulse animation on prompts
-        this.tweens.add({
-            targets: this.p1Prompt, scaleX: 1.1, scaleY: 1.1,
-            yoyo: true, repeat: -1, duration: 300, ease: 'Sine.easeInOut'
-        });
-        this.tweens.add({
-            targets: this.p2Prompt, scaleX: 1.1, scaleY: 1.1,
-            yoyo: true, repeat: -1, duration: 300, ease: 'Sine.easeInOut'
-        });
-
-        // ── Press Counter Text ──
-        this.p1CountText = this.add.text(GAME_WIDTH / 4, GAME_HEIGHT - 90, '0', {
+        // ── Hit Counter Text ──
+        this.p1CountText = this.add.text(GAME_WIDTH / 4, GAME_HEIGHT - 75, '0', {
             fontSize: '48px', fontFamily: 'Arial Black',
             color: '#44CCFF', stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(20);
 
-        this.p2CountText = this.add.text(GAME_WIDTH * 0.75, GAME_HEIGHT - 90, '0', {
+        this.p2CountText = this.add.text(GAME_WIDTH * 0.75, GAME_HEIGHT - 75, '0', {
             fontSize: '48px', fontFamily: 'Arial Black',
             color: '#FF2200', stroke: '#000000', strokeThickness: 6
         }).setOrigin(0.5).setDepth(20);
@@ -145,17 +151,236 @@ export default class DomainClashScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(25).setAlpha(0);
 
         // ── Input Setup ──
-        this.input.keyboard.on('keydown-J', () => this.onMash(true));
-
-        // Numpad 1
-        const numpad1 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE);
-        numpad1.on('down', () => this.onMash(false));
-
-        // Also support regular '1' key as fallback for P2
-        this.input.keyboard.on('keydown-ONE', () => this.onMash(false));
+        this.setupInputListeners();
 
         // ── Intro flash ──
         this.cameras.main.flash(500, 255, 255, 255);
+    }
+
+    // ═══════════════════════════════════════════
+    // QTE KEY DISPLAYS — Large current key indicator
+    // ═══════════════════════════════════════════
+    createKeyDisplays() {
+        const keyY = GAME_HEIGHT - 180;
+
+        // ── P1 Current Key ──
+        // Background circle
+        this.p1KeyBg = this.add.graphics().setDepth(18);
+        this.drawKeyCircle(this.p1KeyBg, GAME_WIDTH / 4, keyY, 55, 0x44CCFF, 0.3);
+
+        // Key text
+        this.p1KeyText = this.add.text(GAME_WIDTH / 4, keyY, '', {
+            fontSize: '58px', fontFamily: 'Arial Black',
+            color: '#FFFFFF', stroke: '#000000', strokeThickness: 6
+        }).setOrigin(0.5).setDepth(22);
+
+        // "PRESIONA" label above
+        this.add.text(GAME_WIDTH / 4, keyY - 75, 'PRESIONA', {
+            fontSize: '14px', fontFamily: 'Arial Black',
+            color: '#44CCFF', stroke: '#000000', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(20);
+
+        // Pulse glow ring
+        this.p1GlowRing = this.add.circle(GAME_WIDTH / 4, keyY, 60, 0x44CCFF, 0).setDepth(17);
+        this.p1GlowRing.setStrokeStyle(3, 0x44CCFF, 0.6);
+        this.tweens.add({
+            targets: this.p1GlowRing, scaleX: 1.3, scaleY: 1.3, alpha: 0,
+            duration: 800, repeat: -1, ease: 'Sine.easeOut'
+        });
+
+        // ── P2 Current Key ──
+        this.p2KeyBg = this.add.graphics().setDepth(18);
+        this.drawKeyCircle(this.p2KeyBg, GAME_WIDTH * 0.75, keyY, 55, 0xFF2200, 0.3);
+
+        this.p2KeyText = this.add.text(GAME_WIDTH * 0.75, keyY, '', {
+            fontSize: '58px', fontFamily: 'Arial Black',
+            color: '#FFFFFF', stroke: '#000000', strokeThickness: 6
+        }).setOrigin(0.5).setDepth(22);
+
+        this.add.text(GAME_WIDTH * 0.75, keyY - 75, 'PRESIONA', {
+            fontSize: '14px', fontFamily: 'Arial Black',
+            color: '#FF2200', stroke: '#000000', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(20);
+
+        this.p2GlowRing = this.add.circle(GAME_WIDTH * 0.75, keyY, 60, 0xFF2200, 0).setDepth(17);
+        this.p2GlowRing.setStrokeStyle(3, 0xFF2200, 0.6);
+        this.tweens.add({
+            targets: this.p2GlowRing, scaleX: 1.3, scaleY: 1.3, alpha: 0,
+            duration: 800, repeat: -1, ease: 'Sine.easeOut'
+        });
+
+        // Set initial keys
+        this.updateKeyDisplay();
+    }
+
+    drawKeyCircle(graphics, x, y, radius, color, alpha) {
+        // Outer glow
+        graphics.fillStyle(color, alpha * 0.3);
+        graphics.fillCircle(x, y, radius + 15);
+        // Main circle
+        graphics.fillStyle(0x0A0A1A, 0.9);
+        graphics.fillCircle(x, y, radius);
+        // Border
+        graphics.lineStyle(4, color, 0.8);
+        graphics.strokeCircle(x, y, radius);
+    }
+
+    updateKeyDisplay() {
+        const p1CurrentKey = this.p1Sequence[this.p1Index];
+        const p2CurrentKey = this.p2Sequence[this.p2Index];
+
+        this.p1KeyText.setText(KEY_LABELS[p1CurrentKey] || p1CurrentKey);
+        this.p2KeyText.setText(KEY_LABELS[p2CurrentKey] || p2CurrentKey);
+    }
+
+    // ═══════════════════════════════════════════
+    // INPUT LISTENERS — Listen for all relevant keys
+    // ═══════════════════════════════════════════
+    setupInputListeners() {
+        // ── P1 Keys: U, I, J, A, S, D, W ──
+        const p1Keys = ['U', 'I', 'J', 'A', 'S', 'D', 'W'];
+        p1Keys.forEach(keyName => {
+            this.input.keyboard.on(`keydown-${keyName}`, () => {
+                this.onKeyPress(true, keyName);
+            });
+        });
+
+        // ── P2 Keys: Arrow keys + Numpad 1 ──
+        this.input.keyboard.on('keydown-UP', () => this.onKeyPress(false, 'UP'));
+        this.input.keyboard.on('keydown-DOWN', () => this.onKeyPress(false, 'DOWN'));
+        this.input.keyboard.on('keydown-LEFT', () => this.onKeyPress(false, 'LEFT'));
+        this.input.keyboard.on('keydown-RIGHT', () => this.onKeyPress(false, 'RIGHT'));
+
+        // Numpad 1
+        const numpad1 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE);
+        numpad1.on('down', () => this.onKeyPress(false, 'NUMPAD_ONE'));
+
+        // Regular '1' key as fallback for P2
+        this.input.keyboard.on('keydown-ONE', () => this.onKeyPress(false, 'NUMPAD_ONE'));
+    }
+
+    // ═══════════════════════════════════════════
+    // KEY PRESS — Check if correct, advance sequence
+    // ═══════════════════════════════════════════
+    onKeyPress(isP1, pressedKey) {
+        if (this.finished) return;
+
+        if (isP1) {
+            const expectedKey = this.p1Sequence[this.p1Index];
+            if (pressedKey === expectedKey) {
+                // ✅ Correct!
+                this.p1Hits++;
+                this.p1Index = (this.p1Index + 1) % this.p1Sequence.length;
+                this.clashProgress = Math.min(100, this.clashProgress + DOMAIN_CLASH.PROGRESS_PER_HIT);
+                this.p1CountText.setText(this.p1Hits.toString());
+
+                this.showCorrectFeedback(true);
+                this.spawnHitParticles(true);
+                this.cameras.main.shake(60, 0.003);
+                this.updateKeyDisplay();
+                this.updateBar();
+            }
+            // Wrong key: do nothing (no penalty, no advance)
+        } else {
+            const expectedKey = this.p2Sequence[this.p2Index];
+            if (pressedKey === expectedKey) {
+                // ✅ Correct!
+                this.p2Hits++;
+                this.p2Index = (this.p2Index + 1) % this.p2Sequence.length;
+                this.clashProgress = Math.max(0, this.clashProgress - DOMAIN_CLASH.PROGRESS_PER_HIT);
+                this.p2CountText.setText(this.p2Hits.toString());
+
+                this.showCorrectFeedback(false);
+                this.spawnHitParticles(false);
+                this.cameras.main.shake(60, 0.003);
+                this.updateKeyDisplay();
+                this.updateBar();
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    // VISUAL FEEDBACK — Green flash on correct press
+    // ═══════════════════════════════════════════
+    showCorrectFeedback(isP1) {
+        const keyY = GAME_HEIGHT - 180;
+        const x = isP1 ? GAME_WIDTH / 4 : GAME_WIDTH * 0.75;
+        const color = isP1 ? 0x00FF44 : 0x00FF44; // Both flash green on success
+
+        // Green explosion ring
+        const ring = this.add.circle(x, keyY, 30, color, 0.6).setDepth(30);
+        this.tweens.add({
+            targets: ring,
+            scaleX: 2.5, scaleY: 2.5, alpha: 0,
+            duration: 300, ease: 'Power2',
+            onComplete: () => ring.destroy()
+        });
+
+        // Flash the key text green briefly
+        const keyText = isP1 ? this.p1KeyText : this.p2KeyText;
+        keyText.setColor('#00FF44');
+        this.time.delayedCall(150, () => {
+            keyText.setColor('#FFFFFF');
+        });
+
+        // Redraw key circle background with green flash
+        const keyBg = isP1 ? this.p1KeyBg : this.p2KeyBg;
+        const baseColor = isP1 ? 0x44CCFF : 0xFF2200;
+        keyBg.clear();
+        this.drawKeyCircle(keyBg, x, keyY, 55, 0x00FF44, 0.6);
+
+        // Return to normal color after brief flash
+        this.time.delayedCall(200, () => {
+            keyBg.clear();
+            this.drawKeyCircle(keyBg, x, keyY, 55, baseColor, 0.3);
+        });
+
+        // Scale punch on the key text
+        this.tweens.add({
+            targets: keyText,
+            scaleX: 1.4, scaleY: 1.4,
+            duration: 80, yoyo: true, ease: 'Back.easeOut'
+        });
+
+        // Impact text
+        const impactText = isP1 ? this.p1Impact : this.p2Impact;
+        this.showImpact(impactText, '✓', '#00FF44');
+    }
+
+    showImpact(textObj, text, color) {
+        textObj.setText(text);
+        textObj.setColor(color);
+        textObj.setAlpha(1);
+        textObj.setScale(1.5);
+
+        this.tweens.add({
+            targets: textObj,
+            alpha: 0, scaleX: 0.5, scaleY: 0.5,
+            duration: 200, ease: 'Power2'
+        });
+    }
+
+    spawnHitParticles(isP1) {
+        const baseX = isP1 ? GAME_WIDTH / 4 : GAME_WIDTH * 0.75;
+        const baseY = GAME_HEIGHT - 180;
+        const color = 0x00FF44; // Green for success
+
+        for (let i = 0; i < 5; i++) {
+            const px = baseX + (Math.random() - 0.5) * 80;
+            const py = baseY + (Math.random() - 0.5) * 60;
+            const size = 3 + Math.random() * 6;
+            const particle = this.add.circle(px, py, size, color, 0.9).setDepth(28);
+
+            this.tweens.add({
+                targets: particle,
+                x: px + (Math.random() - 0.5) * 80,
+                y: py - 20 - Math.random() * 50,
+                alpha: 0, scaleX: 0.1, scaleY: 0.1,
+                duration: 350 + Math.random() * 200,
+                ease: 'Power2',
+                onComplete: () => particle.destroy()
+            });
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -168,11 +393,9 @@ export default class DomainClashScene extends Phaser.Scene {
         const stripWidth = 250;
         const halfW = stripWidth / 2;
 
-        // P1 lines (angle -35°) — left side
         const angle1 = -35 * (Math.PI / 180);
         this.drawStripLines(cx - 160, cy, angle1, halfW, diagLen, 0x44CCFF);
 
-        // P2 lines (angle +35°) — right side
         const angle2 = 35 * (Math.PI / 180);
         this.drawStripLines(cx + 160, cy, angle2, halfW, diagLen, 0xFF2200);
     }
@@ -194,7 +417,6 @@ export default class DomainClashScene extends Phaser.Scene {
 
         const g = this.add.graphics().setDepth(3);
 
-        // Filled strip background
         g.fillStyle(color, 0.08);
         g.beginPath();
         g.moveTo(p1x, p1y);
@@ -204,17 +426,14 @@ export default class DomainClashScene extends Phaser.Scene {
         g.closePath();
         g.fillPath();
 
-        // Border lines
         g.lineStyle(6, color, 0.7);
         g.beginPath(); g.moveTo(p1x, p1y); g.lineTo(p2x, p2y); g.strokePath();
         g.beginPath(); g.moveTo(p4x, p4y); g.lineTo(p3x, p3y); g.strokePath();
 
-        // Glow lines
         g.lineStyle(14, color, 0.15);
         g.beginPath(); g.moveTo(p1x, p1y); g.lineTo(p2x, p2y); g.strokePath();
         g.beginPath(); g.moveTo(p4x, p4y); g.lineTo(p3x, p3y); g.strokePath();
 
-        // Pulsing glow animation
         this.tweens.add({
             targets: g, alpha: 0.4, yoyo: true, repeat: -1,
             duration: 600, ease: 'Sine.easeInOut'
@@ -225,7 +444,6 @@ export default class DomainClashScene extends Phaser.Scene {
     // DOMAIN SIGNS — Show both characters' portraits
     // ═══════════════════════════════════════════
     createDomainSigns() {
-        // P1 sign (left side)
         const p1SignKey = this.getSignKey(this.p1Key);
         if (p1SignKey && this.textures.exists(p1SignKey)) {
             this.p1Sign = this.add.image(GAME_WIDTH / 4, GAME_HEIGHT / 2 + 20, p1SignKey)
@@ -238,7 +456,6 @@ export default class DomainClashScene extends Phaser.Scene {
             });
         }
 
-        // P2 sign (right side)
         const p2SignKey = this.getSignKey(this.p2Key);
         if (p2SignKey && this.textures.exists(p2SignKey)) {
             this.p2Sign = this.add.image(GAME_WIDTH * 0.75, GAME_HEIGHT / 2 + 20, p2SignKey)
@@ -251,7 +468,6 @@ export default class DomainClashScene extends Phaser.Scene {
             });
         }
 
-        // VS text in center
         this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 20, 'VS', {
             fontSize: '64px', fontFamily: 'Arial Black',
             color: '#FFD700', stroke: '#000000', strokeThickness: 8
@@ -259,81 +475,20 @@ export default class DomainClashScene extends Phaser.Scene {
     }
 
     getSignKey(charKey) {
-        if (charKey === 'GOJO') return 'gojo_sign';
-        if (charKey === 'SUKUNA') return 'sukuna_sign';
-        if (charKey === 'KENJAKU') return 'kenjaku_sign';
-        return null;
+        const signMap = {
+            'GOJO': 'gojo_sign',
+            'SUKUNA': 'sukuna_sign',
+            'KENJAKU': 'kenjaku_sign',
+            'TOJI': 'toji_sign',
+            'ISHIGORI': 'ishigori_sign',
+            'KUROROSHI': 'kuroroshi_sign',
+        };
+        return signMap[charKey] || null;
     }
 
     // ═══════════════════════════════════════════
-    // MASHING LOGIC
+    // TUG-OF-WAR BAR UPDATE
     // ═══════════════════════════════════════════
-    onMash(isP1) {
-        if (this.finished) return;
-
-        const now = this.time.now;
-        const lastPress = isP1 ? this.p1LastPress : this.p2LastPress;
-
-        // Anti-spam: minimum interval between valid presses
-        if (now - lastPress < PULSE_INTERVAL) return;
-
-        if (isP1) {
-            this.p1LastPress = now;
-            this.p1Presses++;
-            this.clashProgress = Math.min(100, this.clashProgress + MASH_POWER);
-            this.p1CountText.setText(this.p1Presses.toString());
-            this.showImpact(this.p1Impact, 'HIT!', '#44CCFF');
-            this.spawnMashParticle(true);
-        } else {
-            this.p2LastPress = now;
-            this.p2Presses++;
-            this.clashProgress = Math.max(0, this.clashProgress - MASH_POWER);
-            this.p2CountText.setText(this.p2Presses.toString());
-            this.showImpact(this.p2Impact, 'HIT!', '#FF2200');
-            this.spawnMashParticle(false);
-        }
-
-        // Screen shake on every press
-        this.cameras.main.shake(60, 0.003);
-
-        this.updateBar();
-    }
-
-    showImpact(textObj, text, color) {
-        textObj.setText(text);
-        textObj.setColor(color);
-        textObj.setAlpha(1);
-        textObj.setScale(1.5);
-
-        this.tweens.add({
-            targets: textObj,
-            alpha: 0, scaleX: 0.5, scaleY: 0.5,
-            duration: 200, ease: 'Power2'
-        });
-    }
-
-    spawnMashParticle(isP1) {
-        const baseX = isP1 ? GAME_WIDTH / 4 : GAME_WIDTH * 0.75;
-        const color = isP1 ? 0x44CCFF : 0xFF2200;
-
-        for (let i = 0; i < 3; i++) {
-            const px = baseX + (Math.random() - 0.5) * 100;
-            const py = GAME_HEIGHT / 2 + (Math.random() - 0.5) * 80;
-            const size = 4 + Math.random() * 8;
-            const particle = this.add.circle(px, py, size, color, 0.8).setDepth(8);
-
-            this.tweens.add({
-                targets: particle,
-                x: px + (Math.random() - 0.5) * 60,
-                y: py - 30 - Math.random() * 40,
-                alpha: 0, scaleX: 0.1, scaleY: 0.1,
-                duration: 300 + Math.random() * 200,
-                ease: 'Power2',
-                onComplete: () => particle.destroy()
-            });
-        }
-    }
-
     updateBar() {
         this.clashProgress = Phaser.Math.Clamp(this.clashProgress, 0, 100);
         this.p1Bar.width = (this.clashProgress / 100) * this.barWidth;
@@ -393,9 +548,9 @@ export default class DomainClashScene extends Phaser.Scene {
         this.timerText.setText(timeLeft.toFixed(1));
 
         // Urgency color
-        if (timeLeft <= 2) {
+        if (timeLeft <= 3) {
             this.timerText.setColor('#FF4444');
-        } else if (timeLeft <= 4) {
+        } else if (timeLeft <= 6) {
             this.timerText.setColor('#FFAA00');
         }
 
@@ -411,9 +566,8 @@ export default class DomainClashScene extends Phaser.Scene {
 
         const centerX = GAME_WIDTH / 2;
         const centerY = GAME_HEIGHT / 2 + 20;
-        const intensity = Math.abs(this.clashProgress - 50) / 50; // 0 to 1
+        const intensity = Math.abs(this.clashProgress - 50) / 50;
 
-        // Energy rings at center
         const pulse = 0.5 + Math.sin(time * 0.01) * 0.3;
 
         // P1 energy wave (from left)

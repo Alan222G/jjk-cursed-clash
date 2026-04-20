@@ -99,9 +99,10 @@ export const DOMAIN = {
 
 // ── Domain Clash QTE ─────────────────────────────────────
 export const DOMAIN_CLASH = {
-    TIME_LIMIT: 6000,           // ms for mash tug-of-war
-    P1_MASH_KEY: 'J',
-    P2_MASH_KEY: '1',
+    TIME_LIMIT: 12000,          // 12 seconds for sequence QTE
+    PROGRESS_PER_HIT: 2.5,     // Tug-of-war progress per correct key
+    P1_SEQUENCE: ['U', 'I', 'J', 'A', 'S', 'D', 'W'],
+    P2_SEQUENCE: ['UP', 'DOWN', 'LEFT', 'RIGHT', 'NUMPAD_ONE'],
 };
 
 // ── Rounds ───────────────────────────────────────────────

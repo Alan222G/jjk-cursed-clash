@@ -454,11 +454,8 @@ export default class GameScene extends Phaser.Scene {
         winner.domainActive = true;
         winner.ceSystem.isDomainActive = true;
         
-        // Determine domain type from character
-        let domainType = 'unknown';
-        if (winnerKey === 'GOJO') domainType = 'unlimited_void';
-        else if (winnerKey === 'SUKUNA') domainType = 'malevolent_shrine';
-        else if (winnerKey === 'KENJAKU') domainType = 'womb_profusion';
+        // Determine domain type dynamically from character config
+        const domainType = winner.charData.domainBg || 'unknown';
 
         // Activate the winner's domain cinematic through the normal flow
         this.onDomainActivated(winner, domainType);
