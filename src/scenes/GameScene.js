@@ -453,12 +453,9 @@ export default class GameScene extends Phaser.Scene {
         // ── WINNER: Activates their domain directly (without re-spending CE) ──
         winner.domainActive = true;
         winner.ceSystem.isDomainActive = true;
-        
-        // Determine domain type dynamically from character config
-        const domainType = winner.charData.domainBg || 'unknown';
 
         // Activate the winner's domain cinematic through the normal flow
-        this.onDomainActivated(winner, domainType);
+        this.onDomainActivated(winner, winnerKey);
     }
 
     cancelDomain(owner) {
