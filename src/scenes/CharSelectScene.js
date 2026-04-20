@@ -1,9 +1,18 @@
 // ========================================================
-// CharSelectScene — Character selection grid (MK style)
+// CharSelectScene — Character selection grid (2-row layout)
+// Redesigned from scratch for bulletproof character mapping
 // ========================================================
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
+
+// ── Grid Layout: 2 rows ──
+// Row 0: GOJO, SUKUNA, TOJI, KENJAKU
+// Row 1: ISHIGORI, KUROROSHI  (centered)
+const GRID = [
+    ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU'],
+    ['ISHIGORI', 'KUROROSHI'],
+];
 
 // Map character key → menu avatar texture key
 const MENU_KEY = {
@@ -11,6 +20,8 @@ const MENU_KEY = {
     SUKUNA: 'menu_sukuna',
     TOJI: 'menu_toji',
     KENJAKU: 'menu_kenjaku',
+    ISHIGORI: 'menu_ishigori',
+    KUROROSHI: 'menu_kuroroshi',
 };
 
 // Iconic JJK titles for each character
@@ -19,6 +30,8 @@ const CHAR_TITLES = {
     SUKUNA: 'KING OF CURSES',
     TOJI: 'THE SORCERER KILLER',
     KENJAKU: 'THE DISGRACED ONE',
+    ISHIGORI: 'THE REINCARNATED SORCERER',
+    KUROROSHI: 'THE CURSED COCKROACH',
 };
 
 export default class CharSelectScene extends Phaser.Scene {
@@ -28,13 +41,13 @@ export default class CharSelectScene extends Phaser.Scene {
 
     create() {
         this.timer = 0;
-        this.p1Selection = 'GOJO';
-        this.p2Selection = 'SUKUNA';
+
+        // ── Player cursor positions on the GRID (row, col) ──
+        this.p1Row = 0; this.p1Col = 0; // GOJO
+        this.p2Row = 0; this.p2Col = 1; // SUKUNA
         this.p1Confirmed = false;
         this.p2Confirmed = false;
-        this.hoveredChar = null; // Track which slot the mouse is over
-
-        const roster = Object.keys(CHARACTERS);
+        this.hoveredChar = null;
 
         // ── BGM Loop ──
         const targetVol = (window.gameSettings?.music ?? 50) / 100 * 0.5;
@@ -78,68 +91,82 @@ export default class CharSelectScene extends Phaser.Scene {
         // ── BACK BUTTON (ESC / Click) ──
         this.createBackButton();
 
-        // ── Character Grid (Center) ──
+        // ── Character Grid (2 rows, centered) ──
         this.gridGraphics = this.add.graphics().setDepth(5);
         this.slotSize = 120;
-        this.gridX = GAME_WIDTH / 2 - (roster.length * this.slotSize) / 2;
-        this.gridY = GAME_HEIGHT / 2 - 40;
+        this.gridStartY = GAME_HEIGHT / 2 - 70;
+        this.rowGap = 20; // Vertical gap between rows
 
-        this.slots = [];
+        this.slots = []; // { key, char, x, y, row, col }
         this.slotImages = [];
 
-        roster.forEach((key, i) => {
-            const char = CHARACTERS[key];
-            const sx = this.gridX + i * this.slotSize + this.slotSize / 2;
-            const sy = this.gridY;
+        for (let row = 0; row < GRID.length; row++) {
+            const rowChars = GRID[row];
+            const rowWidth = rowChars.length * this.slotSize;
+            const rowStartX = GAME_WIDTH / 2 - rowWidth / 2;
+            const rowY = this.gridStartY + row * (this.slotSize + this.rowGap);
 
-            this.slots.push({ key, char, x: sx, y: sy });
+            for (let col = 0; col < rowChars.length; col++) {
+                const key = rowChars[col];
+                const char = CHARACTERS[key];
+                if (!char) continue;
 
-            // Clickable zone
-            const zone = this.add.zone(sx, sy, this.slotSize - 10, this.slotSize - 10)
-                .setInteractive({ useHandCursor: true });
-            zone.on('pointerdown', () => {
-                if (!this.p1Confirmed) {
-                    this.p1Selection = key;
-                    this.p1Confirmed = true;
-                } else if (!this.p2Confirmed) {
-                    this.p2Selection = key;
-                    this.p2Confirmed = true;
+                const sx = rowStartX + col * this.slotSize + this.slotSize / 2;
+                const sy = rowY;
+
+                this.slots.push({ key, char, x: sx, y: sy, row, col });
+
+                // Clickable zone
+                const zone = this.add.zone(sx, sy, this.slotSize - 10, this.slotSize - 10)
+                    .setInteractive({ useHandCursor: true });
+                
+                // Capture row/col for click handler
+                const slotRow = row;
+                const slotCol = col;
+                
+                zone.on('pointerdown', () => {
+                    if (!this.p1Confirmed) {
+                        this.p1Row = slotRow;
+                        this.p1Col = slotCol;
+                        this.p1Confirmed = true;
+                    } else if (!this.p2Confirmed) {
+                        this.p2Row = slotRow;
+                        this.p2Col = slotCol;
+                        this.p2Confirmed = true;
+                    }
+                });
+
+                zone.on('pointerover', () => { this.hoveredChar = key; });
+                zone.on('pointerout', () => { if (this.hoveredChar === key) this.hoveredChar = null; });
+
+                // Portrait thumbnail inside the slot
+                const texKey = MENU_KEY[key];
+                if (texKey && this.textures.exists(texKey)) {
+                    const thumb = this.add.image(sx, sy, texKey)
+                        .setDisplaySize(this.slotSize - 16, this.slotSize - 16)
+                        .setDepth(5)
+                        .setAlpha(0.9);
+                    this.slotImages.push({ key, img: thumb });
                 }
-            });
 
-            // Hover for stats tooltip
-            zone.on('pointerover', () => { this.hoveredChar = key; });
-            zone.on('pointerout', () => { if (this.hoveredChar === key) this.hoveredChar = null; });
-
-            // Portrait thumbnail inside the slot
-            const texKey = MENU_KEY[key];
-            if (texKey && this.textures.exists(texKey)) {
-                const thumb = this.add.image(sx, sy, texKey)
-                    .setDisplaySize(this.slotSize - 16, this.slotSize - 16)
-                    .setDepth(5)
-                    .setAlpha(0.9);
-                this.slotImages.push({ key, img: thumb });
+                // Character name below slot
+                this.add.text(sx, sy + this.slotSize / 2 - 20, char.name.split(' ')[0].toUpperCase(), {
+                    fontFamily: 'Arial Black, sans-serif',
+                    fontSize: '11px',
+                    color: '#AAAACC',
+                    stroke: '#000000',
+                    strokeThickness: 2,
+                }).setOrigin(0.5).setDepth(6);
             }
+        }
 
-            // Character name below slot
-            this.add.text(sx, sy + this.slotSize / 2 - 20, char.name.split(' ')[0].toUpperCase(), {
-                fontFamily: 'Arial Black, sans-serif',
-                fontSize: '11px',
-                color: '#AAAACC',
-                stroke: '#000000',
-                strokeThickness: 2,
-            }).setOrigin(0.5).setDepth(6);
-        });
-
-        // Panels replace these OLD P1 texts
-
-        // Variables for panels
+        // ── Stats Panels ──
         this.statsGraphics = this.add.graphics({ x: 0, y: 0 }).setDepth(20);
         this.statsTexts = [];
 
         // ── Instructions ──
         this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 45,
-            'P1: A/D + J  |  P2: ←/→ + Numpad 1  |  ESC: Volver', {
+            'P1: A/D/W/S + J  |  P2: ←/→/↑/↓ + Numpad 1  |  ESC: Volver', {
             fontFamily: 'Arial, sans-serif',
             fontSize: '13px',
             color: '#666688',
@@ -152,7 +179,7 @@ export default class CharSelectScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(5);
 
         // ── Ready Text ──
-        this.readyText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 130, '', {
+        this.readyText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 160, '', {
             fontFamily: 'Arial Black, Impact, sans-serif',
             fontSize: '42px',
             color: '#FFD700',
@@ -163,10 +190,14 @@ export default class CharSelectScene extends Phaser.Scene {
         // ── Keyboard Controls ──
         this.p1KeyA = this.input.keyboard.addKey('A');
         this.p1KeyD = this.input.keyboard.addKey('D');
+        this.p1KeyW = this.input.keyboard.addKey('W');
+        this.p1KeyS = this.input.keyboard.addKey('S');
         this.p1Confirm = this.input.keyboard.addKey('J');
 
         this.p2KeyLeft = this.input.keyboard.addKey('LEFT');
         this.p2KeyRight = this.input.keyboard.addKey('RIGHT');
+        this.p2KeyUp = this.input.keyboard.addKey('UP');
+        this.p2KeyDown = this.input.keyboard.addKey('DOWN');
         this.p2Confirm = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE);
 
         // ESC to go back to menu
@@ -180,6 +211,29 @@ export default class CharSelectScene extends Phaser.Scene {
         this.transitioning = false;
         this._lastP1 = null;
         this._lastP2 = null;
+    }
+
+    // ── Helper: Get character key from grid position ──
+    getKeyAt(row, col) {
+        if (row < 0 || row >= GRID.length) return null;
+        if (col < 0 || col >= GRID[row].length) return null;
+        return GRID[row][col];
+    }
+
+    // ── Helper: Clamp column when changing rows (rows have different lengths) ──
+    clampCol(row, col) {
+        const maxCol = GRID[row].length - 1;
+        return Math.min(col, maxCol);
+    }
+
+    // ── Helper: Get P1 selected key ──
+    get p1Selection() {
+        return this.getKeyAt(this.p1Row, this.p1Col) || 'GOJO';
+    }
+
+    // ── Helper: Get P2 selected key ──
+    get p2Selection() {
+        return this.getKeyAt(this.p2Row, this.p2Col) || 'SUKUNA';
     }
 
     createBackButton() {
@@ -232,6 +286,7 @@ export default class CharSelectScene extends Phaser.Scene {
         if (!charKey) return;
 
         const char = CHARACTERS[charKey];
+        if (!char) return;
         const stats = char.stats;
         const skills = char.skills;
         const title = CHAR_TITLES[charKey] || char.title || '';
@@ -308,9 +363,10 @@ export default class CharSelectScene extends Phaser.Scene {
 
         // Skills Box
         const skillY = sy + statLines.length * lineH + 15;
-        this.add.text(colL, skillY, '⚡ HABILIDADES', {
+        const skillHeader = this.add.text(colL, skillY, '⚡ HABILIDADES', {
             fontFamily: 'Arial Black, sans-serif', fontSize: '12px', color: '#D4A843'
         }).setDepth(21);
+        this.statsTexts.push(skillHeader);
         
         let skIdx = 0;
         if (skills.skill1) {
@@ -338,43 +394,58 @@ export default class CharSelectScene extends Phaser.Scene {
         this.statsTexts = [];
 
         // Draw Player 1 (Left)
-        if (this.p1Selection) {
-            this.drawSideStatsPanel(this.p1Selection, true);
-        }
+        this.drawSideStatsPanel(this.p1Selection, true);
         // Draw Player 2 (Right)
-        if (this.p2Selection) {
-            this.drawSideStatsPanel(this.p2Selection, false);
-        }
+        this.drawSideStatsPanel(this.p2Selection, false);
     }
 
     update(time, delta) {
         this.timer += delta;
-        const roster = Object.keys(CHARACTERS);
 
-        // ── P1 Selection ──
+        // ── P1 Selection (W/A/S/D + J) ──
         if (!this.p1Confirmed) {
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyA)) {
-                const idx = roster.indexOf(this.p1Selection);
-                this.p1Selection = roster[(idx - 1 + roster.length) % roster.length];
+                this.p1Col = Math.max(0, this.p1Col - 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyD)) {
-                const idx = roster.indexOf(this.p1Selection);
-                this.p1Selection = roster[(idx + 1) % roster.length];
+                this.p1Col = Math.min(GRID[this.p1Row].length - 1, this.p1Col + 1);
+            }
+            if (Phaser.Input.Keyboard.JustDown(this.p1KeyW)) {
+                if (this.p1Row > 0) {
+                    this.p1Row--;
+                    this.p1Col = this.clampCol(this.p1Row, this.p1Col);
+                }
+            }
+            if (Phaser.Input.Keyboard.JustDown(this.p1KeyS)) {
+                if (this.p1Row < GRID.length - 1) {
+                    this.p1Row++;
+                    this.p1Col = this.clampCol(this.p1Row, this.p1Col);
+                }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1Confirm)) {
                 this.p1Confirmed = true;
             }
         }
 
-        // ── P2 Selection ──
+        // ── P2 Selection (Arrows + Numpad1) ──
         if (!this.p2Confirmed) {
             if (Phaser.Input.Keyboard.JustDown(this.p2KeyLeft)) {
-                const idx = roster.indexOf(this.p2Selection);
-                this.p2Selection = roster[(idx - 1 + roster.length) % roster.length];
+                this.p2Col = Math.max(0, this.p2Col - 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2KeyRight)) {
-                const idx = roster.indexOf(this.p2Selection);
-                this.p2Selection = roster[(idx + 1) % roster.length];
+                this.p2Col = Math.min(GRID[this.p2Row].length - 1, this.p2Col + 1);
+            }
+            if (Phaser.Input.Keyboard.JustDown(this.p2KeyUp)) {
+                if (this.p2Row > 0) {
+                    this.p2Row--;
+                    this.p2Col = this.clampCol(this.p2Row, this.p2Col);
+                }
+            }
+            if (Phaser.Input.Keyboard.JustDown(this.p2KeyDown)) {
+                if (this.p2Row < GRID.length - 1) {
+                    this.p2Row++;
+                    this.p2Col = this.clampCol(this.p2Row, this.p2Col);
+                }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2Confirm)) {
                 this.p2Confirmed = true;
@@ -386,9 +457,12 @@ export default class CharSelectScene extends Phaser.Scene {
 
         // ── Draw Grid ──
         this.gridGraphics.clear();
+        const p1Key = this.p1Selection;
+        const p2Key = this.p2Selection;
+
         for (const slot of this.slots) {
-            const isP1 = slot.key === this.p1Selection;
-            const isP2 = slot.key === this.p2Selection;
+            const isP1 = slot.key === p1Key;
+            const isP2 = slot.key === p2Key;
             const x = slot.x;
             const y = slot.y;
             const half = this.slotSize / 2 - 4;
@@ -426,6 +500,13 @@ export default class CharSelectScene extends Phaser.Scene {
         // ── Both Confirmed → Start Fight ──
         if (this.p1Confirmed && this.p2Confirmed && !this.transitioning) {
             this.transitioning = true;
+
+            // Store final selections BEFORE any transition logic
+            const finalP1 = this.p1Selection;
+            const finalP2 = this.p2Selection;
+
+            console.log(`[CharSelect] Fight starting: P1="${finalP1}" vs P2="${finalP2}"`);
+
             this.readyText.setText('FIGHT!');
             this.readyText.setAlpha(1);
 
@@ -440,8 +521,8 @@ export default class CharSelectScene extends Phaser.Scene {
                 this.cameras.main.fadeOut(400, 0, 0, 0);
                 this.time.delayedCall(400, () => {
                     this.scene.start('GameScene', {
-                        p1: this.p1Selection,
-                        p2: this.p2Selection,
+                        p1: finalP1,
+                        p2: finalP2,
                     });
                 });
             });

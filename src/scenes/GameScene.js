@@ -7,6 +7,8 @@ import Gojo from '../entities/fighters/Gojo.js';
 import Sukuna from '../entities/fighters/Sukuna.js';
 import Toji from '../entities/fighters/Toji.js';
 import Kenjaku from '../entities/fighters/Kenjaku.js';
+import Ishigori from '../entities/fighters/Ishigori.js';
+import Kuroroshi from '../entities/fighters/Kuroroshi.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -101,11 +103,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createFighter(key, x, y, index) {
-        if (key === 'GOJO') return new Gojo(this, x, y, index);
-        if (key === 'SUKUNA') return new Sukuna(this, x, y, index);
-        if (key === 'TOJI') return new Toji(this, x, y, index);
-        if (key === 'KENJAKU') return new Kenjaku(this, x, y, index);
-        return new Gojo(this, x, y, index);
+        const FIGHTER_CLASSES = {
+            'GOJO': Gojo,
+            'SUKUNA': Sukuna,
+            'TOJI': Toji,
+            'KENJAKU': Kenjaku,
+            'ISHIGORI': Ishigori,
+            'KUROROSHI': Kuroroshi,
+        };
+
+        const normalizedKey = (key || '').toUpperCase().trim();
+        const FighterClass = FIGHTER_CLASSES[normalizedKey];
+
+        if (!FighterClass) {
+            console.warn(`[createFighter] Unknown key "${key}" (normalized: "${normalizedKey}"). Defaulting to Gojo.`);
+            return new Gojo(this, x, y, index);
+        }
+
+        return new FighterClass(this, x, y, index);
     }
 
     // ════════════════════════════════════════════════════════
@@ -130,10 +145,20 @@ export default class GameScene extends Phaser.Scene {
         try { this.sound.stopAll(); } catch(e) {}
 
         const charKey = (owner === this.p1) ? this.p1Key : this.p2Key;
-        const voiceKey = (charKey === 'GOJO') ? 'gojo_domain_voice' : 'sukuna_domain_voice';
-        const signKey = (charKey === 'GOJO') ? 'gojo_sign' : 'sukuna_sign';
-        const tintColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
-        const bgColor = (charKey === 'GOJO') ? 0x44CCFF : 0x000000;
+
+        // ── Generalized domain visual/audio lookup ──
+        const DOMAIN_THEMES = {
+            GOJO:     { voice: 'gojo_domain_voice',   sign: 'gojo_sign',   color: 0x44CCFF, bg: 0x44CCFF, lineColor: 0x44CCFF, textColor: '#44CCFF', name: 'RYŌIKI TENKAI — MURYŌKŪSHŌ' },
+            SUKUNA:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFF2200, bg: 0x000000, lineColor: 0xFF2200, textColor: '#FF4444', name: 'RYŌIKI TENKAI — FUKUMA MIZUSHI' },
+            KENJAKU:  { voice: 'gojo_domain_voice',    sign: 'sukuna_sign', color: 0x8844CC, bg: 0x110022, lineColor: 0xAA66FF, textColor: '#AA66FF', name: 'RYŌIKI TENKAI — TAIHŌGAN' },
+            ISHIGORI: { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFFAA33, bg: 0x1A0A00, lineColor: 0xFFCC00, textColor: '#FFCC00', name: 'RYŌIKI TENKAI — JIKANKŌ GEPPAKU' },
+            KUROROSHI:{ voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x664422, bg: 0x0A0500, lineColor: 0xAA7744, textColor: '#AA7744', name: 'RYŌIKI TENKAI — SHŌKEI GAICHU' },
+        };
+        const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;
+
+        const voiceKey = theme.voice;
+        const signKey = theme.sign;
+        const bgColor = theme.bg;
 
         // Reproduce el audio INMEDIATAMENTE en la Fase 1
         try {
@@ -231,7 +256,7 @@ export default class GameScene extends Phaser.Scene {
         this.domainLines = this.add.graphics();
         this.domainLines.setDepth(52);
         
-        const lineColor = (charKey === 'GOJO') ? 0x44CCFF : 0xFF2200;
+        const lineColor = theme.lineColor;
         
         this.domainLines.lineStyle(6, lineColor, 0.9);
         this.domainLines.beginPath();
@@ -261,14 +286,14 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // Domain Name Text
-        const domainName = (charKey === 'GOJO') ? 'RYŌIKI TENKAI — MURYŌKŪSHŌ' : 'RYŌIKI TENKAI — FUKUMA MIZUSHI';
+        const domainName = theme.name;
         const textX = GAME_WIDTH / 2 - perpX * (halfW + 50);
         const textY = GAME_HEIGHT / 2 - perpY * (halfW + 50);
         
         this.domainText = this.add.text(textX, textY, domainName, {
             fontFamily: 'Arial Black',
             fontSize: '28px',
-            color: (charKey === 'GOJO') ? '#44CCFF' : '#FF4444',
+            color: theme.textColor,
             stroke: '#000000',
             strokeThickness: 5,
             align: 'center',

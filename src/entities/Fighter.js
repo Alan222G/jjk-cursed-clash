@@ -40,8 +40,10 @@ export default class Fighter {
         this.stunTimer = 0;
         this.domainActive = false;
         this.flashTimer = 0;
-        this.burnTimer = 0;
         this.burnTickTimer = 0;
+        this.burnTimer = 0;
+        this.comboCooldown = 0; // 2 seconds between combos
+        this.lastHitConnected = false; // To speed up combos
 
         // ── Colors ──
         this.colors = charData.colors;
@@ -216,6 +218,7 @@ export default class Fighter {
             },
             onExit: function () {
                 this.disableHitbox();
+                this.lastHitConnected = this.hitConnected; // Save for next combo hit eval
                 this.attackPhase = 'none';
             },
         });
@@ -351,6 +354,11 @@ export default class Fighter {
         const attackAction = this.input.pollAttacks();
         if (!attackAction) return;
 
+        // Allow subclass to override / handle specific attacks first (e.g. Ryu's combo finisher)
+        if (this.handleSpecialAttackInput && this.handleSpecialAttackInput(attackAction)) {
+            return;
+        }
+
         if (attackAction === 'DOMAIN') {
             this.tryActivateDomain();
             return;
@@ -363,7 +371,7 @@ export default class Fighter {
 
         // Normal attacks
         if (this.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
-            if (attackAction === 'LIGHT') {
+            if (attackAction === 'LIGHT' && this.comboCooldown <= 0) {
                 this.comboStep = (this.comboStep || 0) + 1;
                 if (this.comboStep > 4) this.comboStep = 1;
                 
@@ -379,9 +387,21 @@ export default class Fighter {
                     atkData.damage = 60; // Daño aumentado
                 }
                 
+                // Speed up combo if previous hit connected
+                if (this.comboStep > 1 && this.lastHitConnected) {
+                    atkData.startup = Math.floor(atkData.startup * 0.4); // 60% faster startup
+                    atkData.recovery = Math.floor(atkData.recovery * 0.6); // 40% faster recovery
+                }
+                
                 this.currentAttack = { ...atkData, type: 'COMBO' };
                 this.stateMachine.setState('attack');
                 this.comboResetTimer = 1500;
+
+                // Cooldown en golpes basicos luego de terminar el combo completo
+                if (this.comboStep === 4) {
+                    this.comboCooldown = 2000;
+                    this.comboStep = 0;
+                }
             }
         }
     }
@@ -418,12 +438,21 @@ export default class Fighter {
     // ── Combat Methods ───────────────────────────────────
 
     enableHitbox(atkData) {
-        const offsetX = atkData.range * this.facing;
+        // Continuous Hitbox: extends from behind the player to the tip of the attack.
+        // The backReach ensures hits connect even when fighters overlap at the same position.
+        const backReach = 20; // Pixels behind center to catch overlapping opponents
+        const frontReach = atkData.range + (atkData.hitboxW / 2);
+        const totalWidth = backReach + frontReach;
+        
+        // Center of the hitbox is shifted forward (front is longer than back)
+        const offsetX = ((frontReach - backReach) / 2) * this.facing;
+        
         const newX = this.sprite.x + offsetX;
         const newY = this.sprite.y - 10;
+        
         this.hitbox.setPosition(newX, newY);
-        this.hitbox.setSize(atkData.hitboxW, atkData.hitboxH);
-        this.hitbox.body.setSize(atkData.hitboxW, atkData.hitboxH);
+        this.hitbox.setSize(totalWidth, atkData.hitboxH);
+        this.hitbox.body.setSize(totalWidth, atkData.hitboxH);
         this.hitbox.body.reset(newX, newY);
         this.hitbox.body.enable = true;
     }
@@ -682,6 +711,10 @@ export default class Fighter {
             if (this.comboResetTimer <= 0) {
                 this.comboStep = 0;
             }
+        }
+        
+        if (this.comboCooldown > 0) {
+            this.comboCooldown -= dt;
         }
 
         // Infinity Drain
