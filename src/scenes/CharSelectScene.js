@@ -49,6 +49,11 @@ export default class CharSelectScene extends Phaser.Scene {
         this.p2Confirmed = false;
         this.hoveredChar = null;
 
+        // ── Admin Menu State ──
+        this.adminModalOpen = false;
+        if (!window.gameSettings) window.gameSettings = {};
+        if (!window.gameSettings.ceMultiplier) window.gameSettings.ceMultiplier = 1;
+
         // ── BGM Loop ──
         const targetVol = (window.gameSettings?.music ?? 50) / 100 * 0.5;
         const existingBgm = this.sound.get('bgm_select');
@@ -90,6 +95,7 @@ export default class CharSelectScene extends Phaser.Scene {
 
         // ── BACK BUTTON (ESC / Click) ──
         this.createBackButton();
+        this.createAdminButton();
 
         // ── Character Grid (2 rows, centered) ──
         this.gridGraphics = this.add.graphics().setDepth(5);
@@ -202,6 +208,7 @@ export default class CharSelectScene extends Phaser.Scene {
 
         // ESC to go back to menu
         this.input.keyboard.on('keydown-ESC', () => {
+            if (this.adminModalOpen) return;
             if (!this.transitioning) {
                 this.sound.stopAll();
                 this.scene.start('MenuScene');
@@ -402,6 +409,9 @@ export default class CharSelectScene extends Phaser.Scene {
     update(time, delta) {
         this.timer += delta;
 
+        // Skip all input when admin modal is open
+        if (this.adminModalOpen) return;
+
         // ── P1 Selection (W/A/S/D + J) ──
         if (!this.p1Confirmed) {
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyA)) {
@@ -526,6 +536,463 @@ export default class CharSelectScene extends Phaser.Scene {
                     });
                 });
             });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // ADMIN MENU SYSTEM
+    // ═══════════════════════════════════════════════════════
+
+    createAdminButton() {
+        const container = this.add.container(GAME_WIDTH - 75, 35).setDepth(10);
+
+        const adminBg = this.add.graphics();
+        adminBg.fillStyle(0x1A1A2E, 0.8);
+        adminBg.fillRoundedRect(-45, -16, 90, 32, 6);
+        adminBg.lineStyle(2, 0xFF4444, 0.5);
+        adminBg.strokeRoundedRect(-45, -16, 90, 32, 6);
+        container.add(adminBg);
+
+        const adminText = this.add.text(0, 0, '⚙ ADMIN', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '12px',
+            color: '#FF6666',
+        }).setOrigin(0.5);
+        container.add(adminText);
+
+        const adminZone = this.add.zone(0, 0, 90, 32).setInteractive({ useHandCursor: true });
+        container.add(adminZone);
+
+        adminZone.on('pointerover', () => {
+            adminText.setColor('#FFFFFF');
+            adminBg.clear();
+            adminBg.fillStyle(0x440000, 0.7);
+            adminBg.fillRoundedRect(-45, -16, 90, 32, 6);
+            adminBg.lineStyle(2, 0xFF4444, 1);
+            adminBg.strokeRoundedRect(-45, -16, 90, 32, 6);
+        });
+
+        adminZone.on('pointerout', () => {
+            adminText.setColor('#FF6666');
+            adminBg.clear();
+            adminBg.fillStyle(0x1A1A2E, 0.8);
+            adminBg.fillRoundedRect(-45, -16, 90, 32, 6);
+            adminBg.lineStyle(2, 0xFF4444, 0.5);
+            adminBg.strokeRoundedRect(-45, -16, 90, 32, 6);
+        });
+
+        adminZone.on('pointerdown', () => {
+            if (this.adminModalOpen) return;
+            if (window.gameSettings?.adminAuthenticated) {
+                this.showAdminPanel();
+            } else {
+                this.showPasswordModal();
+            }
+        });
+
+        // CE Multiplier status indicator (below admin button)
+        this.ceStatusText = this.add.text(GAME_WIDTH - 75, 58, '', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '10px',
+            color: '#FFAA00',
+        }).setOrigin(0.5).setDepth(10);
+        this.updateCEStatusIndicator();
+    }
+
+    updateCEStatusIndicator() {
+        if (!this.ceStatusText) return;
+        const mult = window.gameSettings?.ceMultiplier || 1;
+        if (mult === 1) {
+            this.ceStatusText.setText('');
+        } else {
+            this.ceStatusText.setColor(mult === 2 ? '#FFAA00' : '#FF4444');
+            this.ceStatusText.setText(`CE x${mult} ⚡`);
+        }
+    }
+
+    showPasswordModal() {
+        this.adminModalOpen = true;
+        this.passwordInput = '';
+        this.adminElements = [];
+        this.cursorVisible = true;
+
+        // Dark overlay
+        const overlay = this.add.rectangle(
+            GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75
+        ).setDepth(100).setInteractive();
+        this.adminElements.push(overlay);
+
+        // Modal dimensions
+        const mW = 420, mH = 280;
+        const mx = GAME_WIDTH / 2 - mW / 2;
+        const my = GAME_HEIGHT / 2 - mH / 2;
+
+        // Modal background with red accent border
+        const modalBg = this.add.graphics().setDepth(101);
+        modalBg.fillStyle(0x0D0D1A, 0.98);
+        modalBg.fillRoundedRect(mx, my, mW, mH, 14);
+        modalBg.lineStyle(2, 0xFF3333, 0.8);
+        modalBg.strokeRoundedRect(mx, my, mW, mH, 14);
+        modalBg.lineStyle(1, 0xD4A843, 0.3);
+        modalBg.strokeRoundedRect(mx + 6, my + 6, mW - 12, mH - 12, 10);
+        this.adminElements.push(modalBg);
+
+        // Title
+        const title = this.add.text(GAME_WIDTH / 2, my + 40, '🔒 ACCESO ADMIN', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '22px',
+            color: '#FF4444',
+            stroke: '#000000',
+            strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(title);
+
+        // Subtitle
+        const subtitle = this.add.text(GAME_WIDTH / 2, my + 72, 'Ingresa la contraseña', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            color: '#888899',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(subtitle);
+
+        // Input box visual
+        const inputBoxG = this.add.graphics().setDepth(102);
+        inputBoxG.fillStyle(0x0A0A12, 1);
+        inputBoxG.fillRoundedRect(mx + 50, my + 95, mW - 100, 40, 6);
+        inputBoxG.lineStyle(2, 0x444466, 0.8);
+        inputBoxG.strokeRoundedRect(mx + 50, my + 95, mW - 100, 40, 6);
+        this.adminElements.push(inputBoxG);
+
+        // Password display (shows dots)
+        this.passwordDisplayText = this.add.text(GAME_WIDTH / 2, my + 115, '|', {
+            fontFamily: 'Courier New, monospace',
+            fontSize: '20px',
+            color: '#FFFFFF',
+            letterSpacing: 2,
+        }).setOrigin(0.5).setDepth(103);
+        this.adminElements.push(this.passwordDisplayText);
+
+        // Error message (hidden initially)
+        this.passwordErrorText = this.add.text(GAME_WIDTH / 2, my + 150, '❌ Contraseña incorrecta', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '13px',
+            color: '#FF4444',
+        }).setOrigin(0.5).setDepth(102).setAlpha(0);
+        this.adminElements.push(this.passwordErrorText);
+
+        // Instructions
+        const instrText = this.add.text(GAME_WIDTH / 2, my + 180, 'ENTER para confirmar', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '12px',
+            color: '#666688',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(instrText);
+
+        // Close button
+        const closeBtnG = this.add.graphics().setDepth(102);
+        closeBtnG.fillStyle(0x1A1A2E, 0.9);
+        closeBtnG.fillRoundedRect(GAME_WIDTH / 2 - 60, my + mH - 55, 120, 34, 6);
+        closeBtnG.lineStyle(1, 0x666688, 0.5);
+        closeBtnG.strokeRoundedRect(GAME_WIDTH / 2 - 60, my + mH - 55, 120, 34, 6);
+        this.adminElements.push(closeBtnG);
+
+        const closeText = this.add.text(GAME_WIDTH / 2, my + mH - 38, 'CERRAR', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '13px',
+            color: '#AAAACC',
+        }).setOrigin(0.5).setDepth(103);
+        this.adminElements.push(closeText);
+
+        const closeZone = this.add.zone(GAME_WIDTH / 2, my + mH - 38, 120, 34)
+            .setInteractive({ useHandCursor: true }).setDepth(104);
+        this.adminElements.push(closeZone);
+
+        closeZone.on('pointerover', () => closeText.setColor('#FFFFFF'));
+        closeZone.on('pointerout', () => closeText.setColor('#AAAACC'));
+        closeZone.on('pointerdown', () => this.hidePasswordModal());
+
+        // Blinking cursor timer
+        this.cursorBlink = this.time.addEvent({
+            delay: 530,
+            callback: () => {
+                if (this.passwordDisplayText) {
+                    this.cursorVisible = !this.cursorVisible;
+                    this.updatePasswordDisplay();
+                }
+            },
+            loop: true,
+        });
+
+        // Keyboard handler for typing
+        this._passwordKeyHandler = (event) => {
+            if (!this.adminModalOpen) return;
+
+            const key = event.key;
+            if (key === 'Enter') {
+                if (this.passwordInput === 'Jiren.lu') {
+                    window.gameSettings.adminAuthenticated = true;
+                    this.hidePasswordModal();
+                    this.showAdminPanel();
+                } else {
+                    this.passwordErrorText.setAlpha(1);
+                    this.passwordInput = '';
+                    this.updatePasswordDisplay();
+                }
+            } else if (key === 'Escape') {
+                this.hidePasswordModal();
+            } else if (key === 'Backspace') {
+                this.passwordInput = this.passwordInput.slice(0, -1);
+                this.passwordErrorText.setAlpha(0);
+                this.updatePasswordDisplay();
+            } else if (key.length === 1 && this.passwordInput.length < 30) {
+                this.passwordInput += key;
+                this.passwordErrorText.setAlpha(0);
+                this.updatePasswordDisplay();
+            }
+        };
+        this.input.keyboard.on('keydown', this._passwordKeyHandler);
+    }
+
+    updatePasswordDisplay() {
+        if (!this.passwordDisplayText) return;
+        const dots = '●'.repeat(this.passwordInput.length);
+        const cursor = this.cursorVisible ? '|' : '';
+        this.passwordDisplayText.setText(dots + cursor || cursor);
+    }
+
+    hidePasswordModal() {
+        this.adminModalOpen = false;
+
+        if (this.cursorBlink) {
+            this.cursorBlink.remove();
+            this.cursorBlink = null;
+        }
+
+        if (this._passwordKeyHandler) {
+            this.input.keyboard.off('keydown', this._passwordKeyHandler);
+            this._passwordKeyHandler = null;
+        }
+
+        if (this.adminElements) {
+            this.adminElements.forEach(el => { if (el && el.destroy) el.destroy(); });
+            this.adminElements = [];
+        }
+
+        this.passwordDisplayText = null;
+        this.passwordErrorText = null;
+    }
+
+    showAdminPanel() {
+        this.adminModalOpen = true;
+        this.adminElements = [];
+        const currentMult = window.gameSettings?.ceMultiplier || 1;
+
+        // Dark overlay
+        const overlay = this.add.rectangle(
+            GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.75
+        ).setDepth(100).setInteractive();
+        this.adminElements.push(overlay);
+
+        // Modal
+        const mW = 460, mH = 330;
+        const mx = GAME_WIDTH / 2 - mW / 2;
+        const my = GAME_HEIGHT / 2 - mH / 2;
+
+        const modalBg = this.add.graphics().setDepth(101);
+        modalBg.fillStyle(0x0D0D1A, 0.98);
+        modalBg.fillRoundedRect(mx, my, mW, mH, 14);
+        modalBg.lineStyle(2, 0xD4A843, 0.7);
+        modalBg.strokeRoundedRect(mx, my, mW, mH, 14);
+        modalBg.lineStyle(1, 0xFF4444, 0.3);
+        modalBg.strokeRoundedRect(mx + 6, my + 6, mW - 12, mH - 12, 10);
+        this.adminElements.push(modalBg);
+
+        // Title
+        const title = this.add.text(GAME_WIDTH / 2, my + 35, '⚙ PANEL DE ADMINISTRADOR', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '20px',
+            color: '#D4A843',
+            stroke: '#000000',
+            strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(title);
+
+        // Separator line
+        const sep = this.add.graphics().setDepth(102);
+        sep.lineStyle(1, 0xD4A843, 0.4);
+        sep.lineBetween(mx + 30, my + 60, mx + mW - 30, my + 60);
+        this.adminElements.push(sep);
+
+        // Section title
+        const sectionTitle = this.add.text(GAME_WIDTH / 2, my + 85, 'VELOCIDAD DE REGENERACIÓN CE', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '14px',
+            color: '#AA66FF',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(sectionTitle);
+
+        const sectionSub = this.add.text(GAME_WIDTH / 2, my + 105, '(Aplica para ambos jugadores)', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '11px',
+            color: '#666688',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(sectionSub);
+
+        // CE Multiplier option buttons
+        const options = [
+            { label: 'x1\nNORMAL', mult: 1, activeColor: '#44CC66' },
+            { label: 'x2\nDOBLE', mult: 2, activeColor: '#FFAA00' },
+            { label: 'x3\nTRIPLE', mult: 3, activeColor: '#FF4444' },
+        ];
+
+        const btnW = 120, btnH = 55, btnGap = 20;
+        const totalW = options.length * btnW + (options.length - 1) * btnGap;
+        const startX = GAME_WIDTH / 2 - totalW / 2;
+        const btnY = my + 135;
+
+        options.forEach((opt, i) => {
+            const bx = startX + i * (btnW + btnGap) + btnW / 2;
+            const by = btnY + btnH / 2;
+            const isActive = currentMult === opt.mult;
+
+            const btnG = this.add.graphics().setDepth(102);
+            const drawBtnState = (active, hover) => {
+                btnG.clear();
+                if (active) {
+                    btnG.fillStyle(0x2A1A3E, 1);
+                    btnG.fillRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                    btnG.lineStyle(3, 0xD4A843, 1);
+                    btnG.strokeRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                } else if (hover) {
+                    btnG.fillStyle(0x1A1A2E, 0.95);
+                    btnG.fillRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                    btnG.lineStyle(2, 0x666688, 0.9);
+                    btnG.strokeRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                } else {
+                    btnG.fillStyle(0x0A0A18, 0.9);
+                    btnG.fillRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                    btnG.lineStyle(1, 0x444466, 0.5);
+                    btnG.strokeRoundedRect(bx - btnW / 2, by - btnH / 2, btnW, btnH, 8);
+                }
+            };
+            drawBtnState(isActive, false);
+            this.adminElements.push(btnG);
+
+            const btnLabel = this.add.text(bx, by - 3, opt.label, {
+                fontFamily: 'Arial Black, sans-serif',
+                fontSize: '13px',
+                color: isActive ? opt.activeColor : '#888899',
+                stroke: '#000000',
+                strokeThickness: isActive ? 2 : 0,
+                align: 'center',
+            }).setOrigin(0.5).setDepth(103);
+            this.adminElements.push(btnLabel);
+
+            if (isActive) {
+                const checkmark = this.add.text(bx, by + btnH / 2 + 12, '✓ ACTIVO', {
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: '10px',
+                    color: '#D4A843',
+                }).setOrigin(0.5).setDepth(103);
+                this.adminElements.push(checkmark);
+            }
+
+            const zone = this.add.zone(bx, by, btnW, btnH)
+                .setInteractive({ useHandCursor: true }).setDepth(104);
+            this.adminElements.push(zone);
+
+            zone.on('pointerover', () => {
+                if (currentMult !== opt.mult) {
+                    drawBtnState(false, true);
+                    btnLabel.setColor('#FFFFFF');
+                }
+            });
+            zone.on('pointerout', () => {
+                drawBtnState(currentMult === opt.mult, false);
+                btnLabel.setColor(currentMult === opt.mult ? opt.activeColor : '#888899');
+            });
+            zone.on('pointerdown', () => {
+                window.gameSettings.ceMultiplier = opt.mult;
+                this.hideAdminPanel();
+                this.showAdminPanel();
+                this.updateCEStatusIndicator();
+            });
+        });
+
+        // Status text
+        const statusColorMap = { 1: '#44CC66', 2: '#FFAA00', 3: '#FF4444' };
+        const statusLabelMap = { 1: 'Normal', 2: 'Doble', 3: 'Triple' };
+        const statusText = this.add.text(
+            GAME_WIDTH / 2, my + 235,
+            `Estado actual: CE Regen ${statusLabelMap[currentMult]} (x${currentMult})`,
+            {
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '13px',
+                color: statusColorMap[currentMult],
+            }
+        ).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(statusText);
+
+        // Close button
+        const closeBtnW = 140, closeBtnH = 38;
+        const closeY = my + mH - 55;
+
+        const closeG = this.add.graphics().setDepth(102);
+        closeG.fillStyle(0x1A1A2E, 0.9);
+        closeG.fillRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+        closeG.lineStyle(2, 0xD4A843, 0.5);
+        closeG.strokeRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+        this.adminElements.push(closeG);
+
+        const closeText = this.add.text(GAME_WIDTH / 2, closeY + closeBtnH / 2, 'CERRAR', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '14px',
+            color: '#AAAACC',
+        }).setOrigin(0.5).setDepth(103);
+        this.adminElements.push(closeText);
+
+        const closeZone = this.add.zone(GAME_WIDTH / 2, closeY + closeBtnH / 2, closeBtnW, closeBtnH)
+            .setInteractive({ useHandCursor: true }).setDepth(104);
+        this.adminElements.push(closeZone);
+
+        closeZone.on('pointerover', () => {
+            closeText.setColor('#FFFFFF');
+            closeG.clear();
+            closeG.fillStyle(0x7722CC, 0.5);
+            closeG.fillRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+            closeG.lineStyle(2, 0xD4A843, 1);
+            closeG.strokeRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+        });
+        closeZone.on('pointerout', () => {
+            closeText.setColor('#AAAACC');
+            closeG.clear();
+            closeG.fillStyle(0x1A1A2E, 0.9);
+            closeG.fillRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+            closeG.lineStyle(2, 0xD4A843, 0.5);
+            closeG.strokeRoundedRect(GAME_WIDTH / 2 - closeBtnW / 2, closeY, closeBtnW, closeBtnH, 8);
+        });
+        closeZone.on('pointerdown', () => this.hideAdminPanel());
+
+        // ESC handler for admin panel
+        this._adminEscHandler = (event) => {
+            if (event.key === 'Escape' && this.adminModalOpen) {
+                this.hideAdminPanel();
+            }
+        };
+        this.input.keyboard.on('keydown', this._adminEscHandler);
+    }
+
+    hideAdminPanel() {
+        this.adminModalOpen = false;
+
+        if (this._adminEscHandler) {
+            this.input.keyboard.off('keydown', this._adminEscHandler);
+            this._adminEscHandler = null;
+        }
+
+        if (this.adminElements) {
+            this.adminElements.forEach(el => { if (el && el.destroy) el.destroy(); });
+            this.adminElements = [];
         }
     }
 }

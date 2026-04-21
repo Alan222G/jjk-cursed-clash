@@ -42,9 +42,10 @@ export default class CursedEnergySystem {
             return;
         }
 
-        // Passive regen
+        // Passive regen (with admin CE multiplier if set)
         if (this.ce < this.maxCe) {
-            this.ce = Math.min(this.maxCe, this.ce + this.regenRate * dtSec);
+            const ceMultiplier = window.gameSettings?.ceMultiplier || 1;
+            this.ce = Math.min(this.maxCe, this.ce + this.regenRate * ceMultiplier * dtSec);
         }
     }
 

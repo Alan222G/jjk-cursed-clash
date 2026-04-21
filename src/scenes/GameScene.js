@@ -492,6 +492,13 @@ export default class GameScene extends Phaser.Scene {
             this.domainBg = null;
         }
 
+        // FORCE-UNLOCK the domain owner (caster) — was locked during Phase 1
+        if (owner && !owner.isDead) {
+            owner.isCasting = false;
+            owner.stateMachine.unlock();
+            owner.stateMachine.setState('idle');
+        }
+
         // FORCE-UNLOCK opponent unconditionally
         const opp = (owner === this.p1) ? this.p2 : this.p1;
         if (opp && !opp.isDead) {

@@ -44,6 +44,7 @@ export default class Fighter {
         this.burnTimer = 0;
         this.comboCooldown = 0; // 2 seconds between combos
         this.lastHitConnected = false; // To speed up combos
+        this.aerialComboActive = false; // Launcher aerial combo state
 
         // ── Colors ──
         this.colors = charData.colors;
@@ -371,7 +372,7 @@ export default class Fighter {
 
         // Normal attacks
         if (this.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
-            if (attackAction === 'LIGHT' && this.comboCooldown <= 0) {
+            if (attackAction === 'LIGHT' && (this.comboCooldown <= 0 || this.aerialComboActive)) {
                 this.comboStep = (this.comboStep || 0) + 1;
                 if (this.comboStep > 4) this.comboStep = 1;
                 
@@ -379,12 +380,28 @@ export default class Fighter {
                 if (this.comboStep < 4) {
                     atkData = { ...this.getBasicAttackData('LIGHT') };
                     atkData.damage = 15;
-                    atkData.knockbackX = 0; // Sin empuje
-                    atkData.knockbackY = 0;
-                    atkData.stunDuration = 300; // Solo stun
+                    atkData.stunDuration = 300;
+                    
+                    if (this.aerialComboActive) {
+                        // Aerial combo hits: keep opponent suspended in air
+                        atkData.knockbackX = 0;
+                        atkData.knockbackY = -150; // Slight upward to fight gravity
+                        atkData.stunDuration = 350;
+                    } else {
+                        atkData.knockbackX = 0; // Sin empuje
+                        atkData.knockbackY = 0;
+                    }
                 } else {
                     atkData = { ...this.getBasicAttackData('HEAVY') };
                     atkData.damage = 60; // Daño aumentado
+                    
+                    // ── LAUNCHER: 4th hit + DOWN → launch enemy upward ──
+                    if (this.input.isDown('DOWN') && !this.aerialComboActive) {
+                        atkData.knockbackX = 60;   // Minimal horizontal push
+                        atkData.knockbackY = -800;  // Strong upward launch
+                        atkData.stunDuration = 1200; // Long stun for aerial follow-up
+                        atkData.isLauncher = true;
+                    }
                 }
                 
                 // Speed up combo if previous hit connected
@@ -393,12 +410,16 @@ export default class Fighter {
                     atkData.recovery = Math.floor(atkData.recovery * 0.6); // 40% faster recovery
                 }
                 
-                this.currentAttack = { ...atkData, type: 'COMBO' };
+                this.currentAttack = { ...atkData, type: 'COMBO', comboHit: this.comboStep };
                 this.stateMachine.setState('attack');
                 this.comboResetTimer = 1500;
 
                 // Cooldown en golpes basicos luego de terminar el combo completo
                 if (this.comboStep === 4) {
+                    if (this.aerialComboActive) {
+                        // Aerial combo finisher: end aerial state, apply normal cooldown
+                        this.aerialComboActive = false;
+                    }
                     this.comboCooldown = 2000;
                     this.comboStep = 0;
                 }
@@ -567,12 +588,18 @@ export default class Fighter {
         }
 
         // ── BLACK FLASH MECHANIC (Only for non-Sukuna characters) ──
+        // Probabilities doubled for better synergy with 4-hit combo system
         let isBlackFlash = false;
         if (this.fighterId !== 'sukuna') {
             const rand = Math.random() * 100;
-            if (atk.type === 'HEAVY' && rand <= 5) isBlackFlash = true;
-            else if (atk.type === 'MEDIUM' && rand <= 3) isBlackFlash = true;
-            else if (atk.type === 'LIGHT' && rand <= 1) isBlackFlash = true;
+            if (atk.type === 'HEAVY' && rand <= 10) isBlackFlash = true;
+            else if (atk.type === 'MEDIUM' && rand <= 6) isBlackFlash = true;
+            else if (atk.type === 'LIGHT' && rand <= 2) isBlackFlash = true;
+            // COMBO: 4th hit (heavy finisher) → 10%, hits 1-3 → 2%
+            else if (atk.type === 'COMBO') {
+                if (atk.comboHit === 4 && rand <= 10) isBlackFlash = true;
+                else if (rand <= 2) isBlackFlash = true;
+            }
         }
 
         if (isBlackFlash) {
@@ -586,8 +613,16 @@ export default class Fighter {
         // Pass attack data to scene for block mechanics
         this.scene.lastHitAttack = atk;
 
-        opponent.takeDamage(dmg, kbX, atk.knockbackY, atk.stunDuration); // Passive CE only: no gain on hit
+        opponent.takeDamage(dmg, kbX, atk.knockbackY, atk.stunDuration);
         this.comboSystem.registerHit(atk.type);
+
+        // ── LAUNCHER MECHANIC: Activate aerial combo on launcher hit ──
+        if (atk.isLauncher) {
+            this.aerialComboActive = true;
+            this.comboCooldown = 0;      // Override cooldown for aerial follow-up
+            this.comboStep = 0;          // Reset combo for fresh aerial 4-hit
+            this.comboResetTimer = 3000;  // Extended timer for jump follow-up
+        }
 
         // Random slash SFX on melee impact (SUKUNA ONLY)
         if (this.fighterId === 'sukuna') {
@@ -694,6 +729,11 @@ export default class Fighter {
 
         // Ground check
         this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
+
+        // Reset aerial combo state when landing on ground
+        if (this.isOnGround && this.aerialComboActive) {
+            this.aerialComboActive = false;
+        }
 
         // Fall detection
         if (!this.isOnGround && this.sprite.body.velocity.y > 50 &&
