@@ -397,7 +397,18 @@ export default class Fighter {
 
         // Jump
         if (this.input.justPressed('UP') && this.isOnGround) {
-            this.stateMachine.setState('jump');
+            if (this.aerialComboActive && this._launchTarget) {
+                // Aerial boost: launch attacker to opponent's height
+                const targetY = this._launchTarget.sprite.y;
+                const distUp = this.sprite.y - targetY; // positive = opponent is above
+                // Calculate velocity needed to reach opponent's height (boosted)
+                const boostVel = Math.min(-900, -(distUp * 2.5 + 400));
+                this.sprite.body.setVelocityY(boostVel);
+                this.isOnGround = false;
+                this.stateMachine.setState('jump');
+            } else {
+                this.stateMachine.setState('jump');
+            }
         }
     }
 
@@ -685,22 +696,24 @@ export default class Fighter {
         if (atk.isLauncher) {
             this.aerialComboActive = true;
             this.aerialComboHitsLanded = 0;
+            this._launchTarget = opponent; // Store ref for aerial boost jump
             this.comboCooldown = 0;      // Override cooldown for aerial follow-up
             this.comboStep = 0;          // Reset combo for fresh aerial 4-hit
             this.comboResetTimer = 4000;  // Extended timer for jump follow-up
             
-            // Suspend opponent in the air for 1 second (disable gravity)
+            // Suspend opponent in the air (disable gravity, launch high)
             opponent.sprite.body.setAllowGravity(false);
-            opponent.sprite.body.setVelocityY(-600); // Launch upward first
-            this.scene.time.delayedCall(200, () => {
+            opponent.sprite.body.setVelocityY(-1000); // Strong upward launch
+            this.scene.time.delayedCall(450, () => {
                 if (opponent && !opponent.isDead) {
-                    opponent.sprite.body.setVelocityY(0); // Freeze in air after launch
+                    opponent.sprite.body.setVelocityY(0); // Freeze in air after reaching height
                 }
             });
-            // Grace timer: re-enable gravity after 1.2s if attacker hasn't followed up
-            this._launcherGravityTimer = this.scene.time.delayedCall(1200, () => {
+            // Grace timer: re-enable gravity after 1.5s if attacker hasn't followed up
+            this._launcherGravityTimer = this.scene.time.delayedCall(1500, () => {
                 if (opponent && !opponent.isDead && this.aerialComboHitsLanded === 0) {
                     opponent.sprite.body.setAllowGravity(true);
+                    this._launchTarget = null;
                 }
             });
         }
@@ -871,6 +884,7 @@ export default class Fighter {
         if (this.isOnGround && this.aerialComboActive) {
             this.aerialComboActive = false;
             this.aerialComboHitsLanded = 0;
+            this._launchTarget = null;
         }
         // Re-enable gravity if it was disabled and fighter is back on ground
         if (this.isOnGround && !this.sprite.body.allowGravity) {
