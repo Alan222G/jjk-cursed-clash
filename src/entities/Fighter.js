@@ -293,6 +293,60 @@ export default class Fighter {
             },
         });
 
+        // Downslam stun — 2 second ground stun with orbiting stars
+        sm.addState('downslam_stun', {
+            onEnter: function () {
+                this.sprite.body.setVelocityX(0);
+                this.stunTimer = 2000;
+                this.downslamStarTimer = 0;
+                this.downslamStars = [];
+                // Spawn star graphics
+                for (let i = 0; i < 3; i++) {
+                    const star = this.scene.add.graphics().setDepth(100);
+                    this.downslamStars.push({ g: star, angle: (i * Math.PI * 2) / 3 });
+                }
+            },
+            onUpdate: function (dt) {
+                this.stunTimer -= dt;
+                this.downslamStarTimer += dt * 0.005;
+                // Draw orbiting stars
+                if (this.downslamStars) {
+                    const cx = this.sprite.x;
+                    const cy = this.sprite.y - 70;
+                    const orbitR = 18;
+                    this.downslamStars.forEach(s => {
+                        s.g.clear();
+                        const a = s.angle + this.downslamStarTimer;
+                        const sx = cx + Math.cos(a) * orbitR;
+                        const sy = cy + Math.sin(a) * orbitR * 0.5;
+                        // Draw 4-point star
+                        s.g.fillStyle(0xFFDD44, 0.9);
+                        s.g.beginPath();
+                        s.g.moveTo(sx, sy - 6);
+                        s.g.lineTo(sx + 2, sy - 2);
+                        s.g.lineTo(sx + 6, sy);
+                        s.g.lineTo(sx + 2, sy + 2);
+                        s.g.lineTo(sx, sy + 6);
+                        s.g.lineTo(sx - 2, sy + 2);
+                        s.g.lineTo(sx - 6, sy);
+                        s.g.lineTo(sx - 2, sy - 2);
+                        s.g.closePath();
+                        s.g.fillPath();
+                    });
+                }
+                if (this.stunTimer <= 0) {
+                    this.stateMachine.setState('idle');
+                }
+            },
+            onExit: function () {
+                // Cleanup stars
+                if (this.downslamStars) {
+                    this.downslamStars.forEach(s => { if (s.g) s.g.destroy(); });
+                    this.downslamStars = null;
+                }
+            },
+        });
+
         sm.addState('casting_domain', {
             onEnter: function () {
                 this.sprite.body.setVelocity(0, 0);
@@ -385,8 +439,9 @@ export default class Fighter {
                     if (this.aerialComboActive) {
                         // Aerial combo hits: keep opponent suspended in air
                         atkData.knockbackX = 0;
-                        atkData.knockbackY = -150; // Slight upward to fight gravity
+                        atkData.knockbackY = 0; // No knockback — gravity is disabled
                         atkData.stunDuration = 350;
+                        atkData.isAerialHit = true;
                     } else {
                         atkData.knockbackX = 0; // Sin empuje
                         atkData.knockbackY = 0;
@@ -401,6 +456,16 @@ export default class Fighter {
                         atkData.knockbackY = -800;  // Strong upward launch
                         atkData.stunDuration = 1200; // Long stun for aerial follow-up
                         atkData.isLauncher = true;
+                    }
+                    
+                    // ── DOWNSLAM: 4th aerial hit + JUMP → slam enemy downward ──
+                    if (this.aerialComboActive && this.input.isDown('UP')) {
+                        atkData.knockbackX = 0;
+                        atkData.knockbackY = 1200;  // Strong downward slam
+                        atkData.stunDuration = 2000; // 2 second ground stun
+                        atkData.damage = 80;         // Extra damage on downslam
+                        atkData.isDownslam = true;
+                        atkData.isAerialHit = true;
                     }
                 }
                 
@@ -595,9 +660,9 @@ export default class Fighter {
             if (atk.type === 'HEAVY' && rand <= 10) isBlackFlash = true;
             else if (atk.type === 'MEDIUM' && rand <= 6) isBlackFlash = true;
             else if (atk.type === 'LIGHT' && rand <= 2) isBlackFlash = true;
-            // COMBO: 4th hit (heavy finisher) → 10%, hits 1-3 → 2%
+            // COMBO: 4th hit (heavy finisher) → 7.5%, hits 1-3 → 2%
             else if (atk.type === 'COMBO') {
-                if (atk.comboHit === 4 && rand <= 10) isBlackFlash = true;
+                if (atk.comboHit === 4 && rand <= 7.5) isBlackFlash = true;
                 else if (rand <= 2) isBlackFlash = true;
             }
         }
@@ -619,9 +684,81 @@ export default class Fighter {
         // ── LAUNCHER MECHANIC: Activate aerial combo on launcher hit ──
         if (atk.isLauncher) {
             this.aerialComboActive = true;
+            this.aerialComboHitsLanded = 0;
             this.comboCooldown = 0;      // Override cooldown for aerial follow-up
             this.comboStep = 0;          // Reset combo for fresh aerial 4-hit
-            this.comboResetTimer = 3000;  // Extended timer for jump follow-up
+            this.comboResetTimer = 4000;  // Extended timer for jump follow-up
+            
+            // Suspend opponent in the air for 1 second (disable gravity)
+            opponent.sprite.body.setAllowGravity(false);
+            opponent.sprite.body.setVelocityY(-600); // Launch upward first
+            this.scene.time.delayedCall(200, () => {
+                if (opponent && !opponent.isDead) {
+                    opponent.sprite.body.setVelocityY(0); // Freeze in air after launch
+                }
+            });
+            // Grace timer: re-enable gravity after 1.2s if attacker hasn't followed up
+            this._launcherGravityTimer = this.scene.time.delayedCall(1200, () => {
+                if (opponent && !opponent.isDead && this.aerialComboHitsLanded === 0) {
+                    opponent.sprite.body.setAllowGravity(true);
+                }
+            });
+        }
+
+        // ── AERIAL COMBO HIT: Lock both fighters in the air ──
+        if (atk.isAerialHit && this.aerialComboActive) {
+            this.aerialComboHitsLanded = (this.aerialComboHitsLanded || 0) + 1;
+            
+            // On first aerial hit, lock BOTH fighters in the air (no gravity)
+            if (this.aerialComboHitsLanded === 1) {
+                this.sprite.body.setAllowGravity(false);
+                this.sprite.body.setVelocityY(0);
+                opponent.sprite.body.setAllowGravity(false);
+                opponent.sprite.body.setVelocityY(0);
+                // Cancel the grace timer since we connected
+                if (this._launcherGravityTimer) {
+                    this._launcherGravityTimer.remove();
+                    this._launcherGravityTimer = null;
+                }
+            }
+            
+            // Keep both stable in the air
+            this.sprite.body.setVelocityY(0);
+            opponent.sprite.body.setVelocityY(0);
+        }
+
+        // ── DOWNSLAM: Re-enable gravity and slam opponent down ──
+        if (atk.isDownslam) {
+            // Re-enable gravity for both fighters
+            this.sprite.body.setAllowGravity(true);
+            opponent.sprite.body.setAllowGravity(true);
+            // Slam opponent downward hard
+            opponent.sprite.body.setVelocityY(1200);
+            this.aerialComboActive = false;
+            this.aerialComboHitsLanded = 0;
+            
+            // Force downslam_stun state when opponent hits ground
+            const checkGround = this.scene.time.addEvent({
+                delay: 50,
+                callback: () => {
+                    if (opponent && !opponent.isDead) {
+                        const onGround = opponent.sprite.body.blocked.down || opponent.sprite.body.touching.down;
+                        if (onGround) {
+                            opponent.stateMachine.setState('downslam_stun');
+                            // Screen impact effect
+                            if (this.scene.screenEffects) {
+                                this.scene.screenEffects.shake(0.02, 400);
+                                this.scene.screenEffects.hitFreeze(120);
+                                this.scene.screenEffects.flash(0xFFFFFF, 100, 0.3);
+                            }
+                            checkGround.remove();
+                        }
+                    } else {
+                        checkGround.remove();
+                    }
+                },
+                loop: true,
+            });
         }
 
         // Random slash SFX on melee impact (SUKUNA ONLY)
@@ -733,6 +870,11 @@ export default class Fighter {
         // Reset aerial combo state when landing on ground
         if (this.isOnGround && this.aerialComboActive) {
             this.aerialComboActive = false;
+            this.aerialComboHitsLanded = 0;
+        }
+        // Re-enable gravity if it was disabled and fighter is back on ground
+        if (this.isOnGround && !this.sprite.body.allowGravity) {
+            this.sprite.body.setAllowGravity(true);
         }
 
         // Fall detection
