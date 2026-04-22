@@ -8,7 +8,7 @@ export const GAME_HEIGHT = 720;
 // ── Physics ──────────────────────────────────────────────
 export const PHYSICS = {
     GRAVITY: 1200,
-    GROUND_Y: 620,
+    GROUND_Y: 550,
     DRAG_X: 900,
     WALL_LEFT: 60,
     WALL_RIGHT: 1220,
@@ -25,8 +25,8 @@ export const FIGHTER_DEFAULTS = {
     SPEED: 320,
     JUMP_FORCE: -620,
     WEIGHT: 100,
-    BODY_WIDTH: 55,
-    BODY_HEIGHT: 110,
+    BODY_WIDTH: 75,
+    BODY_HEIGHT: 150,
 };
 
 // ── Attack Data ──────────────────────────────────────────

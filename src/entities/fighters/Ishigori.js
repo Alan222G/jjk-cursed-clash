@@ -211,7 +211,7 @@ export default class Ishigori extends Fighter {
         if (this.graniteFortressTimer > 0) return; // already active
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
-        this.graniteFortressTimer = 5000; // 5 seconds of super armor and damage boost
+        this.graniteFortressTimer = 10000; // 10 seconds of super armor and damage boost
         
         if (this.stateMachine.is('attack')) {
             this.stateMachine.setState('idle');

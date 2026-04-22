@@ -372,22 +372,24 @@ export default class Kuroroshi extends Fighter {
             
             // Screen-obscuring "stain" effect (nubla la vista)
             const stain = this.scene.add.graphics().setDepth(200);
-            stain.fillStyle(0x0a0f0a, 0.95);
-            const cx = GAME_WIDTH / 2;
-            const cy = GAME_HEIGHT / 2;
-            // Draw a big splat in the middle
-            for (let i = 0; i < 15; i++) {
+            stain.fillStyle(0x000000, 0.98); // Almost pitch black
+            stain.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT); // Cover entire screen
+            
+            // Add some organic bug texture dots
+            for (let i = 0; i < 40; i++) {
+                stain.fillStyle(0x1a2b1a, 1);
                 stain.fillCircle(
-                    cx + (Math.random() - 0.5) * 400,
-                    cy + (Math.random() - 0.5) * 300,
-                    40 + Math.random() * 80
+                    Math.random() * GAME_WIDTH,
+                    Math.random() * GAME_HEIGHT,
+                    10 + Math.random() * 30
                 );
             }
-            // Fade out the stain over 3 seconds
+
+            // Fade out the stain over 6 seconds
             this.scene.tweens.add({
                 targets: stain,
                 alpha: 0,
-                duration: 3000,
+                duration: 6000,
                 ease: 'Power2',
                 onComplete: () => stain.destroy()
             });

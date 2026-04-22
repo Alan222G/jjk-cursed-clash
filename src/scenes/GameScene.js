@@ -48,20 +48,8 @@ export default class GameScene extends Phaser.Scene {
             this.sound.play('bgm_combat', { volume: 0.4, loop: true });
         } catch(e) { console.warn('BGM combat play failed', e); }
         
-        // Floor
-        const floorY = GAME_HEIGHT - 60;
-        this.add.rectangle(0, floorY, GAME_WIDTH, 60, 0x1A1A22).setOrigin(0).setDepth(-1); // Shadow backdrop
-        const floorSprite = this.add.tileSprite(0, floorY, GAME_WIDTH, 60, 'ground_texture').setOrigin(0).setDepth(0);
-        
-        // Auto-scale tile texture to perfectly fit the 60px height without cropping
-        const groundImage = this.textures.get('ground_texture').getSourceImage();
-        if (groundImage && groundImage.height) {
-            const scaleFactor = 60 / groundImage.height;
-            floorSprite.tileScaleX = scaleFactor;
-            floorSprite.tileScaleY = scaleFactor;
-        }
-        
         // ── Groups ──
+        this.groundY = GAME_HEIGHT - 60;
         this.projectiles = [];
         
         // ── Entities ──

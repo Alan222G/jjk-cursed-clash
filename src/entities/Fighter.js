@@ -877,6 +877,12 @@ export default class Fighter {
             return;
         }
 
+        const S = 1.35; // Scale up 35%
+        this.graphics.setScale(S);
+        this.graphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
+        this.auraGraphics.setScale(S);
+        this.auraGraphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
+
         // Ground check
         this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
 
