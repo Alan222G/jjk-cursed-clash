@@ -2,26 +2,26 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config.js';
 
 const MAPS = [
-    { id: 'abyss_of_despair', name: 'ABYSS OF DESPAIR' },
-    { id: 'abyssal_depths', name: 'ABYSSAL DEPTHS' },
-    { id: 'ancient_cursed_forest', name: 'ANCIENT CURSED FOREST' },
-    { id: 'castle_of_shadows', name: 'CASTLE OF SHADOWS' },
-    { id: 'cursed_battleground', name: 'CURSED BATTLEGROUND' },
-    { id: 'cursed_shore', name: 'CURSED SHORE' },
-    { id: 'demon_lord_castle', name: 'DEMON LORD CASTLE' },
-    { id: 'forbidden_shrine', name: 'FORBIDDEN SHRINE' },
-    { id: 'forest_of_despair', name: 'FOREST OF DESPAIR' },
-    { id: 'gateway_of_souls', name: 'GATEWAY OF SOULS' },
-    { id: 'heian_era_wasteland', name: 'HEIAN ERA WASTELAND' },
-    { id: 'heian_warship', name: 'HEIAN WARSHIP' },
-    { id: 'jujutsu_colosseum', name: 'JUJUTSU COLOSSEUM' },
-    { id: 'phantom_village', name: 'PHANTOM VILLAGE' },
-    { id: 'sacred_temple_dawn', name: 'SACRED TEMPLE DAWN' },
-    { id: 'sacred_temple_dusk', name: 'SACRED TEMPLE DUSK' },
-    { id: 'shattered_imperial_palace', name: 'SHATTERED IMPERIAL PALACE' },
-    { id: 'skyline_sanctuary', name: 'SKYLINE SANCTUARY' },
-    { id: 'sukunas_heian_throne', name: 'SUKUNA\'S HEIAN THRONE' },
-    { id: 'tectonic_cataclysm', name: 'TECTONIC CATACLYSM' }
+    { id: 'abyss_of_despair.gif', name: 'ABYSS OF DESPAIR' },
+    { id: 'abyssal_depths.gif', name: 'ABYSSAL DEPTHS' },
+    { id: 'ancient_cursed_forest.webp', name: 'ANCIENT CURSED FOREST' },
+    { id: 'castle_of_shadows.gif', name: 'CASTLE OF SHADOWS' },
+    { id: 'cursed_battleground.gif', name: 'CURSED BATTLEGROUND' },
+    { id: 'cursed_shore.gif', name: 'CURSED SHORE' },
+    { id: 'demon_lord_castle.gif', name: 'DEMON LORD CASTLE' },
+    { id: 'forbidden_shrine.gif', name: 'FORBIDDEN SHRINE' },
+    { id: 'forest_of_despair.webp', name: 'FOREST OF DESPAIR' },
+    { id: 'gateway_of_souls.gif', name: 'GATEWAY OF SOULS' },
+    { id: 'heian_era_wasteland.gif', name: 'HEIAN ERA WASTELAND' },
+    { id: 'heian_warship.gif', name: 'HEIAN WARSHIP' },
+    { id: 'jujutsu_colosseum.gif', name: 'JUJUTSU COLOSSEUM' },
+    { id: 'phantom_village.gif', name: 'PHANTOM VILLAGE' },
+    { id: 'sacred_temple_dawn.gif', name: 'SACRED TEMPLE DAWN' },
+    { id: 'sacred_temple_dusk.gif', name: 'SACRED TEMPLE DUSK' },
+    { id: 'shattered_imperial_palace.gif', name: 'SHATTERED IMPERIAL PALACE' },
+    { id: 'skyline_sanctuary.gif', name: 'SKYLINE SANCTUARY' },
+    { id: 'sukunas_heian_throne.gif', name: 'SUKUNA\'S HEIAN THRONE' },
+    { id: 'tectonic_cataclysm.gif', name: 'TECTONIC CATACLYSM' }
 ];
 
 export default class MapSelectScene extends Phaser.Scene {
@@ -109,7 +109,7 @@ export default class MapSelectScene extends Phaser.Scene {
                     fontFamily: 'Arial Black', fontSize: '32px', color: '#D4A843'
                 }).setOrigin(0.5);
             } else {
-                const texKey = `map_${mapData.id}`;
+                const texKey = `map_${mapData.id.split('.')[0]}`;
                 if (this.textures.exists(texKey)) {
                     this.add.image(x, y - 5, texKey)
                         .setDisplaySize(this.slotW - 14, this.slotH - 24)
@@ -233,12 +233,8 @@ export default class MapSelectScene extends Phaser.Scene {
             this.previewDOM.node.src = '';
             this.previewDOM.node.style.backgroundColor = '#000000';
         } else {
-            const texKey = `map_${item.id}`;
-            if (this.textures.exists(texKey)) {
-                const src = this.textures.get(texKey).getSourceImage().src;
-                this.previewDOM.node.src = src;
-                this.previewDOM.node.style.backgroundColor = 'transparent';
-            }
+            this.previewDOM.node.src = `assets/maps/${item.id}`;
+            this.previewDOM.node.style.backgroundColor = 'transparent';
         }
     }
 
@@ -255,17 +251,8 @@ export default class MapSelectScene extends Phaser.Scene {
             const randomMap = MAPS[Math.floor(Math.random() * MAPS.length)];
             finalMapId = randomMap.id;
             this.previewName.setText(`RANDOM: ${randomMap.name}`);
-            const texKey = `map_${finalMapId}`;
-            if (this.textures.exists(texKey)) {
-                finalMapSrc = this.textures.get(texKey).getSourceImage().src;
-                this.previewDOM.node.src = finalMapSrc;
-                this.previewDOM.node.style.backgroundColor = 'transparent';
-            }
-        } else {
-            const texKey = `map_${finalMapId}`;
-            if (this.textures.exists(texKey)) {
-                finalMapSrc = this.textures.get(texKey).getSourceImage().src;
-            }
+            this.previewDOM.node.src = `assets/maps/${finalMapId}`;
+            this.previewDOM.node.style.backgroundColor = 'transparent';
         }
 
         try {

@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
-import { CHARACTERS, CE_COSTS, DOMAIN } from '../../config.js';
+import { CHARACTERS, CE_COSTS, DOMAIN, GAME_WIDTH, GAME_HEIGHT } from '../../config.js';
 
 export default class Kuroroshi extends Fighter {
     constructor(scene, x, y, playerIndex) {
