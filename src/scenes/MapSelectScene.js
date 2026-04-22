@@ -143,8 +143,8 @@ export default class MapSelectScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(11);
         this.previewPanel.add(this.previewName);
 
-        this.previewImage = this.add.image(0, -20, 'pixel').setDisplaySize(400, 260).setDepth(10);
-        this.previewPanel.add(this.previewImage);
+        this.previewDOM = this.add.dom(0, -20, 'img', 'width: 400px; height: 260px; object-fit: cover; border-radius: 4px; pointer-events: none; opacity: 1;');
+        this.previewPanel.add(this.previewDOM);
 
         this.updatePreview();
 
@@ -174,6 +174,7 @@ export default class MapSelectScene extends Phaser.Scene {
         this.keys.ESC.on('down', () => {
             if (!this.confirmed) {
                 this.sound.stopAll();
+                this.previewDOM.node.style.display = 'none';
                 this.scene.start('CharSelectScene');
             }
         });
@@ -229,13 +230,14 @@ export default class MapSelectScene extends Phaser.Scene {
         this.previewName.setText(item.name);
 
         if (item.id === 'random') {
-            this.previewImage.setTexture('pixel');
-            this.previewImage.setTint(0x000000);
+            this.previewDOM.node.src = '';
+            this.previewDOM.node.style.backgroundColor = '#000000';
         } else {
             const texKey = `map_${item.id}`;
             if (this.textures.exists(texKey)) {
-                this.previewImage.setTexture(texKey);
-                this.previewImage.clearTint();
+                const src = this.textures.get(texKey).getSourceImage().src;
+                this.previewDOM.node.src = src;
+                this.previewDOM.node.style.backgroundColor = 'transparent';
             }
         }
     }
@@ -248,12 +250,22 @@ export default class MapSelectScene extends Phaser.Scene {
         const item = this.gridItems[index];
 
         let finalMapId = item.id;
+        let finalMapSrc = '';
         if (finalMapId === 'random') {
             const randomMap = MAPS[Math.floor(Math.random() * MAPS.length)];
             finalMapId = randomMap.id;
             this.previewName.setText(`RANDOM: ${randomMap.name}`);
-            this.previewImage.setTexture(`map_${finalMapId}`);
-            this.previewImage.clearTint();
+            const texKey = `map_${finalMapId}`;
+            if (this.textures.exists(texKey)) {
+                finalMapSrc = this.textures.get(texKey).getSourceImage().src;
+                this.previewDOM.node.src = finalMapSrc;
+                this.previewDOM.node.style.backgroundColor = 'transparent';
+            }
+        } else {
+            const texKey = `map_${finalMapId}`;
+            if (this.textures.exists(texKey)) {
+                finalMapSrc = this.textures.get(texKey).getSourceImage().src;
+            }
         }
 
         try {
@@ -267,6 +279,14 @@ export default class MapSelectScene extends Phaser.Scene {
             scaleX: 1.5,
             scaleY: 1.5,
             duration: 800,
+        });
+
+        // Fade out DOM element manually
+        this.tweens.add({
+            targets: this.previewDOM.node,
+            opacity: 0,
+            duration: 400,
+            delay: 1200
         });
 
         this.time.delayedCall(1200, () => {
@@ -327,6 +347,7 @@ export default class MapSelectScene extends Phaser.Scene {
         zone.on('pointerdown', () => {
             if (!this.confirmed) {
                 this.sound.stopAll();
+                this.previewDOM.node.style.display = 'none';
                 this.scene.start('CharSelectScene');
             }
         });

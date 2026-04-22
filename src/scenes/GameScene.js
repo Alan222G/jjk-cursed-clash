@@ -28,15 +28,19 @@ export default class GameScene extends Phaser.Scene {
 
     create() {
         // ── Background & Environment ──
-        if (this.mapKey) {
-            this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, `map_${this.mapKey}`)
-                .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-                .setDepth(-10);
-        } else {
-            this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya')
-                .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-                .setDepth(-10);
+        const bgImg = document.getElementById('game-bg-img');
+        if (bgImg) {
+            if (this.mapKey) {
+                bgImg.src = `assets/maps/${this.mapKey}`;
+            } else {
+                bgImg.src = 'assets/backgrounds/shibuya.png';
+            }
+            bgImg.style.display = 'block';
         }
+
+        this.events.on('shutdown', () => {
+            if (bgImg) bgImg.style.display = 'none';
+        });
             
         // BGM Deathmatch Mapeado a Loop
         this.sound.stopAll();

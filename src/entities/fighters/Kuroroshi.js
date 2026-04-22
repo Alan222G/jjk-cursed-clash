@@ -370,6 +370,28 @@ export default class Kuroroshi extends Fighter {
             }
             try { this.scene.sound.play('heavy_smash', { volume: 0.2 }); } catch(e){}
             
+            // Screen-obscuring "stain" effect (nubla la vista)
+            const stain = this.scene.add.graphics().setDepth(200);
+            stain.fillStyle(0x0a0f0a, 0.95);
+            const cx = GAME_WIDTH / 2;
+            const cy = GAME_HEIGHT / 2;
+            // Draw a big splat in the middle
+            for (let i = 0; i < 15; i++) {
+                stain.fillCircle(
+                    cx + (Math.random() - 0.5) * 400,
+                    cy + (Math.random() - 0.5) * 300,
+                    40 + Math.random() * 80
+                );
+            }
+            // Fade out the stain over 3 seconds
+            this.scene.tweens.add({
+                targets: stain,
+                alpha: 0,
+                duration: 3000,
+                ease: 'Power2',
+                onComplete: () => stain.destroy()
+            });
+            
             // Spawn a visual swarm attacking them
             const swarm = this.scene.add.graphics().setDepth(25);
             this.scene.tweens.addCounter({
