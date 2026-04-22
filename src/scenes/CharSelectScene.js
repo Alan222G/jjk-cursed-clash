@@ -530,7 +530,7 @@ export default class CharSelectScene extends Phaser.Scene {
             this.time.delayedCall(1200, () => {
                 this.cameras.main.fadeOut(400, 0, 0, 0);
                 this.time.delayedCall(400, () => {
-                    this.scene.start('GameScene', {
+                    this.scene.start('MapSelectScene', {
                         p1: finalP1,
                         p2: finalP2,
                     });

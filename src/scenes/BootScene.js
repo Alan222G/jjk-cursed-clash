@@ -71,6 +71,22 @@ export default class BootScene extends Phaser.Scene {
         // Domains (official images)
         this.load.image('gojo_void', 'assets/domains/gojo_void.jpg');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
+        this.load.image('kenjaku_domain', 'assets/domains/kenjaku_domain.jpg');
+        
+        // Maps
+        const maps = [
+            'abyss_of_despair.gif', 'abyssal_depths.gif', 'ancient_cursed_forest.webp',
+            'castle_of_shadows.gif', 'cursed_battleground.gif', 'cursed_shore.gif',
+            'demon_lord_castle.gif', 'forbidden_shrine.gif', 'forest_of_despair.webp',
+            'gateway_of_souls.gif', 'heian_era_wasteland.gif', 'heian_warship.gif',
+            'jujutsu_colosseum.gif', 'phantom_village.gif', 'sacred_temple_dawn.gif',
+            'sacred_temple_dusk.gif', 'shattered_imperial_palace.gif', 'skyline_sanctuary.gif',
+            'sukunas_heian_throne.gif', 'tectonic_cataclysm.gif'
+        ];
+        maps.forEach(map => {
+            this.load.image(`map_${map.split('.')[0]}`, `assets/maps/${map}`);
+        });
+
         // Character Portraits
         this.load.image('portrait_gojo', 'assets/portraits/gojo_portrait.jpg');
         this.load.image('portrait_sukuna', 'assets/portraits/sukuna_portrait.jpg');
@@ -81,6 +97,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
         this.load.image('menu_toji', 'assets/menus/toji_menu.jpg');
         this.load.image('menu_kenjaku', 'assets/menus/kenjaku_menu.jpg');
+        this.load.image('menu_ishigori', 'assets/menus/ishigori_menu.jpg');
+        this.load.image('menu_kuroroshi', 'assets/menus/kuroroshi_menu.jpg');
         // Character Sprites (Pixel Art)
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         
@@ -92,10 +110,12 @@ export default class BootScene extends Phaser.Scene {
         // Audio
         this.load.audio('gojo_domain_voice', 'assets/audio/gojo_domain.m4a');
         this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
-        // Black Flash Assets
+        // Black Flash Assets & Domain Signs
         this.load.image('black_flash', 'assets/images/black_flash.png');
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
         this.load.image('sukuna_sign', 'assets/images/sukuna_sign.jpg');
+        this.load.image('ishigori_sign', 'assets/images/ishigori_sign.jpg');
+        this.load.image('kuroroshi_sign', 'assets/images/kuroroshi_sign.jpg');
         this.load.audio('black_flash_sfx', 'assets/audio/black_flash_better.m4a');
 
         // SFX Hooks

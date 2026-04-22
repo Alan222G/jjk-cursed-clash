@@ -15,6 +15,7 @@ export default class Ishigori extends Fighter {
         this.chargeLevel = 0;
         this.chargeVfx = null;
         this.chargeParticles = null;
+        this.graniteFortressTimer = 0;
     }
 
     setupStates() {
@@ -207,57 +208,79 @@ export default class Ishigori extends Fighter {
     tryActivateDomain() {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                const clashPossible = this.scene.attemptDomainClash(this);
-                if (!clashPossible) return;
-            } else {
-                return; // Own domain
-            }
-        } else if (this.domainActive) {
-            return;
-        }
+        if (this.graniteFortressTimer > 0) return; // already active
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
-        this.domainActive = true;
-        this.ceSystem.startDomain();
-
+        this.graniteFortressTimer = 5000; // 5 seconds of super armor and damage boost
+        
         if (this.stateMachine.is('attack')) {
             this.stateMachine.setState('idle');
         }
 
         try {
-            this.scene.sound.play('heavy_smash', { volume: 0.5 });
+            this.scene.sound.play('heavy_smash', { volume: 0.8 });
+            this.scene.sound.play('sfx_charge', { volume: 0.6 });
         } catch (e) {}
 
-        if (this.scene.onDomainActivated) {
-            this.scene.onDomainActivated(this, 'ishigori_domain');
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xFFCC00, 150, 0.4);
+            this.scene.screenEffects.shake(0.02, 500);
+        }
+        
+        // Spawn floating rocks
+        this.fortressRocks = [];
+        for (let i = 0; i < 5; i++) {
+            const rock = this.scene.add.graphics().setDepth(25);
+            this.fortressRocks.push({ g: rock, angle: (Math.PI * 2 / 5) * i });
         }
     }
 
-    applySureHitTick(opponent) {
-        if (!this.domainActive) return;
-        
-        // Time Cell Moon Palace - Paralysis + DPS
-        opponent.stateMachine.unlock();
-        if (!opponent.stateMachine.is('domain_stunned')) {
-            opponent.stateMachine.setState('domain_stunned');
+    takeDamage(damage, knockbackX, knockbackY, stunDuration) {
+        if (this.graniteFortressTimer > 0) {
+            // Super Armor: take 50% damage, no knockback, no stun
+            super.takeDamage(Math.floor(damage * 0.5), 0, 0, 0);
+            
+            // Visual feedback for tanking
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.005, 100);
+            }
+            try { this.scene.sound.play('heavy_smash', { volume: 0.3 }); } catch(e){}
+            return;
         }
-        opponent.sprite.body.setVelocity(0, 0);
-
-        // Constant tracking blasts
-        const py = opponent.sprite.y - 10;
-        const px = opponent.sprite.x;
         
-        try { this.scene.sound.play('sfx_beam', { volume: 0.2 }); } catch(e) {}
-        
-        const blast = this.scene.add.circle(px, py, 20, 0xFFAA33, 0.8).setDepth(20);
-        this.scene.tweens.add({
-            targets: blast, scaleX: 3, scaleY: 3, alpha: 0, duration: 400, onComplete: () => blast.destroy()
-        });
+        super.takeDamage(damage, knockbackX, knockbackY, stunDuration);
+    }
 
-        opponent.takeDamage(40, 0, 0, 200);
+    update(time, dt) {
+        super.update(time, dt);
+        
+        if (this.graniteFortressTimer > 0) {
+            this.graniteFortressTimer -= dt;
+            this.power = 1.5; // +50% power during buff
+            
+            if (this.fortressRocks) {
+                this.fortressRocks.forEach(rockData => {
+                    rockData.angle += dt * 0.003;
+                    const r = 50 + Math.sin(time * 0.005) * 10;
+                    const rx = this.sprite.x + Math.cos(rockData.angle) * r;
+                    const ry = this.sprite.y - 40 + Math.sin(rockData.angle) * (r * 0.3);
+                    
+                    rockData.g.clear();
+                    rockData.g.fillStyle(0x555555, 1);
+                    rockData.g.fillCircle(rx, ry, 6);
+                    rockData.g.lineStyle(1, 0xFFAA33, 0.8);
+                    rockData.g.strokeCircle(rx, ry, 6);
+                });
+            }
+            
+            if (this.graniteFortressTimer <= 0) {
+                this.power = this.charData.stats.power; // reset power
+                if (this.fortressRocks) {
+                    this.fortressRocks.forEach(r => r.g.destroy());
+                    this.fortressRocks = null;
+                }
+            }
+        }
     }
 
     fireGraniteBlast(chargeMs) {
@@ -511,6 +534,21 @@ export default class Ishigori extends Fighter {
                     x + Math.cos(angle - 0.2) * 25, y - 60 + Math.sin(angle - 0.2) * 12
                 );
             }
+        }
+    }
+
+    drawAura(dt) {
+        super.drawAura(dt);
+        if (this.graniteFortressTimer > 0 && !this.isDead) {
+            const ag = this.auraGraphics;
+            const x = this.sprite.x;
+            const y = this.sprite.y;
+            const pulse = 0.3 + Math.sin(this.scene.time.now * 0.01) * 0.2;
+            
+            ag.fillStyle(0xFFAA33, pulse);
+            ag.fillEllipse(x, y - 40, 90, 140);
+            ag.lineStyle(2, 0xFFCC00, pulse + 0.2);
+            ag.strokeEllipse(x, y - 40, 90 + pulse * 10, 140 + pulse * 10);
         }
     }
 }

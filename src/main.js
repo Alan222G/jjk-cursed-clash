@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import CharSelectScene from './scenes/CharSelectScene.js';
+import MapSelectScene from './scenes/MapSelectScene.js';
 import GameScene from './scenes/GameScene.js';
 import DomainClashScene from './scenes/DomainClashScene.js';
 import OptionsScene from './scenes/OptionsScene.js';
@@ -37,7 +38,7 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, MenuScene, OptionsScene, CharSelectScene, GameScene, PauseScene, DomainClashScene]
+    scene: [BootScene, MenuScene, OptionsScene, CharSelectScene, MapSelectScene, GameScene, PauseScene, DomainClashScene]
 };
 
 const game = new Phaser.Game(config);

@@ -19,6 +19,8 @@ export default class Kuroroshi extends Fighter {
 
         // Life Blade poison passive
         this.poisonChance = 0.25; // 25% basic attack poison
+        
+        this.swarmShieldTimer = 0;
     }
 
     // ════════════════════════════════════════════
@@ -319,69 +321,71 @@ export default class Kuroroshi extends Fighter {
     }
 
     // ════════════════════════════════════════════
-    // DOMAIN: Deadly Swarm
+    // SWARM SHIELD COUNTER
     // ════════════════════════════════════════════
     tryActivateDomain() {
         if (this.isCasting) return;
         if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                const clashPossible = this.scene.attemptDomainClash(this);
-                if (!clashPossible) return;
-            } else {
-                return;
-            }
-        } else if (this.domainActive) {
-            return;
-        }
+        if (this.swarmShieldTimer > 0) return; // already active
 
         this.ceSystem.spend(CE_COSTS.DOMAIN);
-        this.domainActive = true;
-        this.ceSystem.startDomain();
+        this.swarmShieldTimer = 5000; // 5 seconds of swarm shield counter
 
         if (this.stateMachine.is('attack')) {
             this.stateMachine.setState('idle');
         }
 
         try {
-            this.scene.sound.play('sukuna_domain_voice', { volume: (window.gameSettings?.sfx ?? 50) / 100 });
+            this.scene.sound.play('heavy_smash', { volume: 0.6 });
         } catch (e) {}
 
-        if (this.scene.onDomainActivated) {
-            this.scene.onDomainActivated(this, 'kuroroshi_domain');
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x336633, 150, 0.4);
+            this.scene.screenEffects.shake(0.015, 300);
+        }
+        
+        // Visual indicator
+        this.shieldSwarmParticles = [];
+        for (let i = 0; i < 12; i++) {
+            this.shieldSwarmParticles.push({
+                angle: Math.random() * Math.PI * 2,
+                speed: 0.05 + Math.random() * 0.05,
+                radius: 30 + Math.random() * 20,
+                yOffset: (Math.random() - 0.5) * 60
+            });
         }
     }
 
-    /** Sure-Hit: Deadly Swarm — constant plague + defense debuff */
-    applySureHitTick(opponent) {
-        if (!this.domainActive) return;
+    takeDamage(damage, knockbackX, knockbackY, stunDuration) {
+        // Let damage happen, but if shield is active, counterattack!
+        super.takeDamage(damage, knockbackX, knockbackY, stunDuration);
 
-        // DoT + Stun lock
-        opponent.stateMachine.unlock();
-        if (!opponent.stateMachine.is('domain_stunned')) {
-            opponent.stateMachine.setState('domain_stunned');
-        }
-        opponent.sprite.body.setVelocity(0, 0);
-
-        // Swarm damage
-        opponent.takeDamage(30, 0, 0, 200);
-        if (opponent.applyBurn) opponent.applyBurn(2000);
-
-        // Visual: bugs crawling on opponent
-        const ox = opponent.sprite.x;
-        const oy = opponent.sprite.y;
-        for (let i = 0; i < 3; i++) {
-            const bx = ox + (Math.random() - 0.5) * 50;
-            const by = oy + (Math.random() - 0.5) * 80 - 20;
-            const bug = this.scene.add.ellipse(bx, by, 8, 5, 0x332211, 0.9).setDepth(15);
-            this.scene.tweens.add({
-                targets: bug,
-                x: bx + (Math.random() - 0.5) * 30,
-                y: by + Math.random() * 20,
-                alpha: 0,
-                duration: 600,
-                onComplete: () => bug.destroy()
+        if (this.swarmShieldTimer > 0 && this.opponent && !this.isDead) {
+            // Apply poison counter to opponent
+            this.opponent.applyBleed(2000); // reuse bleed for poison
+            
+            // Visual feedback
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.01, 200);
+            }
+            try { this.scene.sound.play('heavy_smash', { volume: 0.2 }); } catch(e){}
+            
+            // Spawn a visual swarm attacking them
+            const swarm = this.scene.add.graphics().setDepth(25);
+            this.scene.tweens.addCounter({
+                from: 0, to: 1, duration: 400,
+                onUpdate: (tw) => {
+                    swarm.clear();
+                    const v = tw.getValue();
+                    const x = Phaser.Math.Interpolation.Linear([this.sprite.x, this.opponent.sprite.x], v);
+                    const y = Phaser.Math.Interpolation.Linear([this.sprite.y, this.opponent.sprite.y], v);
+                    
+                    swarm.fillStyle(0x111111, 0.8);
+                    for (let i = 0; i < 5; i++) {
+                        swarm.fillCircle(x + (Math.random()-0.5)*30, y - 30 + (Math.random()-0.5)*30, 3 + Math.random()*3);
+                    }
+                },
+                onComplete: () => swarm.destroy()
             });
         }
     }
@@ -614,6 +618,41 @@ export default class Kuroroshi extends Fighter {
                     x + Math.cos(angle + 0.2) * 25, y - 55 + Math.sin(angle + 0.2) * 12,
                     x + Math.cos(angle - 0.2) * 25, y - 55 + Math.sin(angle - 0.2) * 12
                 );
+            }
+        }
+    }
+
+    update(time, dt) {
+        super.update(time, dt);
+
+        if (this.swarmShieldTimer > 0) {
+            this.swarmShieldTimer -= dt;
+            if (this.shieldSwarmParticles) {
+                this.shieldSwarmParticles.forEach(p => {
+                    p.angle += p.speed;
+                });
+            }
+            if (this.swarmShieldTimer <= 0) {
+                this.shieldSwarmParticles = null;
+            }
+        }
+    }
+
+    drawAura(dt) {
+        super.drawAura(dt);
+        if (this.swarmShieldTimer > 0 && !this.isDead) {
+            const ag = this.auraGraphics;
+            const x = this.sprite.x;
+            const y = this.sprite.y;
+            
+            // Draw swarm shield particles
+            if (this.shieldSwarmParticles) {
+                ag.fillStyle(0x111111, 0.8);
+                this.shieldSwarmParticles.forEach(p => {
+                    const px = x + Math.cos(p.angle) * p.radius;
+                    const py = y - 40 + p.yOffset + Math.sin(p.angle) * (p.radius * 0.3);
+                    ag.fillCircle(px, py, 4);
+                });
             }
         }
     }

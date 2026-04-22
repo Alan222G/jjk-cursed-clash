@@ -23,13 +23,20 @@ export default class GameScene extends Phaser.Scene {
     init(data) {
         this.p1Key = data.p1 || 'GOJO';
         this.p2Key = data.p2 || 'SUKUNA';
+        this.mapKey = data.mapKey || null;
     }
 
     create() {
         // ── Background & Environment ──
-        this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya')
-            .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-            .setDepth(-10);
+        if (this.mapKey) {
+            this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, `map_${this.mapKey}`)
+                .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+                .setDepth(-10);
+        } else {
+            this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'bg_shibuya')
+                .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+                .setDepth(-10);
+        }
             
         // BGM Deathmatch Mapeado a Loop
         this.sound.stopAll();
