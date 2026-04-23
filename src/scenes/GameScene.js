@@ -309,8 +309,8 @@ export default class GameScene extends Phaser.Scene {
         
         this._domainMaskGraphics = maskGraphics;
 
-        // ── AFTER 2 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
-        this.domainPhase1Timer = this.time.delayedCall(2000, () => {
+        // ── AFTER 3 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
+        this.domainPhase1Timer = this.time.delayedCall(3000, () => {
             if (!this.domainPhase1) return; // Was cancelled by a domain clash
             
             this.domainPhase1 = false;

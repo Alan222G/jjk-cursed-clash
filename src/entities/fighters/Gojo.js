@@ -400,7 +400,7 @@ export default class Gojo extends Fighter {
                 speed: 1200,
                 direction: this.facing,
                 color: 0x9922FF,
-                size: { w: 300, h: 300 },
+                size: { w: 600, h: 600 },
                 lifetime: 3000,
                 type: 'circle',
             });
@@ -435,8 +435,8 @@ export default class Gojo extends Fighter {
         circle.setDepth(12);
         this.scene.tweens.add({
             targets: circle,
-            scaleX: 5, // 15 * 5 = 75px radius (150px diameter)
-            scaleY: 5,
+            scaleX: 10, // 15 * 10 = 150px radius (300px diameter)
+            scaleY: 10,
             alpha: 0,
             duration: 400,
             ease: 'Power2',
@@ -553,19 +553,19 @@ export default class Gojo extends Fighter {
 
             const pulse = 0.8 + Math.sin(time * 0.01) * 0.2;
 
-            // Blue Core (150px diameter = 75 radius)
+            // Blue Core (300px diameter = 150 radius)
             this.blueGraphics.fillStyle(0x2244FF, pulse);
-            this.blueGraphics.fillCircle(bx, by, 75);
+            this.blueGraphics.fillCircle(bx, by, 150);
 
             // White center inner glow
             this.blueGraphics.fillStyle(0xFFFFFF, pulse * 0.6);
-            this.blueGraphics.fillCircle(bx, by, 35);
+            this.blueGraphics.fillCircle(bx, by, 70);
 
             // Outer attraction rings (spinning)
             this.blueGraphics.lineStyle(4, 0x00D4FF, pulse * 0.5);
-            this.blueGraphics.strokeCircle(bx, by, 75 + (time % 500) / 10);
+            this.blueGraphics.strokeCircle(bx, by, 150 + (time % 500) / 10);
             this.blueGraphics.lineStyle(2, 0x88EEFF, pulse * 0.3);
-            this.blueGraphics.strokeCircle(bx, by, 105 + (time % 800) / 15);
+            this.blueGraphics.strokeCircle(bx, by, 210 + (time % 800) / 15);
 
             // ── MASSIVE Gravitational Suction Logic (all directions) ──
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;

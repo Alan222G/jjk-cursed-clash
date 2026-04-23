@@ -32,7 +32,7 @@ export default class Ishigori extends Fighter {
                 // Start VFX on pompadour tip
                 const px = this.sprite.x + 20 * this.facing;
                 const py = this.sprite.y - 65;
-                this.chargeVfx = this.scene.add.circle(px, py, 5, 0xFFAA33, 0.8).setDepth(15);
+                this.chargeVfx = this.scene.add.circle(px, py, 5, 0x44CCFF, 0.8).setDepth(15);
                 
                 try {
                     this.chargeSfx = this.scene.sound.add('sfx_charge', { volume: 0.5 });
@@ -57,7 +57,7 @@ export default class Ishigori extends Fighter {
                         this.chargeVfx.setRadius(radius);
                         // Random fluctuations in alpha/color
                         const t = this.scene.time.now;
-                        this.chargeVfx.setFillStyle(t % 200 > 100 ? 0xFFAA33 : 0xFFCC00, 0.8 + Math.random() * 0.2);
+                        this.chargeVfx.setFillStyle(t % 200 > 100 ? 0x44CCFF : 0xFFFFFF, 0.8 + Math.random() * 0.2);
                     }
                 } else {
                     // Released
@@ -122,7 +122,7 @@ export default class Ishigori extends Fighter {
         } catch(e) {}
 
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0xFFAA33, 100, 0.4);
+            this.scene.screenEffects.flash(0x44CCFF, 100, 0.4);
             this.scene.screenEffects.shake(0.015, 300);
         }
 
@@ -134,7 +134,7 @@ export default class Ishigori extends Fighter {
             stunDuration: 600,
             speed: 1200,
             direction: this.facing,
-            color: 0xFFAA33,
+            color: 0x44CCFF,
             size: { w: 100, h: 40 }, // Flat beam
             lifetime: 1000,
             type: 'beam',
@@ -157,7 +157,7 @@ export default class Ishigori extends Fighter {
         this.sprite.body.setVelocityX(0);
 
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.domainFlash(0xFFAA33);
+            this.scene.screenEffects.domainFlash(0x44CCFF);
             this.scene.screenEffects.slowMotion(0.2, 1000);
         }
 
@@ -166,7 +166,7 @@ export default class Ishigori extends Fighter {
         // Big orb charging above him
         const orbX = this.sprite.x;
         const orbY = this.sprite.y - 120;
-        const orb = this.scene.add.circle(orbX, orbY, 10, 0xFFCC00, 0.9).setDepth(20);
+        const orb = this.scene.add.circle(orbX, orbY, 10, 0xFFFFFF, 0.9).setDepth(20);
 
         this.scene.tweens.add({
             targets: orb, scaleX: 10, scaleY: 10, alpha: 0.8, duration: 1000,
@@ -186,7 +186,7 @@ export default class Ishigori extends Fighter {
                     stunDuration: 1000,
                     speed: 2000,
                     direction: this.facing,
-                    color: 0xFFCC00,
+                    color: 0x44CCFF,
                     size: { w: 400, h: 200 }, // Massive beam
                     lifetime: 2000,
                     type: 'beam',
@@ -268,7 +268,7 @@ export default class Ishigori extends Fighter {
                     rockData.g.clear();
                     rockData.g.fillStyle(0x555555, 1);
                     rockData.g.fillCircle(rx, ry, 6);
-                    rockData.g.lineStyle(1, 0xFFAA33, 0.8);
+                    rockData.g.lineStyle(1, 0x44CCFF, 0.8);
                     rockData.g.strokeCircle(rx, ry, 6);
                 });
             }
@@ -320,7 +320,7 @@ export default class Ishigori extends Fighter {
             stunDuration: 500,
             speed: finalSpeed,
             direction: this.facing,
-            color: 0xFFAA33,
+            color: 0x44CCFF,
             size: { w: finalW, h: finalH },
             lifetime: 2000,
             type: 'beam',
@@ -372,10 +372,10 @@ export default class Ishigori extends Fighter {
             stunDuration: 300,
             speed: finalSpeed,
             direction: this.facing,
-            color: 0xFFAA33,
-            size: { w: finalW, h: finalH },
+            color: 0x44CCFF,
+            size: { w: 80, h: 30 },
             lifetime: 1500,
-            type: 'circle',
+            type: 'beam',
         });
 
         if (this.scene.projectiles) {
@@ -473,21 +473,21 @@ export default class Ishigori extends Fighter {
             const pulse = Math.sin(this.scene.time.now * 0.015) * 3;
 
             // Outer glow
-            g.fillStyle(0xFFCC00, 0.2 + chargeT * 0.3);
+            g.fillStyle(0xFFFFFF, 0.2 + chargeT * 0.3);
             g.fillCircle(tipX, tipY, radius + 10 + pulse);
 
             // Core orb
-            g.fillStyle(0xFFAA33, 0.8 + chargeT * 0.2);
+            g.fillStyle(0x44CCFF, 0.8 + chargeT * 0.2);
             g.fillCircle(tipX, tipY, radius);
 
             // Inner white-hot core at high charge
             if (chargeT > 0.5) {
-                g.fillStyle(0xFFFFDD, 0.6 + chargeT * 0.3);
+                g.fillStyle(0xFFFFFF, 0.6 + chargeT * 0.3);
                 g.fillCircle(tipX, tipY, radius * 0.4);
             }
 
             // Sparks / energy lines radiating
-            g.lineStyle(2, 0xFFCC00, 0.5 + chargeT * 0.3);
+            g.lineStyle(2, 0xFFFFFF, 0.5 + chargeT * 0.3);
             for (let s = 0; s < 4; s++) {
                 const angle = (this.scene.time.now * 0.01 + s * Math.PI / 2);
                 const sparkLen = 8 + chargeT * 18;
@@ -545,9 +545,9 @@ export default class Ishigori extends Fighter {
             const y = this.sprite.y;
             const pulse = 0.3 + Math.sin(this.scene.time.now * 0.01) * 0.2;
             
-            ag.fillStyle(0xFFAA33, pulse);
+            ag.fillStyle(0x44CCFF, pulse);
             ag.fillEllipse(x, y - 40, 90, 140);
-            ag.lineStyle(2, 0xFFCC00, pulse + 0.2);
+            ag.lineStyle(2, 0xFFFFFF, pulse + 0.2);
             ag.strokeEllipse(x, y - 40, 90 + pulse * 10, 140 + pulse * 10);
         }
     }

@@ -34,7 +34,7 @@ export default class Projectile {
             this.glow = scene.add.circle(x, y, this.size.w / 2 + 12, this.color, 0.3);
         } else {
             // Invisible physics body for custom drawn types including worm
-            const alpha = (this.type === 'slash' || this.type === 'fire_arrow' || this.type === 'worm') ? 0 : 0.9;
+            const alpha = (this.type === 'slash' || this.type === 'fire_arrow' || this.type === 'worm' || this.type === 'beam') ? 0 : 0.9;
             this.sprite = scene.add.rectangle(x, y, this.size.w, this.size.h, this.color, alpha);
             this.glow = scene.add.rectangle(x, y, this.size.w + 12, this.size.h + 12, this.color, alpha === 0 ? 0 : 0.3);
             // Si es el gusano, inicializar el Sprite visual de Phaser que va a seguir a la hitbox
@@ -173,6 +173,24 @@ export default class Projectile {
                 this.wormSprite.setTexture(`sprite_worm_${currentFrameUrl}`);
             }
         }
+        else if (this.type === 'beam') {
+            const w = this.size.w;
+            const h = this.size.h;
+            
+            // Outer Aura
+            this.customGraphics.lineStyle(h + 8, this.color, pulse + 0.3);
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - (w/2) * dir, py);
+            this.customGraphics.lineTo(px + (w/2) * dir, py);
+            this.customGraphics.strokePath();
+
+            // White core
+            this.customGraphics.lineStyle(h - 4, 0xFFFFFF, 1);
+            this.customGraphics.beginPath();
+            this.customGraphics.moveTo(px - (w/2) * dir, py);
+            this.customGraphics.lineTo(px + (w/2) * dir, py);
+            this.customGraphics.strokePath();
+        }
         else if (this.type === 'uzumaki') {
             // Uzumaki Beam
             const w = this.size.w; // Massive width
@@ -212,7 +230,7 @@ export default class Projectile {
                 // Devastating Black/Purple lightning spikes
                 for (let i = 0; i < 4; i++) {
                     const ang = Math.random() * Math.PI * 2;
-                    const r = 60 + Math.random() * 60; // Scaled up
+                    const r = 120 + Math.random() * 120; // Scaled up
                     const endX = px + Math.cos(ang) * r;
                     const endY = py + Math.sin(ang) * r;
                     this.customGraphics.lineStyle(4, Math.random() > 0.5 ? 0x000000 : 0xAA00FF, 0.8);
