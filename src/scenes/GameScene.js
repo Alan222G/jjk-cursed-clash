@@ -75,10 +75,7 @@ export default class GameScene extends Phaser.Scene {
         this.damageNumbers = new DamageNumbers(this);
         this.screenEffects = new ScreenEffects(this);
 
-        // ── Collisions & Bounds ──
-        // Expand the world horizontally so fighters can move freely across a wide map
-        this.physics.world.setBounds(-3000, 0, GAME_WIDTH + 6000, GAME_HEIGHT);
-        this.cameras.main.setBounds(-3000, 0, GAME_WIDTH + 6000, GAME_HEIGHT);
+        // ── Collisions ──
 
         this.physics.add.overlap(this.p1.hitbox, this.p2.sprite, () => {
             this.p1.onHitOpponent(this.p2);
@@ -655,12 +652,6 @@ export default class GameScene extends Phaser.Scene {
             this.onKnockout(this.p1, this.p2);
             return;
         }
-
-        // ── Camera Follow Logic ──
-        // Calculate the midpoint between both fighters
-        const midX = (this.p1.sprite.x + this.p2.sprite.x) / 2;
-        // Smoothly pan camera towards the midpoint
-        this.cameras.main.scrollX += (midX - (this.cameras.main.scrollX + GAME_WIDTH / 2)) * 0.1;
 
         if (this.aiManager) this.aiManager.update(time, delta);
         
