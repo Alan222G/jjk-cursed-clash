@@ -5,13 +5,9 @@ const MAPS = [
     { id: 'abyss_of_despair.gif', name: 'ABYSS OF DESPAIR' },
     { id: 'abyssal_depths.gif', name: 'ABYSSAL DEPTHS' },
     { id: 'ancient_cursed_forest.webp', name: 'ANCIENT CURSED FOREST' },
-    { id: 'castle_of_shadows.gif', name: 'CASTLE OF SHADOWS' },
-    { id: 'cursed_battleground.gif', name: 'CURSED BATTLEGROUND' },
     { id: 'cursed_shore.gif', name: 'CURSED SHORE' },
-    { id: 'demon_lord_castle.gif', name: 'DEMON LORD CASTLE' },
     { id: 'forbidden_shrine.gif', name: 'FORBIDDEN SHRINE' },
     { id: 'forest_of_despair.webp', name: 'FOREST OF DESPAIR' },
-    { id: 'gateway_of_souls.gif', name: 'GATEWAY OF SOULS' },
     { id: 'heian_era_wasteland.gif', name: 'HEIAN ERA WASTELAND' },
     { id: 'heian_warship.gif', name: 'HEIAN WARSHIP' },
     { id: 'jujutsu_colosseum.gif', name: 'JUJUTSU COLOSSEUM' },
@@ -74,12 +70,12 @@ export default class MapSelectScene extends Phaser.Scene {
         this.createBackButton();
 
         // Layout parameters
-        this.cols = 5;
+        this.cols = 6; // More columns for bottom layout
         this.rows = Math.ceil((MAPS.length + 1) / this.cols); // +1 for RANDOM
-        this.slotW = 140;
-        this.slotH = 90;
-        this.startX = GAME_WIDTH / 2 - (this.cols * this.slotW) / 2 + this.slotW / 2 + 150; // offset right
-        this.startY = 150;
+        this.slotW = 160; // Increased spacing
+        this.slotH = 100; // Increased spacing
+        this.startX = GAME_WIDTH / 2 - (this.cols * this.slotW) / 2 + this.slotW / 2; // Centered
+        this.startY = 450; // Moved to bottom
 
         // Create Grid Items
         this.gridItems = [];
@@ -128,22 +124,22 @@ export default class MapSelectScene extends Phaser.Scene {
         this.selectedCol = 0;
         this.confirmed = false;
 
-        // Preview Panel on the Left
-        this.previewPanel = this.add.container(250, GAME_HEIGHT / 2);
+        // Preview Panel on the Top
+        this.previewPanel = this.add.container(GAME_WIDTH / 2, 230);
         const panelBg = this.add.graphics();
         panelBg.fillStyle(0x0A0A18, 0.9);
-        panelBg.fillRect(-220, -180, 440, 360);
+        panelBg.fillRect(-350, -150, 700, 300);
         panelBg.lineStyle(3, 0xD4A843, 1);
-        panelBg.strokeRect(-220, -180, 440, 360);
+        panelBg.strokeRect(-350, -150, 700, 300);
         this.previewPanel.add(panelBg);
 
-        this.previewName = this.add.text(0, 140, '', {
-            fontFamily: 'Arial Black', fontSize: '20px', color: '#FFFFFF',
+        this.previewName = this.add.text(0, 115, '', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#FFFFFF',
             stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(11);
         this.previewPanel.add(this.previewName);
 
-        this.previewDOM = this.add.dom(0, -20, 'img', 'width: 400px; height: 260px; object-fit: cover; border-radius: 4px; pointer-events: none; opacity: 1;');
+        this.previewDOM = this.add.dom(0, -20, 'img', 'width: 660px; height: 210px; object-fit: cover; border-radius: 4px; pointer-events: none; opacity: 1;');
         this.previewPanel.add(this.previewDOM);
 
         this.updatePreview();

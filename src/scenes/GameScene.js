@@ -75,7 +75,11 @@ export default class GameScene extends Phaser.Scene {
         this.damageNumbers = new DamageNumbers(this);
         this.screenEffects = new ScreenEffects(this);
 
-        // ── Collisions ──
+        // ── Collisions & Bounds ──
+        // Expand the world horizontally so fighters can move freely across a wide map
+        this.physics.world.setBounds(-3000, 0, GAME_WIDTH + 6000, GAME_HEIGHT);
+        this.cameras.main.setBounds(-3000, 0, GAME_WIDTH + 6000, GAME_HEIGHT);
+
         this.physics.add.overlap(this.p1.hitbox, this.p2.sprite, () => {
             this.p1.onHitOpponent(this.p2);
         });
@@ -308,8 +312,8 @@ export default class GameScene extends Phaser.Scene {
         
         this._domainMaskGraphics = maskGraphics;
 
-        // ── AFTER 3 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
-        this.domainPhase1Timer = this.time.delayedCall(3000, () => {
+        // ── AFTER 2 SECONDS: Phase1 → Phase2 (Real Domain activates) ──
+        this.domainPhase1Timer = this.time.delayedCall(2000, () => {
             if (!this.domainPhase1) return; // Was cancelled by a domain clash
             
             this.domainPhase1 = false;
@@ -338,18 +342,26 @@ export default class GameScene extends Phaser.Scene {
                 });
             }
 
-            // Domain Background
+            // Domain Background covering the full screen using HTML
             const bgKey = owner.charData.domainBg;
-            if (bgKey && this.textures.exists(bgKey)) {
-                this.domainBg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, bgKey)
-                    .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-                    .setDepth(-5);
-                this.domainBg.setAlpha(0);
-                this.tweens.add({ targets: this.domainBg, alpha: 1, duration: 800 });
+            if (bgKey) {
+                const domainImgMap = {
+                    'gojo_void': 'assets/domains/gojo_void.jpg',
+                    'sukuna_shrine': 'assets/domains/sukuna_shrine.png',
+                    'kenjaku_domain': 'assets/domains/kenjaku_domain.jpg'
+                };
+                const bgImg = document.getElementById('game-bg-img');
+                if (bgImg && domainImgMap[bgKey]) {
+                    // Store original if not already stored
+                    if (!this.originalMapSrc) {
+                        this.originalMapSrc = bgImg.src;
+                    }
+                    bgImg.src = domainImgMap[bgKey];
+                }
             }
 
-            // Clean up portrait and overlay after 3 seconds of showing off
-            this.time.delayedCall(3000, () => {
+            // Clean up portrait and overlay after 2 seconds of showing off
+            this.time.delayedCall(2000, () => {
                 const fadeTargets = [this.domainOverlay, this.domainPortrait, this.domainText].filter(Boolean);
                 if (fadeTargets.length > 0) {
                     this.tweens.add({
@@ -489,6 +501,13 @@ export default class GameScene extends Phaser.Scene {
         if (this.domainBg) {
             this.domainBg.destroy();
             this.domainBg = null;
+        }
+        
+        // Restore HTML map background if it was changed
+        const bgImg = document.getElementById('game-bg-img');
+        if (bgImg && this.originalMapSrc) {
+            bgImg.src = this.originalMapSrc;
+            this.originalMapSrc = null; // reset
         }
 
         // FORCE-UNLOCK the domain owner (caster) — was locked during Phase 1
@@ -636,6 +655,12 @@ export default class GameScene extends Phaser.Scene {
             this.onKnockout(this.p1, this.p2);
             return;
         }
+
+        // ── Camera Follow Logic ──
+        // Calculate the midpoint between both fighters
+        const midX = (this.p1.sprite.x + this.p2.sprite.x) / 2;
+        // Smoothly pan camera towards the midpoint
+        this.cameras.main.scrollX += (midX - (this.cameras.main.scrollX + GAME_WIDTH / 2)) * 0.1;
 
         if (this.aiManager) this.aiManager.update(time, delta);
         

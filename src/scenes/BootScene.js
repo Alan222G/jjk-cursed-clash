@@ -76,10 +76,9 @@ export default class BootScene extends Phaser.Scene {
         // Maps
         const maps = [
             'abyss_of_despair.gif', 'abyssal_depths.gif', 'ancient_cursed_forest.webp',
-            'castle_of_shadows.gif', 'cursed_battleground.gif', 'cursed_shore.gif',
-            'demon_lord_castle.gif', 'forbidden_shrine.gif', 'forest_of_despair.webp',
-            'gateway_of_souls.gif', 'heian_era_wasteland.gif', 'heian_warship.gif',
-            'jujutsu_colosseum.gif', 'phantom_village.gif', 'sacred_temple_dawn.gif',
+            'cursed_shore.gif', 'forbidden_shrine.gif', 'forest_of_despair.webp',
+            'heian_era_wasteland.gif', 'heian_warship.gif', 'jujutsu_colosseum.gif',
+            'phantom_village.gif', 'sacred_temple_dawn.gif',
             'sacred_temple_dusk.gif', 'shattered_imperial_palace.gif', 'skyline_sanctuary.gif',
             'sukunas_heian_throne.gif', 'tectonic_cataclysm.gif'
         ];
