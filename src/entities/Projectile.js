@@ -16,7 +16,8 @@ export default class Projectile {
         this.direction = config.direction || 1;
         this.lifetime = config.lifetime || 2000;
         this.color = config.color || 0x4488FF;
-        this.size = config.size || { w: 30, h: 20 };
+        const baseSize = config.size || { w: 30, h: 20 };
+        this.size = { w: baseSize.w * 1.5, h: baseSize.h * 1.5 }; // Increased by 50%
         this.type = config.type || 'normal'; // normal, heavy, beam, circle, slash, fire_arrow, worm, uzumaki
         this.alive = true;
         this.timer = 0;
@@ -41,7 +42,7 @@ export default class Projectile {
                 this.wormSprite = scene.add.sprite(x, y, 'sprite_worm_1');
                 this.wormSprite.setDepth(15);
                 this.wormSprite.setFlipX(this.direction < 0); // El sprite original mira hacia la derecha, entonces se voltea si la dir. es -1
-                this.wormSprite.setScale(1.2); // Escala para que luzca bien y proporcionado a las dimensiones originales
+                this.wormSprite.setScale(1.8); // Escala para que luzca bien y proporcionado a las dimensiones originales (scaled up)
                 this.wormSprite.play('anim_worm');
             }
         }
@@ -115,49 +116,49 @@ export default class Projectile {
 
         if (this.type === 'slash') {
             // Black slash anime style
-            this.customGraphics.lineStyle(4, 0x000000, 1); // Black core
+            this.customGraphics.lineStyle(6, 0x000000, 1); // Black core
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - 15 * dir, py - 40);
-            this.customGraphics.lineTo(px + 20 * dir, py);
-            this.customGraphics.lineTo(px - 15 * dir, py + 40);
+            this.customGraphics.moveTo(px - 22 * dir, py - 60);
+            this.customGraphics.lineTo(px + 30 * dir, py);
+            this.customGraphics.lineTo(px - 22 * dir, py + 60);
             this.customGraphics.strokePath();
 
             // Red/Dark red outer aura
-            this.customGraphics.lineStyle(2, 0xFF0000, pulse + 0.3);
+            this.customGraphics.lineStyle(3, 0xFF0000, pulse + 0.3);
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - 18 * dir, py - 45);
-            this.customGraphics.lineTo(px + 25 * dir, py);
-            this.customGraphics.lineTo(px - 18 * dir, py + 45);
+            this.customGraphics.moveTo(px - 27 * dir, py - 67);
+            this.customGraphics.lineTo(px + 37 * dir, py);
+            this.customGraphics.lineTo(px - 27 * dir, py + 67);
             this.customGraphics.strokePath();
         } 
         else if (this.type === 'fire_arrow') {
             // Fuga Arrow (Flaming)
             const fColor = (Math.floor(this.timer) % 4 < 2) ? 0xFF5500 : 0xFFDD00;
             // Arrow shaft
-            this.customGraphics.lineStyle(6, 0x000000, 0.9);
+            this.customGraphics.lineStyle(9, 0x000000, 0.9);
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - 60 * dir, py);
-            this.customGraphics.lineTo(px + 10 * dir, py);
+            this.customGraphics.moveTo(px - 90 * dir, py);
+            this.customGraphics.lineTo(px + 15 * dir, py);
             this.customGraphics.strokePath();
             // Fire Aura
-            this.customGraphics.lineStyle(10, fColor, 0.6);
+            this.customGraphics.lineStyle(15, fColor, 0.6);
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - 70 * dir, py);
-            this.customGraphics.lineTo(px + 5 * dir, py);
+            this.customGraphics.moveTo(px - 105 * dir, py);
+            this.customGraphics.lineTo(px + 7 * dir, py);
             this.customGraphics.strokePath();
             // Arrow head
             this.customGraphics.fillStyle(0x000000, 1);
             this.customGraphics.fillTriangle(
-                px + 30 * dir, py,
-                px + 10 * dir, py - 15,
-                px + 10 * dir, py + 15
+                px + 45 * dir, py,
+                px + 15 * dir, py - 22,
+                px + 15 * dir, py + 22
             );
             // Fire head aura
             this.customGraphics.fillStyle(fColor, 0.5);
             this.customGraphics.fillTriangle(
-                px + 45 * dir, py,
-                px + 5 * dir, py - 25,
-                px + 5 * dir, py + 25
+                px + 67 * dir, py,
+                px + 7 * dir, py - 37,
+                px + 7 * dir, py + 37
             );
         }
         else if (this.type === 'worm') {
@@ -211,13 +212,13 @@ export default class Projectile {
                 // Devastating Black/Purple lightning spikes
                 for (let i = 0; i < 4; i++) {
                     const ang = Math.random() * Math.PI * 2;
-                    const r = 40 + Math.random() * 40;
+                    const r = 60 + Math.random() * 60; // Scaled up
                     const endX = px + Math.cos(ang) * r;
                     const endY = py + Math.sin(ang) * r;
-                    this.customGraphics.lineStyle(3, Math.random() > 0.5 ? 0x000000 : 0xAA00FF, 0.8);
+                    this.customGraphics.lineStyle(4, Math.random() > 0.5 ? 0x000000 : 0xAA00FF, 0.8);
                     this.customGraphics.beginPath();
                     this.customGraphics.moveTo(px, py);
-                    this.customGraphics.lineTo(px + Math.cos(ang)*(r/2) + (Math.random()-0.5)*10, py + Math.sin(ang)*(r/2) + (Math.random()-0.5)*10);
+                    this.customGraphics.lineTo(px + Math.cos(ang)*(r/2) + (Math.random()-0.5)*15, py + Math.sin(ang)*(r/2) + (Math.random()-0.5)*15);
                     this.customGraphics.lineTo(endX, endY);
                     this.customGraphics.strokePath();
                 }

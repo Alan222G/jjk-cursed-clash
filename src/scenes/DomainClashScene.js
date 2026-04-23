@@ -395,7 +395,7 @@ export default class DomainClashScene extends Phaser.Scene {
         const cx = GAME_WIDTH / 2;
         const cy = GAME_HEIGHT / 2;
         const diagLen = GAME_WIDTH * 2;
-        const stripWidth = 250;
+        const stripWidth = 350; // Increased width for the parallel lines
         const halfW = stripWidth / 2;
 
         const angle1 = -35 * (Math.PI / 180);
@@ -453,7 +453,7 @@ export default class DomainClashScene extends Phaser.Scene {
         if (p1SignKey && this.textures.exists(p1SignKey)) {
             this.p1Sign = this.add.image(GAME_WIDTH / 4, GAME_HEIGHT / 2 + 20, p1SignKey)
                 .setDepth(4).setOrigin(0.5).setAlpha(0.6);
-            const scale1 = Math.min(300 / this.p1Sign.width, 300 / this.p1Sign.height);
+            const scale1 = Math.min(400 / this.p1Sign.width, 400 / this.p1Sign.height); // Scaled up from 300 to 400
             this.p1Sign.setScale(scale1);
             this.tweens.add({
                 targets: this.p1Sign, scaleX: scale1 * 1.05, scaleY: scale1 * 1.05,
@@ -465,7 +465,7 @@ export default class DomainClashScene extends Phaser.Scene {
         if (p2SignKey && this.textures.exists(p2SignKey)) {
             this.p2Sign = this.add.image(GAME_WIDTH * 0.75, GAME_HEIGHT / 2 + 20, p2SignKey)
                 .setDepth(4).setOrigin(0.5).setAlpha(0.6);
-            const scale2 = Math.min(300 / this.p2Sign.width, 300 / this.p2Sign.height);
+            const scale2 = Math.min(400 / this.p2Sign.width, 400 / this.p2Sign.height); // Scaled up from 300 to 400
             this.p2Sign.setScale(scale2);
             this.tweens.add({
                 targets: this.p2Sign, scaleX: scale2 * 1.05, scaleY: scale2 * 1.05,

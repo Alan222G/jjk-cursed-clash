@@ -91,6 +91,15 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('portrait_sukuna', 'assets/portraits/sukuna_portrait.jpg');
         this.load.image('portrait_toji', 'assets/portraits/toji_portrait.jpg');
         this.load.image('portrait_kenjaku', 'assets/portraits/kenjaku_portrait.jpg');
+        this.load.image('portrait_ishigori', 'assets/portraits/ishigori_portrait.jpg');
+        this.load.image('portrait_kuroroshi', 'assets/portraits/kuroroshi_portrait.jpg');
+
+        // Domain Clash Signs
+        this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
+        this.load.image('sukuna_sign', 'assets/images/sukuna_sign.jpg');
+        this.load.image('kenjaku_sign', 'assets/images/geto_sign.jpg');
+        this.load.image('ishigori_sign', 'assets/images/ishigori_sign.jpg');
+        this.load.image('kuroroshi_sign', 'assets/images/kuroroshi_sign.jpg');
         // Character Menu Avatars
         this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');

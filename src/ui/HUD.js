@@ -134,8 +134,8 @@ export default class HUD {
         const p2cx = GAME_WIDTH - HUD_STYLE.MARGIN - ar;
         const acy = 45;
         
-        const p1Tex = p1Key === 'GOJO' ? 'portrait_gojo' : 'portrait_sukuna';
-        const p2Tex = p2Key === 'GOJO' ? 'portrait_gojo' : 'portrait_sukuna';
+        const p1Tex = `portrait_${p1Key.toLowerCase()}`;
+        const p2Tex = `portrait_${p2Key.toLowerCase()}`;
 
         if (this.scene.textures.exists(p1Tex)) {
             this.p1Portrait = this.scene.add.image(p1cx, acy, p1Tex)
