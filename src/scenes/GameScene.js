@@ -343,18 +343,39 @@ export default class GameScene extends Phaser.Scene {
             // Domain Background covering the full screen using HTML
             const bgKey = owner.charData.domainBg;
             if (bgKey) {
-                const domainImgMap = {
-                    'gojo_void': 'assets/domains/gojo_void.jpg',
-                    'sukuna_shrine': 'assets/domains/sukuna_shrine.png',
-                    'kenjaku_domain': 'assets/domains/kenjaku_domain.jpg'
-                };
-                const bgImg = document.getElementById('game-bg-img');
-                if (bgImg && domainImgMap[bgKey]) {
-                    // Store original if not already stored
-                    if (!this.originalMapSrc) {
-                        this.originalMapSrc = bgImg.src;
+                // Si es un dominio overlay (PNG), dibujarlo dentro de Phaser sobre el mapa a la altura de los pies
+                if (bgKey === 'kenjaku_domain' || bgKey === 'sukuna_shrine') {
+                    // GROUND_Y is approx PHYSICS.GROUND_Y
+                    const groundY = GAME_HEIGHT - 60; // Assuming 60px above bottom
+                    
+                    this.domainBg = this.add.image(GAME_WIDTH / 2, groundY, bgKey)
+                        .setOrigin(0.5, 1) // Ancla en la parte inferior central
+                        .setDepth(1) // Detras de los jugadores (depth > 1) pero frente al fondo HTML
+                        .setAlpha(0);
+                    
+                    // Escalar si es necesario (asumiendo que ocupa toda la pantalla a lo ancho)
+                    this.domainBg.displayWidth = GAME_WIDTH;
+                    this.domainBg.scaleY = this.domainBg.scaleX; // Mantener proporcion
+                    
+                    this.tweens.add({
+                        targets: this.domainBg,
+                        alpha: 1,
+                        duration: 800
+                    });
+                } else {
+                    const domainImgMap = {
+                        'gojo_void': 'assets/domains/gojo_void.jpg',
+                        'sukuna_shrine': 'assets/domains/sukuna_shrine.png',
+                        'kenjaku_domain': 'assets/domains/kenjaku_domain.jpg'
+                    };
+                    const bgImg = document.getElementById('game-bg-img');
+                    if (bgImg && domainImgMap[bgKey]) {
+                        // Store original if not already stored
+                        if (!this.originalMapSrc) {
+                            this.originalMapSrc = bgImg.src;
+                        }
+                        bgImg.src = domainImgMap[bgKey];
                     }
-                    bgImg.src = domainImgMap[bgKey];
                 }
             }
 
