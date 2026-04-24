@@ -150,10 +150,11 @@ export default class GameScene extends Phaser.Scene {
         const DOMAIN_THEMES = {
             GOJO:     { voice: 'gojo_domain_voice',   sign: 'gojo_sign',   color: 0x44CCFF, bg: 0x44CCFF, lineColor: 0x44CCFF, textColor: '#44CCFF', name: 'RYŌIKI TENKAI — MURYŌKŪSHŌ' },
             SUKUNA:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFF2200, bg: 0x000000, lineColor: 0xFF2200, textColor: '#FF4444', name: 'RYŌIKI TENKAI — FUKUMA MIZUSHI' },
-            KENJAKU:  { voice: 'gojo_domain_voice',    sign: 'sukuna_sign', color: 0x8844CC, bg: 0x110022, lineColor: 0xAA66FF, textColor: '#AA66FF', name: 'RYŌIKI TENKAI — TAIHŌGAN' },
-            ISHIGORI: { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFFAA33, bg: 0x1A0A00, lineColor: 0xFFCC00, textColor: '#FFCC00', name: 'RYŌIKI TENKAI — JIKANKŌ GEPPAKU' },
-            KUROROSHI:{ voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x664422, bg: 0x0A0500, lineColor: 0xAA7744, textColor: '#AA7744', name: 'RYŌIKI TENKAI — SHŌKEI GAICHU' },
+            KENJAKU:  { voice: 'gojo_domain_voice',    sign: 'kenjaku_sign', color: 0x8844CC, bg: 0x110022, lineColor: 0xAA66FF, textColor: '#AA66FF', name: 'RYŌIKI TENKAI — TAIHŌGAN' },
+            ISHIGORI: { voice: 'sukuna_domain_voice',  sign: 'ishigori_sign', color: 0xFFAA33, bg: 0x1A0A00, lineColor: 0xFFCC00, textColor: '#FFCC00', name: 'RYŌIKI TENKAI — JIKANKŌ GEPPAKU' },
+            KUROROSHI:{ voice: 'sukuna_domain_voice',  sign: 'kuroroshi_sign', color: 0x664422, bg: 0x0A0500, lineColor: 0xAA7744, textColor: '#AA7744', name: 'RYŌIKI TENKAI — SHŌKEI GAICHU' },
         };
+
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;
 
         const voiceKey = theme.voice;

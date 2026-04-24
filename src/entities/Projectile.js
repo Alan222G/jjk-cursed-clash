@@ -23,6 +23,9 @@ export default class Projectile {
         this.timer = 0;
         this.onHitCallback = config.onHitCallback || null;
 
+        this.startX = x;
+        this.startY = y;
+
         // Custom visuals
         this.customGraphics = scene.add.graphics().setDepth(6);
 
@@ -174,22 +177,72 @@ export default class Projectile {
             }
         }
         else if (this.type === 'beam') {
-            const w = this.size.w;
-            const h = this.size.h;
+            // Fases del rayo: EXTENDING, SUSTAINING, FADING
+            if (!this.beamState) {
+                this.beamState = 'EXTENDING';
+                this.beamLength = 0;
+                this.beamThickness = this.size.h;
+                // Maximum length across screen
+                this.maxLength = 1500; 
+                this.sprite.body.setVelocityX(0); // Stop Arcade physics from moving it
+            }
+
+            const dtSec = dt / 1000;
+            const originalSpeed = this.speed;
+
+            if (this.beamState === 'EXTENDING') {
+                this.beamLength += originalSpeed * dtSec * 1.5; // Extend fast
+                if (this.beamLength >= this.maxLength || this.timer >= this.lifetime * 0.4) {
+                    this.beamState = 'SUSTAINING';
+                }
+            } else if (this.beamState === 'SUSTAINING') {
+                if (this.timer >= this.lifetime * 0.7) {
+                    this.beamState = 'FADING';
+                }
+            } else if (this.beamState === 'FADING') {
+                const remainingTime = this.lifetime - this.timer;
+                const fadeProgress = 1 - (remainingTime / (this.lifetime * 0.3));
+                // Collapse on its central axis
+                this.beamThickness = this.size.h * Math.max(0, 1 - fadeProgress);
+                if (this.beamThickness <= 0) this.beamThickness = 0;
+            }
+
+            // Sync physics body to match the current length and thickness
+            this.sprite.body.setSize(this.beamLength, Math.max(10, this.beamThickness));
             
+            // Arcade physics doesn't rotate well, so we adjust x and y to grow from start
+            if (this.direction > 0) {
+                this.sprite.setX(this.startX + this.beamLength / 2);
+            } else {
+                this.sprite.setX(this.startX - this.beamLength / 2);
+            }
+            this.sprite.setY(this.startY);
+            this.sprite.setDisplaySize(this.beamLength, this.beamThickness);
+
+            const h = this.beamThickness;
+            const currentTipX = this.startX + this.beamLength * this.direction;
+
             // Outer Aura
-            this.customGraphics.lineStyle(h + 8, this.color, pulse + 0.3);
+            this.customGraphics.lineStyle(h + 12, this.color, (pulse + 0.3) * (h / this.size.h));
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - (w/2) * dir, py);
-            this.customGraphics.lineTo(px + (w/2) * dir, py);
+            this.customGraphics.moveTo(this.startX, this.startY);
+            this.customGraphics.lineTo(currentTipX, this.startY);
             this.customGraphics.strokePath();
 
             // White core
-            this.customGraphics.lineStyle(h - 4, 0xFFFFFF, 1);
+            this.customGraphics.lineStyle(Math.max(1, h), 0xFFFFFF, (h / this.size.h));
             this.customGraphics.beginPath();
-            this.customGraphics.moveTo(px - (w/2) * dir, py);
-            this.customGraphics.lineTo(px + (w/2) * dir, py);
+            this.customGraphics.moveTo(this.startX, this.startY);
+            this.customGraphics.lineTo(currentTipX, this.startY);
             this.customGraphics.strokePath();
+
+            // Head of the beam (Burst effect at the front)
+            if (h > 0) {
+                this.customGraphics.fillStyle(0xFFFFFF, (h / this.size.h));
+                this.customGraphics.fillEllipse(currentTipX, this.startY, h * 0.8, h * 0.8);
+                this.customGraphics.fillStyle(this.color, (h / this.size.h) * 0.6);
+                this.customGraphics.fillEllipse(currentTipX, this.startY, h * 1.5, h * 1.5);
+            }
         }
         else if (this.type === 'uzumaki') {
             // Uzumaki Beam
