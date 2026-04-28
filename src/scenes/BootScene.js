@@ -71,7 +71,7 @@ export default class BootScene extends Phaser.Scene {
         // Domains (official images)
         this.load.image('gojo_void', 'assets/domains/gojo_void.jpg');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
-        this.load.image('kenjaku_domain', 'assets/domains/kenjaku_domain.jpg');
+        this.load.image('kenjaku_domain', 'assets/domains/kenjaku_domain.png');
         
         // Maps
         const maps = [

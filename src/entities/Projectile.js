@@ -213,18 +213,17 @@ export default class Projectile {
 
             // Sync physics body to match the current length and thickness
             const physicsThickness = Math.max(10, this.beamThickness);
+            
+            // Keep sprite anchored at start position to prevent Arcade physics from desyncing body.x
+            this.sprite.setX(this.startX);
+            this.sprite.setY(this.startY);
             this.sprite.body.setSize(this.beamLength, physicsThickness);
             
-            // Arcade physics doesn't rotate well, so we adjust x and y to grow from start
             if (this.direction > 0) {
-                this.sprite.setX(this.startX + this.beamLength / 2);
-                this.sprite.body.x = this.startX;
+                this.sprite.body.setOffset(this.size.w / 2, this.size.h / 2 - physicsThickness / 2);
             } else {
-                this.sprite.setX(this.startX - this.beamLength / 2);
-                this.sprite.body.x = this.startX - this.beamLength;
+                this.sprite.body.setOffset(this.size.w / 2 - this.beamLength, this.size.h / 2 - physicsThickness / 2);
             }
-            this.sprite.setY(this.startY);
-            this.sprite.body.y = this.startY - physicsThickness / 2;
             this.sprite.setDisplaySize(this.beamLength, this.beamThickness);
 
             const h = this.beamThickness;
