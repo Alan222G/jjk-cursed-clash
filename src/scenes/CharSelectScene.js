@@ -51,6 +51,10 @@ export default class CharSelectScene extends Phaser.Scene {
         this.p2Confirmed = false;
         this.hoveredChar = null;
 
+        // ── Sukuna 20 availability — random luck event (25% chance) ──
+        this.sukuna20Available = Math.random() < 0.25;
+        this.sukuna20TakenBy = null; // null, 'p1', or 'p2'
+
         // ── Admin Menu State ──
         this.adminModalOpen = false;
         if (!window.gameSettings) window.gameSettings = {};
@@ -134,15 +138,18 @@ export default class CharSelectScene extends Phaser.Scene {
                 
                 zone.on('pointerdown', () => {
                     const clickedKey = this.getKeyAt(slotRow, slotCol);
+                    // Block if Sukuna 20 is unavailable or already taken
+                    if (clickedKey === 'SUKUNA_20' && (!this.sukuna20Available || this.sukuna20TakenBy)) return;
                     if (!this.p1Confirmed) {
                         this.p1Row = slotRow;
                         this.p1Col = slotCol;
+                        if (clickedKey === 'SUKUNA_20') this.sukuna20TakenBy = 'p1';
                         this.p1Confirmed = true;
                     } else if (!this.p2Confirmed) {
-                        // Block if SUKUNA_20 already taken by P1
-                        if (clickedKey === 'SUKUNA_20' && this.p1Confirmed && this.p1Selection === 'SUKUNA_20') return;
+                        if (clickedKey === 'SUKUNA_20' && this.sukuna20TakenBy) return;
                         this.p2Row = slotRow;
                         this.p2Col = slotCol;
+                        if (clickedKey === 'SUKUNA_20') this.sukuna20TakenBy = 'p2';
                         this.p2Confirmed = true;
                     }
                 });
@@ -438,12 +445,13 @@ export default class CharSelectScene extends Phaser.Scene {
                 }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1Confirm)) {
-                this.p1Confirmed = true;
-            }
-            // Prevent P1 from sitting on a locked character (P2 already took SUKUNA_20)
-            if (this.p1Selection === 'SUKUNA_20' && this.p2Confirmed && this.p2Selection === 'SUKUNA_20') {
-                // Move P1 off SUKUNA_20
-                this.p1Col = 0;
+                // Block if Sukuna 20 is unavailable or taken
+                if (this.p1Selection === 'SUKUNA_20' && (!this.sukuna20Available || this.sukuna20TakenBy)) {
+                    // Don't confirm
+                } else {
+                    if (this.p1Selection === 'SUKUNA_20') this.sukuna20TakenBy = 'p1';
+                    this.p1Confirmed = true;
+                }
             }
         }
 
@@ -468,10 +476,11 @@ export default class CharSelectScene extends Phaser.Scene {
                 }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2Confirm)) {
-                // Block if SUKUNA_20 already taken by P1
-                if (this.p2Selection === 'SUKUNA_20' && this.p1Confirmed && this.p1Selection === 'SUKUNA_20') {
-                    // Don't confirm, skip
+                // Block if Sukuna 20 is unavailable or taken
+                if (this.p2Selection === 'SUKUNA_20' && (!this.sukuna20Available || this.sukuna20TakenBy)) {
+                    // Don't confirm
                 } else {
+                    if (this.p2Selection === 'SUKUNA_20') this.sukuna20TakenBy = 'p2';
                     this.p2Confirmed = true;
                 }
             }
@@ -485,9 +494,9 @@ export default class CharSelectScene extends Phaser.Scene {
         const p1Key = this.p1Selection;
         const p2Key = this.p2Selection;
 
-        // Check if SUKUNA_20 is locked by either player
-        const sukuna20LockedByP1 = this.p1Confirmed && p1Key === 'SUKUNA_20';
-        const sukuna20LockedByP2 = this.p2Confirmed && p2Key === 'SUKUNA_20';
+        // Check Sukuna 20 lock state
+        const s20Unavailable = !this.sukuna20Available;
+        const s20Taken = this.sukuna20TakenBy !== null;
 
         for (const slot of this.slots) {
             const isP1 = slot.key === p1Key;
@@ -496,13 +505,11 @@ export default class CharSelectScene extends Phaser.Scene {
             const y = slot.y;
             const half = this.slotSize / 2 - 4;
 
-            // Check if this slot is locked (SUKUNA_20 taken by the other player)
-            const isLocked = slot.key === 'SUKUNA_20' && (
-                (sukuna20LockedByP1 && !this.p2Confirmed) ||
-                (sukuna20LockedByP2 && !this.p1Confirmed)
-            );
+            // Is this Sukuna 20 and is it locked?
+            const isS20 = slot.key === 'SUKUNA_20';
+            const isGrayed = isS20 && (s20Unavailable || (s20Taken && !isP1 && !isP2));
 
-            let bgColor = isLocked ? 0x220000 : 0x0A0A18;
+            let bgColor = isGrayed ? 0x222222 : 0x0A0A18;
             let borderColor = 0x444466;
             let borderAlpha = 0.5;
 
@@ -512,24 +519,37 @@ export default class CharSelectScene extends Phaser.Scene {
                 borderColor = 0x4488FF; borderAlpha = 1;
             } else if (isP2) {
                 borderColor = 0xFF4444; borderAlpha = 1;
-            } else if (isLocked) {
-                borderColor = 0x660000; borderAlpha = 0.8;
+            } else if (isGrayed) {
+                borderColor = 0x444444; borderAlpha = 0.6;
             }
 
             // Slot background
-            this.gridGraphics.fillStyle(bgColor, 0.6);
+            this.gridGraphics.fillStyle(bgColor, isGrayed ? 0.85 : 0.6);
             this.gridGraphics.fillRect(x - half, y - half, half * 2, half * 2);
             this.gridGraphics.lineStyle(3, borderColor, borderAlpha);
             this.gridGraphics.strokeRect(x - half, y - half, half * 2, half * 2);
 
-            // LOCKED overlay
-            if (isLocked) {
-                this.gridGraphics.fillStyle(0xFF0000, 0.15);
+            // GRAY + PADLOCK overlay for Sukuna 20
+            if (isGrayed) {
+                // Dark gray overlay
+                this.gridGraphics.fillStyle(0x333333, 0.55);
                 this.gridGraphics.fillRect(x - half, y - half, half * 2, half * 2);
-                // X mark
-                this.gridGraphics.lineStyle(4, 0xFF0000, 0.6);
-                this.gridGraphics.lineBetween(x - half + 10, y - half + 10, x + half - 10, y + half - 10);
-                this.gridGraphics.lineBetween(x + half - 10, y - half + 10, x - half + 10, y + half - 10);
+                // Padlock icon (drawn with primitives)
+                const lx = x, ly = y - 5;
+                // Lock body
+                this.gridGraphics.fillStyle(0x888888, 0.9);
+                this.gridGraphics.fillRect(lx - 12, ly, 24, 18);
+                // Lock shackle (arc)
+                this.gridGraphics.lineStyle(4, 0x888888, 0.9);
+                this.gridGraphics.beginPath();
+                this.gridGraphics.arc(lx, ly, 10, Math.PI, 0, false);
+                this.gridGraphics.strokePath();
+                // Keyhole
+                this.gridGraphics.fillStyle(0x222222, 1);
+                this.gridGraphics.fillCircle(lx, ly + 7, 3);
+                this.gridGraphics.fillRect(lx - 1.5, ly + 9, 3, 5);
+                // "LOCKED" text
+                // (drawn as static text only once via slotImages)
             }
 
             // P1 indicator arrow (bottom)

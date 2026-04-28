@@ -8,7 +8,8 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS } from '../config.js';
 import networkManager from '../systems/NetworkManager.js';
 
-const CHAR_KEYS = Object.keys(CHARACTERS).filter(k => k !== 'SUKUNA_20');
+const ALL_CHAR_KEYS = Object.keys(CHARACTERS);
+const NORMAL_CHAR_KEYS = ALL_CHAR_KEYS.filter(k => k !== 'SUKUNA_20');
 const FORMATS = [
     { label: '1 vs 1', slots: 2 },
     { label: '4 PLAYERS', slots: 4 },
@@ -23,6 +24,9 @@ export default class TournamentLobbyScene extends Phaser.Scene {
         this.roomCode = null;
         this.isHost = false;
         this.joinMode = false;
+        // Sukuna 20 random luck event (25% chance per tournament)
+        this.sukuna20Available = Math.random() < 0.25;
+        this.sukuna20TakenBySlot = -1; // index of slot that has Sukuna 20, -1 = none
     }
 
     create() {
@@ -360,10 +364,11 @@ export default class TournamentLobbyScene extends Phaser.Scene {
         const format = FORMATS[this.formatIndex];
         const count = format.slots;
         this.slots = [];
+        this.sukuna20TakenBySlot = -1;
         for (let i = 0; i < count; i++) {
             this.slots.push({
                 type: i === 0 ? 'player' : 'bot',
-                charKey: CHAR_KEYS[i % CHAR_KEYS.length],
+                charKey: NORMAL_CHAR_KEYS[i % NORMAL_CHAR_KEYS.length],
                 name: i === 0 ? 'PLAYER 1' : `BOT ${i}`,
                 ready: i !== 0,
             });
@@ -459,8 +464,17 @@ export default class TournamentLobbyScene extends Phaser.Scene {
             }).setOrigin(0.5).setInteractive({ useHandCursor: true });
             container.add(leftA);
             leftA.on('pointerdown', () => {
-                const idx = CHAR_KEYS.indexOf(slot.charKey);
-                slot.charKey = CHAR_KEYS[(idx - 1 + CHAR_KEYS.length) % CHAR_KEYS.length];
+                let idx = ALL_CHAR_KEYS.indexOf(slot.charKey);
+                let newIdx = (idx - 1 + ALL_CHAR_KEYS.length) % ALL_CHAR_KEYS.length;
+                // Skip SUKUNA_20 if unavailable or taken by another
+                if (ALL_CHAR_KEYS[newIdx] === 'SUKUNA_20') {
+                    if (!this.sukuna20Available || (this.sukuna20TakenBySlot >= 0 && this.sukuna20TakenBySlot !== i)) {
+                        newIdx = (newIdx - 1 + ALL_CHAR_KEYS.length) % ALL_CHAR_KEYS.length;
+                    }
+                }
+                if (slot.charKey === 'SUKUNA_20') this.sukuna20TakenBySlot = -1;
+                slot.charKey = ALL_CHAR_KEYS[newIdx];
+                if (slot.charKey === 'SUKUNA_20') this.sukuna20TakenBySlot = i;
                 this.renderSlots();
             });
 
@@ -469,8 +483,16 @@ export default class TournamentLobbyScene extends Phaser.Scene {
             }).setOrigin(0.5).setInteractive({ useHandCursor: true });
             container.add(rightA);
             rightA.on('pointerdown', () => {
-                const idx = CHAR_KEYS.indexOf(slot.charKey);
-                slot.charKey = CHAR_KEYS[(idx + 1) % CHAR_KEYS.length];
+                let idx = ALL_CHAR_KEYS.indexOf(slot.charKey);
+                let newIdx = (idx + 1) % ALL_CHAR_KEYS.length;
+                if (ALL_CHAR_KEYS[newIdx] === 'SUKUNA_20') {
+                    if (!this.sukuna20Available || (this.sukuna20TakenBySlot >= 0 && this.sukuna20TakenBySlot !== i)) {
+                        newIdx = (newIdx + 1) % ALL_CHAR_KEYS.length;
+                    }
+                }
+                if (slot.charKey === 'SUKUNA_20') this.sukuna20TakenBySlot = -1;
+                slot.charKey = ALL_CHAR_KEYS[newIdx];
+                if (slot.charKey === 'SUKUNA_20') this.sukuna20TakenBySlot = i;
                 this.renderSlots();
             });
 
