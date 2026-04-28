@@ -11,6 +11,10 @@ import GameScene from './scenes/GameScene.js';
 import DomainClashScene from './scenes/DomainClashScene.js';
 import OptionsScene from './scenes/OptionsScene.js';
 import PauseScene from './scenes/PauseScene.js';
+import TournamentLobbyScene from './scenes/TournamentLobbyScene.js';
+import TournamentBracketScene from './scenes/TournamentBracketScene.js';
+import RaidLobbyScene from './scenes/RaidLobbyScene.js';
+import RaidFightScene from './scenes/RaidFightScene.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './config.js';
 
 // Inicializar configuración global desde localStorage
@@ -41,7 +45,8 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, MenuScene, OptionsScene, CharSelectScene, MapSelectScene, GameScene, PauseScene, DomainClashScene]
+    scene: [BootScene, MenuScene, OptionsScene, CharSelectScene, MapSelectScene, GameScene, PauseScene, DomainClashScene, TournamentLobbyScene, TournamentBracketScene, RaidLobbyScene, RaidFightScene]
 };
 
 const game = new Phaser.Game(config);
+

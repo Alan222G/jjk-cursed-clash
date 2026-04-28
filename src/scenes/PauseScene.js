@@ -6,6 +6,7 @@
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS } from '../config.js';
+import AIManager from '../systems/AIManager.js';
 
 // ── Per-character control data factory ──────────────────
 function getCharacterControls(charKey, playerIndex) {
@@ -155,6 +156,35 @@ function getCharacterControls(charKey, playerIndex) {
                 `Efecto: Enjambre de plagas devoradoras`,
             ]
         });
+    } else if (charKey === 'SUKUNA_20') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS (FORMA VERDADERA)',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `  Dispara 3 cortes en rápida sucesión`,
+                `${atkKeys.special}+${moveKeys.up} — Spiderweb  (20 CE)`,
+                `  Red de cortes en el suelo, daño en área`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `  Corte masivo que se ajusta al objetivo`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `  Flecha de fuego divino devastadora`,
+            ]
+        });
+        sections.push({
+            title: 'HABILIDADES PASIVAS',
+            lines: [
+                `Técnica Cursed Inversa: Regenera 15 HP/s pasivamente`,
+                `4 Brazos: Mayor alcance de combate`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Dominio sin barrera, cortes devastadores`,
+                `80 daño por tick (mejorado)`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──
@@ -231,13 +261,43 @@ export default class PauseScene extends Phaser.Scene {
             fontFamily: 'Arial', fontSize: '12px', color: '#666688', fontStyle: 'italic'
         }).setOrigin(0.5).setDepth(31);
 
+        // ── P2 Control Toggle (CPU / Human) — In-Game ──
+        if (!window.gameSettings.p2Control) window.gameSettings.p2Control = 'cpu';
+        
+        const p2CtrlY = sliderBaseY + 80;
+        this.add.text(cx - 80, p2CtrlY, 'P2 CONTROL:', {
+            fontFamily: 'Arial Black', fontSize: '16px', color: '#CCCCDD'
+        }).setOrigin(1, 0.5).setDepth(31);
+        
+        this.p2CtrlToggle = this.add.text(cx + 20, p2CtrlY, window.gameSettings.p2Control.toUpperCase(), {
+            fontFamily: 'Arial Black', fontSize: '16px',
+            color: window.gameSettings.p2Control === 'cpu' ? '#D4A843' : '#44CCFF'
+        }).setOrigin(0, 0.5).setDepth(31).setInteractive({ useHandCursor: true });
+        
+        this.p2CtrlToggle.on('pointerdown', () => {
+            window.gameSettings.p2Control = window.gameSettings.p2Control === 'cpu' ? 'humano' : 'cpu';
+            this.p2CtrlToggle.setText(window.gameSettings.p2Control.toUpperCase());
+            this.p2CtrlToggle.setColor(window.gameSettings.p2Control === 'cpu' ? '#D4A843' : '#44CCFF');
+            this.saveSettings();
+            
+            // Apply immediately to current game
+            const gameScene = this.scene.get('GameScene');
+            if (gameScene) {
+                if (window.gameSettings.p2Control === 'humano') {
+                    gameScene.aiManager = null;
+                } else {
+                    gameScene.aiManager = new AIManager(gameScene.p2, gameScene.p1);
+                }
+            }
+        });
+
         // ════════════════════════════════════
         // SCROLLABLE AREA: Controls
         // ════════════════════════════════════
         const scrollAreaTop = 195;
         const scrollAreaBottom = GAME_HEIGHT - 85;
         const scrollAreaHeight = scrollAreaBottom - scrollAreaTop;
-        const scrollAreaWidth = 1200;
+        const scrollAreaWidth = 920;
 
         // Panel background for scroll area
         const scrollBg = this.add.graphics().setDepth(4);
@@ -260,12 +320,12 @@ export default class PauseScene extends Phaser.Scene {
         yPos += 40;
 
         // ── P1 Character Card ──
-        const p1Y = this.buildCharacterCard(cx - 290, yPos, this.p1Key, 0, 560);
+        yPos = this.buildCharacterCard(cx, yPos, this.p1Key, 0, scrollAreaWidth - 40);
+        yPos += 25;
 
         // ── P2 Character Card ──
-        const p2Y = this.buildCharacterCard(cx + 290, yPos, this.p2Key, 1, 560);
-
-        yPos = Math.max(p1Y, p2Y) + 20;
+        yPos = this.buildCharacterCard(cx, yPos, this.p2Key, 1, scrollAreaWidth - 40);
+        yPos += 20;
 
         // ── Store total content height for scroll bounds ──
         this.contentHeight = yPos - scrollAreaTop;
@@ -553,5 +613,9 @@ export default class PauseScene extends Phaser.Scene {
 
         zone.on('pointerdown', callback);
         return container;
+    }
+
+    saveSettings() {
+        localStorage.setItem('jjk_settings', JSON.stringify(window.gameSettings));
     }
 }

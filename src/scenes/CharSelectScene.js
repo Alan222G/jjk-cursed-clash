@@ -11,7 +11,7 @@ import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 // Row 1: ISHIGORI, KUROROSHI  (centered)
 const GRID = [
     ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU'],
-    ['ISHIGORI', 'KUROROSHI'],
+    ['ISHIGORI', 'KUROROSHI', 'SUKUNA_20'],
 ];
 
 // Map character key → menu avatar texture key
@@ -22,6 +22,7 @@ const MENU_KEY = {
     KENJAKU: 'menu_kenjaku',
     ISHIGORI: 'menu_ishigori',
     KUROROSHI: 'menu_kuroroshi',
+    SUKUNA_20: 'menu_sukuna',  // Reuse Sukuna portrait for now
 };
 
 // Iconic JJK titles for each character
@@ -32,6 +33,7 @@ const CHAR_TITLES = {
     KENJAKU: 'THE DISGRACED ONE',
     ISHIGORI: 'THE REINCARNATED SORCERER',
     KUROROSHI: 'THE CURSED COCKROACH',
+    SUKUNA_20: 'TRUE FORM — 20 FINGERS',
 };
 
 export default class CharSelectScene extends Phaser.Scene {

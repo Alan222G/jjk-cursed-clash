@@ -329,6 +329,37 @@ export const CHARACTERS = {
         },
         domainBg: null,
     },
+    SUKUNA_20: {
+        id: 'sukuna_20',
+        name: 'Sukuna — True Form',
+        title: 'King of Curses (20 Fingers)',
+        colors: {
+            primary: 0x1A0000,
+            secondary: 0xFF0000,
+            energy: 0xCC0022,
+            accent: 0xFF2244,
+            skin: 0xD8B8A0,
+            hair: 0xCC4466,
+        },
+        stats: {
+            maxHp: 15000,
+            speed: 350,
+            power: 2.0,
+            defense: 1.5,
+            ceRegen: 6.0,
+            weight: 130,
+            jumpForce: -650,
+            domainDuration: 60000,
+            domainPhase1: 25000,
+        },
+        skills: {
+            skill1: { name: 'World-Splitting Dismantle', cost: 25, damage: 80, type: 'slash_ranged' },
+            skill2: { name: 'World Cleave', cost: 50, damage: 150, type: 'slash_aoe' },
+            domain: { name: 'Malevolent Shrine — Barrierless', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Divine Flame — Fuga', cost: 120, damage: 700, type: 'fire' },
+        },
+        domainBg: 'sukuna_shrine',
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────

@@ -11,6 +11,10 @@ export default class HUD {
         this.graphics = scene.add.graphics();
         this.graphics.setDepth(100);
         this.graphics.setScrollFactor(0);
+        
+        // Character keys for pause menu
+        this.p1Key = null;
+        this.p2Key = null;
 
         // Round indicators
         this.p1Rounds = 0;
@@ -88,7 +92,7 @@ export default class HUD {
             if (scene.matchEnded) return;
             scene.physics.pause();
             scene.scene.pause();
-            scene.scene.launch('PauseScene');
+            scene.scene.launch('PauseScene', { p1Key: this.p1Key, p2Key: this.p2Key });
         });
 
         // Round text
@@ -129,6 +133,10 @@ export default class HUD {
     }
 
     setPortraits(p1Key, p2Key) {
+        // Store keys for pause menu
+        this.p1Key = p1Key;
+        this.p2Key = p2Key;
+        
         const ar = HUD_STYLE.AVATAR_RADIUS;
         const p1cx = HUD_STYLE.MARGIN + ar;
         const p2cx = GAME_WIDTH - HUD_STYLE.MARGIN - ar;
@@ -200,7 +208,7 @@ export default class HUD {
         const p1x = s.AVATAR_RADIUS * 2 + s.MARGIN + 10;
         const p1y = 22;
         this.drawHealthBar(g, p1x, p1y, p1.getHpRatio(), s.BAR_WIDTH, false);
-        this.drawCEBar(g, p1x, p1y + s.BAR_HEIGHT + 6, p1.getCeRatio(), s.BAR_WIDTH, false, p1.ceSystem.isFatigued, p1.colors);
+        this.drawCEBar(g, p1x, p1y + s.BAR_HEIGHT + 6, p1.getCeRatio(), s.BAR_WIDTH, false, p1.ceSystem.isFatigued, p1.colors.energy);
         this.drawAvatar(g, s.MARGIN + s.AVATAR_RADIUS, 45, p1.colors, false);
         this.drawRoundPips(g, p1x, p1y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p1Rounds, false);
 
@@ -208,7 +216,7 @@ export default class HUD {
         const p2x = GAME_WIDTH - s.AVATAR_RADIUS * 2 - s.MARGIN - 10 - s.BAR_WIDTH;
         const p2y = 22;
         this.drawHealthBar(g, p2x, p2y, p2.getHpRatio(), s.BAR_WIDTH, true);
-        this.drawCEBar(g, p2x, p2y + s.BAR_HEIGHT + 6, p2.getCeRatio(), s.BAR_WIDTH, true, p2.ceSystem.isFatigued, p2.colors);
+        this.drawCEBar(g, p2x, p2y + s.BAR_HEIGHT + 6, p2.getCeRatio(), s.BAR_WIDTH, true, p2.ceSystem.isFatigued, p2.colors.energy);
         this.drawAvatar(g, GAME_WIDTH - s.MARGIN - s.AVATAR_RADIUS, 45, p2.colors, true);
         this.drawRoundPips(g, p2x + s.BAR_WIDTH, p2y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p2Rounds, true);
 
@@ -275,7 +283,7 @@ export default class HUD {
         g.strokeRect(x - 2, y - 2, width + 4, h + 4);
     }
 
-    drawCEBar(g, x, y, ratio, width, mirrored, fatigued, colors) {
+    drawCEBar(g, x, y, ratio, width, mirrored, fatigued, ceColor) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
         const h = s.CE_BAR_HEIGHT;
@@ -286,26 +294,27 @@ export default class HUD {
         g.fillStyle(0x0A0A1E, 1);
         g.fillRect(x, y, width, h);
 
-        // CE fill
-        const ceBase = fatigued ? 0x444444 : (colors ? colors.energy : 0x0055FF);
+        // CE fill — use character-specific energy color
+        const ceBase = fatigued ? 0x444444 : (ceColor || 0x0055FF);
         const fillW = width * ratio;
         
         if (fillW > 0) {
             if (mirrored) {
                 g.fillStyle(ceBase, 1);
                 g.fillRect(x + width - fillW, y, fillW, h);
-                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillStyle(0xFFFFFF, 0.25);
                 g.fillRect(x + width - fillW, y, fillW, h / 2);
             } else {
                 g.fillStyle(ceBase, 1);
                 g.fillRect(x, y, fillW, h);
-                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillStyle(0xFFFFFF, 0.25);
                 g.fillRect(x, y, fillW, h / 2);
             }
         }
 
-        // Border
-        g.lineStyle(2, 0x4488FF, 1);
+        // Border — use character CE color for border glow
+        const borderColor = fatigued ? 0x666666 : (ceColor || 0x4488FF);
+        g.lineStyle(2, borderColor, 1);
         g.strokeRect(x - 2, y - 2, width + 4, h + 4);
 
         // Tier markers (Divided into exactly 3 parts visually)

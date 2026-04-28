@@ -81,7 +81,8 @@ export default class MenuScene extends Phaser.Scene {
         const menuItems = [
             { text: 'FIGHT', action: () => this.startFight() },
             { text: 'OPCIONES', action: () => { this.scene.start('OptionsScene'); } },
-            { text: 'TOURNAMENT', action: () => {} },
+            { text: 'TOURNAMENT', action: () => { this.sound.stopAll(); this.scene.start('TournamentLobbyScene'); } },
+            { text: 'RAID', action: () => { this.sound.stopAll(); this.scene.start('RaidLobbyScene'); } },
         ];
 
         this.menuButtons = [];

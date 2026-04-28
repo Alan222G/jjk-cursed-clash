@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import Gojo from '../entities/fighters/Gojo.js';
 import Sukuna from '../entities/fighters/Sukuna.js';
+import Sukuna20 from '../entities/fighters/Sukuna20.js';
 import Toji from '../entities/fighters/Toji.js';
 import Kenjaku from '../entities/fighters/Kenjaku.js';
 import Ishigori from '../entities/fighters/Ishigori.js';
@@ -106,6 +107,7 @@ export default class GameScene extends Phaser.Scene {
         const FIGHTER_CLASSES = {
             'GOJO': Gojo,
             'SUKUNA': Sukuna,
+            'SUKUNA_20': Sukuna20,
             'TOJI': Toji,
             'KENJAKU': Kenjaku,
             'ISHIGORI': Ishigori,
@@ -153,6 +155,7 @@ export default class GameScene extends Phaser.Scene {
             KENJAKU:  { voice: 'gojo_domain_voice',    sign: 'kenjaku_sign', color: 0x8844CC, bg: 0x110022, lineColor: 0xAA66FF, textColor: '#AA66FF', name: 'RYŌIKI TENKAI — TAIHŌGAN' },
             ISHIGORI: { voice: 'sukuna_domain_voice',  sign: 'ishigori_sign', color: 0xFFAA33, bg: 0x1A0A00, lineColor: 0xFFCC00, textColor: '#FFCC00', name: 'RYŌIKI TENKAI — JIKANKŌ GEPPAKU' },
             KUROROSHI:{ voice: 'sukuna_domain_voice',  sign: 'kuroroshi_sign', color: 0x664422, bg: 0x0A0500, lineColor: 0xAA7744, textColor: '#AA7744', name: 'RYŌIKI TENKAI — SHŌKEI GAICHU' },
+            SUKUNA_20:{ voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFF0000, bg: 0x0A0000, lineColor: 0xFF2200, textColor: '#FF2200', name: 'RYŌIKI TENKAI — FUKUMA MIZUSHI (BARRIERLESS)' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;

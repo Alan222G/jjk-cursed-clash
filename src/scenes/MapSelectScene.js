@@ -101,9 +101,50 @@ export default class MapSelectScene extends Phaser.Scene {
 
             // Thumbnail (scaled down)
             if (mapData.id === 'random') {
-                this.add.text(x, y - 10, '?', {
-                    fontFamily: 'Arial Black', fontSize: '32px', color: '#D4A843'
-                }).setOrigin(0.5);
+                // Elaborate "?" design with geometric shapes
+                const qg = this.add.graphics().setDepth(6);
+                // Outer glow circle
+                qg.fillStyle(0xD4A843, 0.15);
+                qg.fillCircle(x, y - 8, 35);
+                // Question mark body using shapes
+                // Arc/curve of the "?"
+                qg.lineStyle(5, 0xD4A843, 0.9);
+                qg.beginPath();
+                qg.arc(x, y - 20, 14, -Math.PI * 0.8, Math.PI * 0.2, false);
+                qg.strokePath();
+                // Stem of the "?"
+                qg.lineStyle(5, 0xD4A843, 0.9);
+                qg.beginPath();
+                qg.moveTo(x + 10, y - 12);
+                qg.lineTo(x + 2, y - 2);
+                qg.strokePath();
+                // Dot of the "?"
+                qg.fillStyle(0xFFD700, 1);
+                qg.fillCircle(x + 1, y + 8, 4);
+                // Decorative diamonds around the "?"
+                const drawDiamond = (dx, dy, s) => {
+                    qg.fillStyle(0xD4A843, 0.6);
+                    qg.beginPath();
+                    qg.moveTo(dx, dy - s);
+                    qg.lineTo(dx + s, dy);
+                    qg.lineTo(dx, dy + s);
+                    qg.lineTo(dx - s, dy);
+                    qg.closePath();
+                    qg.fillPath();
+                };
+                drawDiamond(x - 22, y - 22, 4);
+                drawDiamond(x + 24, y - 18, 3);
+                drawDiamond(x - 18, y + 6, 3);
+                drawDiamond(x + 20, y + 10, 4);
+                // Animate glow
+                this.tweens.add({
+                    targets: qg,
+                    alpha: 0.5,
+                    yoyo: true,
+                    repeat: -1,
+                    duration: 1200,
+                    ease: 'Sine.easeInOut',
+                });
             } else {
                 const texKey = `map_${mapData.id.split('.')[0]}`;
                 if (this.textures.exists(texKey)) {
@@ -141,9 +182,6 @@ export default class MapSelectScene extends Phaser.Scene {
 
         this.previewDOM = this.add.dom(0, -20, 'img', 'width: 660px; height: 210px; object-fit: cover; border-radius: 4px; pointer-events: none; opacity: 1;');
         this.previewPanel.add(this.previewDOM);
-
-        this.bigQuestionMark = this.add.graphics().setDepth(12);
-        this.previewPanel.add(this.bigQuestionMark);
 
         this.updatePreview();
 
@@ -228,23 +266,9 @@ export default class MapSelectScene extends Phaser.Scene {
 
         this.previewName.setText(item.name);
 
-        this.bigQuestionMark.clear();
         if (item.id === 'random') {
             this.previewDOM.node.src = '';
-            this.previewDOM.node.style.backgroundColor = '#0A0A18';
-            
-            // Draw big question mark
-            const qg = this.bigQuestionMark;
-            qg.fillStyle(0xD4A843, 1);
-            const ox = 0;
-            const oy = -40;
-            qg.fillRect(ox - 30, oy - 60, 60, 20); // Top
-            qg.fillRect(ox - 50, oy - 40, 20, 30); // Left upper
-            qg.fillRect(ox + 30, oy - 40, 20, 40); // Right upper
-            qg.fillRect(ox + 10, oy, 20, 20);      // Middle right
-            qg.fillRect(ox - 10, oy + 20, 20, 30); // Middle down
-            // Dot
-            qg.fillRect(ox - 10, oy + 70, 20, 20);
+            this.previewDOM.node.style.backgroundColor = '#000000';
         } else {
             this.previewDOM.node.src = `assets/maps/${item.id}`;
             this.previewDOM.node.style.backgroundColor = 'transparent';
