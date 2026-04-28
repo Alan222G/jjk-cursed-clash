@@ -80,7 +80,7 @@ export default class MenuScene extends Phaser.Scene {
         // ── Menu Options ──
         const menuItems = [
             { text: 'FIGHT', action: () => this.startFight() },
-            { text: 'OPCIONES', action: () => { this.scene.start('OptionsScene'); } },
+            { text: 'TOURNAMENT', action: () => { this.scene.start('OptionsScene'); } },
             { text: 'CRÉDITOS', action: () => {} },
         ];
 

@@ -233,91 +233,117 @@ export default class HUD {
     drawHealthBar(g, x, y, ratio, width, mirrored) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
+        const h = s.BAR_HEIGHT + 4; // Make it a bit thicker
 
-        // Background
-        g.fillStyle(s.BG_COLOR, 0.9);
-        g.fillRect(x, y, width, s.BAR_HEIGHT);
+        // Background (Dark gradient feel)
+        g.fillStyle(0x1A0505, 0.95);
+        g.fillRoundedRect(x, y, width, h, 6);
+        
+        // Inner shadow
+        g.lineStyle(2, 0x000000, 0.6);
+        g.strokeRoundedRect(x, y, width, h, 6);
 
         // Health fill
-        let hpColor = s.HP_COLOR_HIGH;
-        if (ratio < 0.5) hpColor = s.HP_COLOR_MED;
-        if (ratio < 0.25) hpColor = s.HP_COLOR_LOW;
+        let hpColor = 0x00FF88; // Bright modern green
+        let hpGlow = 0x00CC44;
+        if (ratio < 0.5) { hpColor = 0xFFDD00; hpGlow = 0xCCAA00; }
+        if (ratio < 0.25) { hpColor = 0xFF3333; hpGlow = 0xCC0000; }
 
         const fillW = width * ratio;
-        if (mirrored) {
-            g.fillStyle(hpColor, 0.95);
-            g.fillRect(x + width - fillW, y, fillW, s.BAR_HEIGHT);
-        } else {
-            g.fillStyle(hpColor, 0.95);
-            g.fillRect(x, y, fillW, s.BAR_HEIGHT);
+        if (fillW > 0) {
+            const r = Math.min(6, fillW / 2);
+            if (mirrored) {
+                g.fillStyle(hpGlow, 0.95);
+                g.fillRoundedRect(x + width - fillW, y, fillW, h, r);
+                g.fillStyle(hpColor, 1);
+                g.fillRoundedRect(x + width - fillW, y, fillW, h * 0.4, r);
+            } else {
+                g.fillStyle(hpGlow, 0.95);
+                g.fillRoundedRect(x, y, fillW, h, r);
+                g.fillStyle(hpColor, 1);
+                g.fillRoundedRect(x, y, fillW, h * 0.4, r);
+            }
         }
 
-        // Shine line
-        g.fillStyle(0xFFFFFF, 0.15);
-        g.fillRect(x, y, width, s.BAR_HEIGHT / 3);
+        // Tech-like segments
+        g.lineStyle(1, 0x000000, 0.3);
+        for(let i=1; i<4; i++) {
+            const sx = x + (width / 4) * i;
+            g.lineBetween(sx, y, sx, y + h);
+        }
 
-        // Gold border
-        g.lineStyle(s.BORDER_WIDTH, s.BORDER_COLOR, 1);
-        g.strokeRect(x, y, width, s.BAR_HEIGHT);
-
-        // Inner glow line
-        g.lineStyle(1, s.BORDER_COLOR, 0.3);
-        g.strokeRect(x + 2, y + 2, width - 4, s.BAR_HEIGHT - 4);
+        // Premium Gold border
+        g.lineStyle(3, 0xFFD700, 1);
+        g.strokeRoundedRect(x - 1, y - 1, width + 2, h + 2, 8);
     }
 
     drawCEBar(g, x, y, ratio, width, mirrored, fatigued) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
+        const h = s.CE_BAR_HEIGHT + 2;
 
         // Background
-        g.fillStyle(0x0A0A1E, 0.9);
-        g.fillRect(x, y, width, s.CE_BAR_HEIGHT);
+        g.fillStyle(0x05051A, 0.95);
+        g.fillRoundedRect(x, y, width, h, 4);
 
         // CE fill
-        const ceColor = fatigued ? 0x444444 : s.CE_COLOR;
+        const ceBase = fatigued ? 0x444444 : 0x0055FF;
+        const ceLight = fatigued ? 0x888888 : 0x44AAFF;
         const fillW = width * ratio;
-        if (mirrored) {
-            g.fillStyle(ceColor, 0.9);
-            g.fillRect(x + width - fillW, y, fillW, s.CE_BAR_HEIGHT);
-        } else {
-            g.fillStyle(ceColor, 0.9);
-            g.fillRect(x, y, fillW, s.CE_BAR_HEIGHT);
+        
+        if (fillW > 0) {
+            const r = Math.min(4, fillW / 2);
+            if (mirrored) {
+                g.fillStyle(ceBase, 0.9);
+                g.fillRoundedRect(x + width - fillW, y, fillW, h, r);
+                g.fillStyle(ceLight, 1);
+                g.fillRoundedRect(x + width - fillW, y, fillW, h * 0.4, r);
+            } else {
+                g.fillStyle(ceBase, 0.9);
+                g.fillRoundedRect(x, y, fillW, h, r);
+                g.fillStyle(ceLight, 1);
+                g.fillRoundedRect(x, y, fillW, h * 0.4, r);
+            }
         }
 
         // Glow overlay
         if (!fatigued && ratio > 0.5) {
-            g.fillStyle(s.CE_GLOW, 0.2);
-            g.fillRect(x, y, width * ratio, s.CE_BAR_HEIGHT);
+            g.fillStyle(0xFFFFFF, 0.15);
+            g.fillRoundedRect(mirrored ? x + width - fillW : x, y, fillW, h, 4);
         }
 
         // Border
-        g.lineStyle(2, s.BORDER_COLOR_DARK, 0.8);
-        g.strokeRect(x, y, width, s.CE_BAR_HEIGHT);
+        g.lineStyle(2, 0x4488FF, 0.8);
+        g.strokeRoundedRect(x, y, width, h, 4);
 
-        // Tier markers
-        const tiers = [0.15, 0.3, 0.5, 0.75]; // 30/200, 60/200, 100/200, 150/200
+        // Tier markers (Divided into exactly 3 parts visually)
+        const tiers = [1/3, 2/3];
         for (const t of tiers) {
             const mx = x + width * t;
-            g.lineStyle(1, s.BORDER_COLOR, 0.5);
-            g.lineBetween(mx, y, mx, y + s.CE_BAR_HEIGHT);
+            g.lineStyle(2, 0xFFFFFF, 0.6);
+            g.lineBetween(mx, y, mx, y + h);
         }
     }
 
     drawAvatar(g, cx, cy, colors, mirrored) {
         const s = HUD_STYLE;
-        const r = s.AVATAR_RADIUS;
-
-        // Outer ornamental border
-        g.lineStyle(s.AVATAR_BORDER + 2, s.BORDER_COLOR, 1);
-        g.strokeCircle(cx, cy, r + 4);
+        const r = s.AVATAR_RADIUS + 2;
 
         // Dark fill (behind portrait)
         g.fillStyle(0x0A0A1E, 1);
         g.fillCircle(cx, cy, r);
 
-        // Energy glow ring
-        g.lineStyle(2, colors.energy, 0.5);
-        g.strokeCircle(cx, cy, r - 2);
+        // Energy glow ring behind border
+        g.lineStyle(6, colors.energy, 0.4);
+        g.strokeCircle(cx, cy, r + 4);
+
+        // Outer ornamental border (Premium Gold)
+        g.lineStyle(4, 0xFFD700, 1);
+        g.strokeCircle(cx, cy, r);
+        
+        // Inner rim
+        g.lineStyle(2, 0xFFFFFF, 0.6);
+        g.strokeCircle(cx, cy, r - 3);
     }
 
     drawRoundPips(g, x, y, wins, mirrored) {

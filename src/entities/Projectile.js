@@ -68,13 +68,13 @@ export default class Projectile {
         this.timer += dt;
 
         // Lifetime check
-        if (this.timer >= this.lifetime) {
+        if (this.type !== 'beam' && this.timer >= this.lifetime) {
             this.destroy();
             return;
         }
 
         // Out of bounds check
-        if (this.sprite.x < -50 || this.sprite.x > 1330) {
+        if (this.type !== 'beam' && (this.sprite.x < -50 || this.sprite.x > 1330)) {
             this.destroy();
             return;
         }
@@ -204,7 +204,11 @@ export default class Projectile {
                 const fadeProgress = 1 - (remainingTime / (this.lifetime * 0.3));
                 // Collapse on its central axis
                 this.beamThickness = this.size.h * Math.max(0, 1 - fadeProgress);
-                if (this.beamThickness <= 0) this.beamThickness = 0;
+                if (this.beamThickness <= 0) {
+                    this.beamThickness = 0;
+                    this.destroy();
+                    return;
+                }
             }
 
             // Sync physics body to match the current length and thickness
