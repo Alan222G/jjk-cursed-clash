@@ -161,20 +161,20 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TÉCNICAS MALDITAS (FORMA VERDADERA)',
             lines: [
                 `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
-                `  Dispara 3 cortes en rápida sucesión`,
-                `${atkKeys.special}+${moveKeys.up} — Spiderweb  (20 CE)`,
-                `  Red de cortes en el suelo, daño en área`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
-                `  Corte masivo que se ajusta al objetivo`,
+                `  Triple corte simultáneo (3 proyectiles)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Dominio Simple  (15+ CE)`,
+                `  Escudo intocable por 10s (como Infinito)`,
+                `  Consume CE constante + extra al recibir ataques`,
                 `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
-                `  Flecha de fuego divino devastadora`,
+                `  Red de cortes gigante + SANGRADO (30 dmg/s, 8s)`,
             ]
         });
         sections.push({
             title: 'HABILIDADES PASIVAS',
             lines: [
-                `Técnica Cursed Inversa: Regenera 15 HP/s pasivamente`,
+                `Técnica Cursed Inversa: Regenera 15 HP/s`,
                 `4 Brazos: Mayor alcance de combate`,
+                `HP Dinámico: Se ajusta según número de oponentes`,
             ]
         });
         sections.push({

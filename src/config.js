@@ -342,7 +342,7 @@ export const CHARACTERS = {
             hair: 0xCC4466,
         },
         stats: {
-            maxHp: 15000,
+            maxHp: 5000,
             speed: 350,
             power: 2.0,
             defense: 1.5,
@@ -354,9 +354,9 @@ export const CHARACTERS = {
         },
         skills: {
             skill1: { name: 'World-Splitting Dismantle', cost: 25, damage: 80, type: 'slash_ranged' },
-            skill2: { name: 'World Cleave', cost: 50, damage: 150, type: 'slash_aoe' },
+            skill2: { name: 'Simple Domain', cost: 15, damage: 0, type: 'shield' },
             domain: { name: 'Malevolent Shrine — Barrierless', cost: 100, sureHitType: 'dps' },
-            maximum: { name: 'Divine Flame — Fuga', cost: 120, damage: 700, type: 'fire' },
+            maximum: { name: 'Divine Flame — Fuga', cost: 120, damage: 700, type: 'bleed_net' },
         },
         domainBg: 'sukuna_shrine',
     },

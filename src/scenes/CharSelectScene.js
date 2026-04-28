@@ -133,11 +133,14 @@ export default class CharSelectScene extends Phaser.Scene {
                 const slotCol = col;
                 
                 zone.on('pointerdown', () => {
+                    const clickedKey = this.getKeyAt(slotRow, slotCol);
                     if (!this.p1Confirmed) {
                         this.p1Row = slotRow;
                         this.p1Col = slotCol;
                         this.p1Confirmed = true;
                     } else if (!this.p2Confirmed) {
+                        // Block if SUKUNA_20 already taken by P1
+                        if (clickedKey === 'SUKUNA_20' && this.p1Confirmed && this.p1Selection === 'SUKUNA_20') return;
                         this.p2Row = slotRow;
                         this.p2Col = slotCol;
                         this.p2Confirmed = true;
@@ -437,6 +440,11 @@ export default class CharSelectScene extends Phaser.Scene {
             if (Phaser.Input.Keyboard.JustDown(this.p1Confirm)) {
                 this.p1Confirmed = true;
             }
+            // Prevent P1 from sitting on a locked character (P2 already took SUKUNA_20)
+            if (this.p1Selection === 'SUKUNA_20' && this.p2Confirmed && this.p2Selection === 'SUKUNA_20') {
+                // Move P1 off SUKUNA_20
+                this.p1Col = 0;
+            }
         }
 
         // ── P2 Selection (Arrows + Numpad1) ──
@@ -460,7 +468,12 @@ export default class CharSelectScene extends Phaser.Scene {
                 }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2Confirm)) {
-                this.p2Confirmed = true;
+                // Block if SUKUNA_20 already taken by P1
+                if (this.p2Selection === 'SUKUNA_20' && this.p1Confirmed && this.p1Selection === 'SUKUNA_20') {
+                    // Don't confirm, skip
+                } else {
+                    this.p2Confirmed = true;
+                }
             }
         }
 
@@ -472,6 +485,10 @@ export default class CharSelectScene extends Phaser.Scene {
         const p1Key = this.p1Selection;
         const p2Key = this.p2Selection;
 
+        // Check if SUKUNA_20 is locked by either player
+        const sukuna20LockedByP1 = this.p1Confirmed && p1Key === 'SUKUNA_20';
+        const sukuna20LockedByP2 = this.p2Confirmed && p2Key === 'SUKUNA_20';
+
         for (const slot of this.slots) {
             const isP1 = slot.key === p1Key;
             const isP2 = slot.key === p2Key;
@@ -479,7 +496,13 @@ export default class CharSelectScene extends Phaser.Scene {
             const y = slot.y;
             const half = this.slotSize / 2 - 4;
 
-            let bgColor = 0x0A0A18;
+            // Check if this slot is locked (SUKUNA_20 taken by the other player)
+            const isLocked = slot.key === 'SUKUNA_20' && (
+                (sukuna20LockedByP1 && !this.p2Confirmed) ||
+                (sukuna20LockedByP2 && !this.p1Confirmed)
+            );
+
+            let bgColor = isLocked ? 0x220000 : 0x0A0A18;
             let borderColor = 0x444466;
             let borderAlpha = 0.5;
 
@@ -489,6 +512,8 @@ export default class CharSelectScene extends Phaser.Scene {
                 borderColor = 0x4488FF; borderAlpha = 1;
             } else if (isP2) {
                 borderColor = 0xFF4444; borderAlpha = 1;
+            } else if (isLocked) {
+                borderColor = 0x660000; borderAlpha = 0.8;
             }
 
             // Slot background
@@ -496,6 +521,16 @@ export default class CharSelectScene extends Phaser.Scene {
             this.gridGraphics.fillRect(x - half, y - half, half * 2, half * 2);
             this.gridGraphics.lineStyle(3, borderColor, borderAlpha);
             this.gridGraphics.strokeRect(x - half, y - half, half * 2, half * 2);
+
+            // LOCKED overlay
+            if (isLocked) {
+                this.gridGraphics.fillStyle(0xFF0000, 0.15);
+                this.gridGraphics.fillRect(x - half, y - half, half * 2, half * 2);
+                // X mark
+                this.gridGraphics.lineStyle(4, 0xFF0000, 0.6);
+                this.gridGraphics.lineBetween(x - half + 10, y - half + 10, x + half - 10, y + half - 10);
+                this.gridGraphics.lineBetween(x + half - 10, y - half + 10, x - half + 10, y + half - 10);
+            }
 
             // P1 indicator arrow (bottom)
             if (isP1) {
