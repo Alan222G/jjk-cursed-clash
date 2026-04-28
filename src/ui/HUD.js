@@ -233,117 +233,109 @@ export default class HUD {
     drawHealthBar(g, x, y, ratio, width, mirrored) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
-        const h = s.BAR_HEIGHT + 4; // Make it a bit thicker
+        const h = s.BAR_HEIGHT;
 
-        // Background (Dark gradient feel)
-        g.fillStyle(0x1A0505, 0.95);
-        g.fillRoundedRect(x, y, width, h, 6);
-        
-        // Inner shadow
-        g.lineStyle(2, 0x000000, 0.6);
-        g.strokeRoundedRect(x, y, width, h, 6);
+        // Background (Retro solid dark border style)
+        g.fillStyle(0x000000, 1);
+        g.fillRect(x - 2, y - 2, width + 4, h + 4);
+        g.fillStyle(s.BG_COLOR, 1);
+        g.fillRect(x, y, width, h);
 
         // Health fill
-        let hpColor = 0x00FF88; // Bright modern green
-        let hpGlow = 0x00CC44;
-        if (ratio < 0.5) { hpColor = 0xFFDD00; hpGlow = 0xCCAA00; }
-        if (ratio < 0.25) { hpColor = 0xFF3333; hpGlow = 0xCC0000; }
+        let hpColor = s.HP_COLOR_HIGH;
+        if (ratio < 0.5) hpColor = s.HP_COLOR_MED;
+        if (ratio < 0.25) hpColor = s.HP_COLOR_LOW;
 
         const fillW = width * ratio;
         if (fillW > 0) {
-            const r = Math.min(6, fillW / 2);
             if (mirrored) {
-                g.fillStyle(hpGlow, 0.95);
-                g.fillRoundedRect(x + width - fillW, y, fillW, h, r);
                 g.fillStyle(hpColor, 1);
-                g.fillRoundedRect(x + width - fillW, y, fillW, h * 0.4, r);
+                g.fillRect(x + width - fillW, y, fillW, h);
+                // Retro top-shine (sharp block)
+                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillRect(x + width - fillW, y, fillW, h / 3);
             } else {
-                g.fillStyle(hpGlow, 0.95);
-                g.fillRoundedRect(x, y, fillW, h, r);
                 g.fillStyle(hpColor, 1);
-                g.fillRoundedRect(x, y, fillW, h * 0.4, r);
+                g.fillRect(x, y, fillW, h);
+                // Retro top-shine
+                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillRect(x, y, fillW, h / 3);
             }
         }
 
-        // Tech-like segments
-        g.lineStyle(1, 0x000000, 0.3);
+        // Retro arcade segments (every 25%)
+        g.lineStyle(1, 0x000000, 0.5);
         for(let i=1; i<4; i++) {
             const sx = x + (width / 4) * i;
             g.lineBetween(sx, y, sx, y + h);
         }
 
-        // Premium Gold border
-        g.lineStyle(3, 0xFFD700, 1);
-        g.strokeRoundedRect(x - 1, y - 1, width + 2, h + 2, 8);
+        // Thick retro gold border
+        g.lineStyle(3, 0xD4A843, 1);
+        g.strokeRect(x - 2, y - 2, width + 4, h + 4);
     }
 
     drawCEBar(g, x, y, ratio, width, mirrored, fatigued) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
-        const h = s.CE_BAR_HEIGHT + 2;
+        const h = s.CE_BAR_HEIGHT;
 
         // Background
-        g.fillStyle(0x05051A, 0.95);
-        g.fillRoundedRect(x, y, width, h, 4);
+        g.fillStyle(0x000000, 1);
+        g.fillRect(x - 2, y - 2, width + 4, h + 4);
+        g.fillStyle(0x0A0A1E, 1);
+        g.fillRect(x, y, width, h);
 
         // CE fill
         const ceBase = fatigued ? 0x444444 : 0x0055FF;
-        const ceLight = fatigued ? 0x888888 : 0x44AAFF;
         const fillW = width * ratio;
         
         if (fillW > 0) {
-            const r = Math.min(4, fillW / 2);
             if (mirrored) {
-                g.fillStyle(ceBase, 0.9);
-                g.fillRoundedRect(x + width - fillW, y, fillW, h, r);
-                g.fillStyle(ceLight, 1);
-                g.fillRoundedRect(x + width - fillW, y, fillW, h * 0.4, r);
+                g.fillStyle(ceBase, 1);
+                g.fillRect(x + width - fillW, y, fillW, h);
+                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillRect(x + width - fillW, y, fillW, h / 2);
             } else {
-                g.fillStyle(ceBase, 0.9);
-                g.fillRoundedRect(x, y, fillW, h, r);
-                g.fillStyle(ceLight, 1);
-                g.fillRoundedRect(x, y, fillW, h * 0.4, r);
+                g.fillStyle(ceBase, 1);
+                g.fillRect(x, y, fillW, h);
+                g.fillStyle(0xFFFFFF, 0.2);
+                g.fillRect(x, y, fillW, h / 2);
             }
         }
 
-        // Glow overlay
-        if (!fatigued && ratio > 0.5) {
-            g.fillStyle(0xFFFFFF, 0.15);
-            g.fillRoundedRect(mirrored ? x + width - fillW : x, y, fillW, h, 4);
-        }
-
         // Border
-        g.lineStyle(2, 0x4488FF, 0.8);
-        g.strokeRoundedRect(x, y, width, h, 4);
+        g.lineStyle(2, 0x4488FF, 1);
+        g.strokeRect(x - 2, y - 2, width + 4, h + 4);
 
         // Tier markers (Divided into exactly 3 parts visually)
         const tiers = [1/3, 2/3];
         for (const t of tiers) {
             const mx = x + width * t;
-            g.lineStyle(2, 0xFFFFFF, 0.6);
+            g.lineStyle(2, 0xFFFFFF, 0.8);
             g.lineBetween(mx, y, mx, y + h);
         }
     }
 
     drawAvatar(g, cx, cy, colors, mirrored) {
         const s = HUD_STYLE;
-        const r = s.AVATAR_RADIUS + 2;
+        const r = s.AVATAR_RADIUS;
 
-        // Dark fill (behind portrait)
-        g.fillStyle(0x0A0A1E, 1);
-        g.fillCircle(cx, cy, r);
-
-        // Energy glow ring behind border
-        g.lineStyle(6, colors.energy, 0.4);
+        // Outer ornamental border (Retro thick block border)
+        g.lineStyle(6, 0x000000, 1);
         g.strokeCircle(cx, cy, r + 4);
 
-        // Outer ornamental border (Premium Gold)
-        g.lineStyle(4, 0xFFD700, 1);
+        // Dark fill (behind portrait)
+        g.fillStyle(0x000000, 1);
+        g.fillCircle(cx, cy, r);
+
+        // Inner solid border
+        g.lineStyle(4, 0xD4A843, 1);
+        g.strokeCircle(cx, cy, r + 2);
+
+        // Energy glow ring
+        g.lineStyle(2, colors.energy, 0.8);
         g.strokeCircle(cx, cy, r);
-        
-        // Inner rim
-        g.lineStyle(2, 0xFFFFFF, 0.6);
-        g.strokeCircle(cx, cy, r - 3);
     }
 
     drawRoundPips(g, x, y, wins, mirrored) {

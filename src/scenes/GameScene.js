@@ -346,7 +346,8 @@ export default class GameScene extends Phaser.Scene {
                 // Si es un dominio overlay (PNG), dibujarlo dentro de Phaser sobre el mapa a la altura de los pies
                 if (bgKey === 'kenjaku_domain' || bgKey === 'sukuna_shrine') {
                     // GROUND_Y is approx PHYSICS.GROUND_Y
-                    const groundY = GAME_HEIGHT - 60; // Assuming 60px above bottom
+                    let groundY = GAME_HEIGHT - 60; // Assuming 60px above bottom
+                    if (bgKey === 'kenjaku_domain') groundY += 150; // Lower it by 150px
                     
                     this.domainBg = this.add.image(GAME_WIDTH / 2, groundY, bgKey)
                         .setOrigin(0.5, 1) // Ancla en la parte inferior central

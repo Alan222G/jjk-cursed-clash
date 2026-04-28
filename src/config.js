@@ -333,7 +333,7 @@ export const CHARACTERS = {
 
 // ── Visual Constants ─────────────────────────────────────
 export const HUD_STYLE = {
-    BAR_WIDTH: 420,
+    BAR_WIDTH: 510,
     BAR_HEIGHT: 28,
     CE_BAR_HEIGHT: 14,
     BORDER_WIDTH: 3,
