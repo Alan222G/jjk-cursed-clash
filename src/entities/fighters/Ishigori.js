@@ -132,7 +132,7 @@ export default class Ishigori extends Fighter {
             knockbackX: 800,
             knockbackY: -200,
             stunDuration: 600,
-            speed: 4000,
+            speed: 1200,
             direction: this.facing,
             color: 0x44CCFF,
             size: { w: 100, h: 30 }, // Flat beam
@@ -184,7 +184,7 @@ export default class Ishigori extends Fighter {
                     knockbackX: 1500,
                     knockbackY: -500,
                     stunDuration: 1000,
-                    speed: 6000,
+                    speed: 2000,
                     direction: this.facing,
                     color: 0x44CCFF,
                     size: { w: 400, h: 100 }, // Huge beam, but not screen-covering
@@ -299,7 +299,7 @@ export default class Ishigori extends Fighter {
         const multiplier = 1.0 + (chargeT * 2.0);
         
         const finalDamage = Math.floor(skill.damage * this.power * multiplier);
-        const finalSpeed = 3000 + (chargeT * 3000);
+        const finalSpeed = 600 + (chargeT * 400);
         const finalW = 100;
         const finalH = 30 + (chargeT * 20);
         const kbX = 400 + (chargeT * 600);
@@ -370,7 +370,7 @@ export default class Ishigori extends Fighter {
             knockbackX: 300,
             knockbackY: -50,
             stunDuration: 300,
-            speed: 4000,
+            speed: finalSpeed,
             direction: this.facing,
             color: 0x44CCFF,
             size: { w: 80, h: 30 },

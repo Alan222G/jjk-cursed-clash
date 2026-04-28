@@ -142,6 +142,9 @@ export default class MapSelectScene extends Phaser.Scene {
         this.previewDOM = this.add.dom(0, -20, 'img', 'width: 660px; height: 210px; object-fit: cover; border-radius: 4px; pointer-events: none; opacity: 1;');
         this.previewPanel.add(this.previewDOM);
 
+        this.bigQuestionMark = this.add.graphics().setDepth(12);
+        this.previewPanel.add(this.bigQuestionMark);
+
         this.updatePreview();
 
         // Ready Text
@@ -225,9 +228,23 @@ export default class MapSelectScene extends Phaser.Scene {
 
         this.previewName.setText(item.name);
 
+        this.bigQuestionMark.clear();
         if (item.id === 'random') {
             this.previewDOM.node.src = '';
-            this.previewDOM.node.style.backgroundColor = '#000000';
+            this.previewDOM.node.style.backgroundColor = '#0A0A18';
+            
+            // Draw big question mark
+            const qg = this.bigQuestionMark;
+            qg.fillStyle(0xD4A843, 1);
+            const ox = 0;
+            const oy = -40;
+            qg.fillRect(ox - 30, oy - 60, 60, 20); // Top
+            qg.fillRect(ox - 50, oy - 40, 20, 30); // Left upper
+            qg.fillRect(ox + 30, oy - 40, 20, 40); // Right upper
+            qg.fillRect(ox + 10, oy, 20, 20);      // Middle right
+            qg.fillRect(ox - 10, oy + 20, 20, 30); // Middle down
+            // Dot
+            qg.fillRect(ox - 10, oy + 70, 20, 20);
         } else {
             this.previewDOM.node.src = `assets/maps/${item.id}`;
             this.previewDOM.node.style.backgroundColor = 'transparent';

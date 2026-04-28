@@ -237,7 +237,7 @@ export default class PauseScene extends Phaser.Scene {
         const scrollAreaTop = 195;
         const scrollAreaBottom = GAME_HEIGHT - 85;
         const scrollAreaHeight = scrollAreaBottom - scrollAreaTop;
-        const scrollAreaWidth = 920;
+        const scrollAreaWidth = 1200;
 
         // Panel background for scroll area
         const scrollBg = this.add.graphics().setDepth(4);
@@ -260,12 +260,12 @@ export default class PauseScene extends Phaser.Scene {
         yPos += 40;
 
         // ── P1 Character Card ──
-        yPos = this.buildCharacterCard(cx, yPos, this.p1Key, 0, scrollAreaWidth - 40);
-        yPos += 25;
+        const p1Y = this.buildCharacterCard(cx - 290, yPos, this.p1Key, 0, 560);
 
         // ── P2 Character Card ──
-        yPos = this.buildCharacterCard(cx, yPos, this.p2Key, 1, scrollAreaWidth - 40);
-        yPos += 20;
+        const p2Y = this.buildCharacterCard(cx + 290, yPos, this.p2Key, 1, 560);
+
+        yPos = Math.max(p1Y, p2Y) + 20;
 
         // ── Store total content height for scroll bounds ──
         this.contentHeight = yPos - scrollAreaTop;

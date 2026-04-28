@@ -200,7 +200,7 @@ export default class HUD {
         const p1x = s.AVATAR_RADIUS * 2 + s.MARGIN + 10;
         const p1y = 22;
         this.drawHealthBar(g, p1x, p1y, p1.getHpRatio(), s.BAR_WIDTH, false);
-        this.drawCEBar(g, p1x, p1y + s.BAR_HEIGHT + 6, p1.getCeRatio(), s.BAR_WIDTH, false, p1.ceSystem.isFatigued);
+        this.drawCEBar(g, p1x, p1y + s.BAR_HEIGHT + 6, p1.getCeRatio(), s.BAR_WIDTH, false, p1.ceSystem.isFatigued, p1.colors);
         this.drawAvatar(g, s.MARGIN + s.AVATAR_RADIUS, 45, p1.colors, false);
         this.drawRoundPips(g, p1x, p1y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p1Rounds, false);
 
@@ -208,7 +208,7 @@ export default class HUD {
         const p2x = GAME_WIDTH - s.AVATAR_RADIUS * 2 - s.MARGIN - 10 - s.BAR_WIDTH;
         const p2y = 22;
         this.drawHealthBar(g, p2x, p2y, p2.getHpRatio(), s.BAR_WIDTH, true);
-        this.drawCEBar(g, p2x, p2y + s.BAR_HEIGHT + 6, p2.getCeRatio(), s.BAR_WIDTH, true, p2.ceSystem.isFatigued);
+        this.drawCEBar(g, p2x, p2y + s.BAR_HEIGHT + 6, p2.getCeRatio(), s.BAR_WIDTH, true, p2.ceSystem.isFatigued, p2.colors);
         this.drawAvatar(g, GAME_WIDTH - s.MARGIN - s.AVATAR_RADIUS, 45, p2.colors, true);
         this.drawRoundPips(g, p2x + s.BAR_WIDTH, p2y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p2Rounds, true);
 
@@ -275,7 +275,7 @@ export default class HUD {
         g.strokeRect(x - 2, y - 2, width + 4, h + 4);
     }
 
-    drawCEBar(g, x, y, ratio, width, mirrored, fatigued) {
+    drawCEBar(g, x, y, ratio, width, mirrored, fatigued, colors) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
         const h = s.CE_BAR_HEIGHT;
@@ -287,7 +287,7 @@ export default class HUD {
         g.fillRect(x, y, width, h);
 
         // CE fill
-        const ceBase = fatigued ? 0x444444 : 0x0055FF;
+        const ceBase = fatigued ? 0x444444 : (colors ? colors.energy : 0x0055FF);
         const fillW = width * ratio;
         
         if (fillW > 0) {
