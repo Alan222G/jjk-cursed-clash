@@ -663,18 +663,19 @@ export default class Fighter {
             atk.onHit(this, opponent, dmg);
         }
 
-        // ── BLACK FLASH MECHANIC (Only for non-Sukuna characters) ──
-        // Probabilities doubled for better synergy with 4-hit combo system
+        // ── BLACK FLASH MECHANIC ──
+        // Probabilities can be multiplied per-character (e.g., Yuji = 2x)
         let isBlackFlash = false;
         if (this.fighterId !== 'sukuna') {
+            const bfMult = this.blackFlashMultiplier || 1.0;
             const rand = Math.random() * 100;
-            if (atk.type === 'HEAVY' && rand <= 10) isBlackFlash = true;
-            else if (atk.type === 'MEDIUM' && rand <= 6) isBlackFlash = true;
-            else if (atk.type === 'LIGHT' && rand <= 2) isBlackFlash = true;
+            if (atk.type === 'HEAVY' && rand <= 10 * bfMult) isBlackFlash = true;
+            else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
+            else if (atk.type === 'LIGHT' && rand <= 2 * bfMult) isBlackFlash = true;
             // COMBO: 4th hit (heavy finisher) → 7.5%, hits 1-3 → 2%
             else if (atk.type === 'COMBO') {
-                if (atk.comboHit === 4 && rand <= 7.5) isBlackFlash = true;
-                else if (rand <= 2) isBlackFlash = true;
+                if (atk.comboHit === 4 && rand <= 7.5 * bfMult) isBlackFlash = true;
+                else if (rand <= 2 * bfMult) isBlackFlash = true;
             }
         }
 

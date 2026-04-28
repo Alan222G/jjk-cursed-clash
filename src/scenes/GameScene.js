@@ -10,6 +10,8 @@ import Toji from '../entities/fighters/Toji.js';
 import Kenjaku from '../entities/fighters/Kenjaku.js';
 import Ishigori from '../entities/fighters/Ishigori.js';
 import Kuroroshi from '../entities/fighters/Kuroroshi.js';
+import Yuji from '../entities/fighters/Yuji.js';
+import Mahito from '../entities/fighters/Mahito.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -112,6 +114,8 @@ export default class GameScene extends Phaser.Scene {
             'KENJAKU': Kenjaku,
             'ISHIGORI': Ishigori,
             'KUROROSHI': Kuroroshi,
+            'YUJI': Yuji,
+            'MAHITO': Mahito,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();

@@ -185,6 +185,57 @@ function getCharacterControls(charKey, playerIndex) {
                 `80 daño por tick (mejorado)`,
             ]
         });
+    } else if (charKey === 'YUJI') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS (SHINJUKU)',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `  Golpe físico + explosión de CE retardada (200ms)`,
+                `${atkKeys.special}+${moveKeys.up} — Soul Dismantle  (15 CE)`,
+                `  3 cortes de alma heredados de Sukuna`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `  Rayo de sangre de alta velocidad`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `  5 Black Flash consecutivos garantizados (x2.5 dmg c/u)`,
+            ]
+        });
+        sections.push({
+            title: 'HABILIDADES PASIVAS',
+            lines: [
+                `Black Flash x2: DOBLE probabilidad de Black Flash`,
+                `Sin Dominio: No puede activar expansión de dominio`,
+                `Instinto de Combate: Velocidad superior (370)`,
+            ]
+        });
+    } else if (charKey === 'MAHITO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS (TRANSFIGURACIÓN)',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `  Transforma brazo en cuchilla (5s, +40% daño)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `  Invoca humano transfigurado (ataca al oponente)`,
+                `${atkKeys.special}+${moveKeys.up} — Body Repel  (35 CE)`,
+                `  Explosión de almas AOE (4 proyectiles)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `  Forma verdadera 120% (15s, x2 poder, x1.8 def)`,
+            ]
+        });
+        sections.push({
+            title: 'HABILIDADES PASIVAS',
+            lines: [
+                `Defensa de Alma: 25% reducción de daño físico`,
+                `Transfiguración: Inmunidad parcial a ataques normales`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Toque de alma garantizado (60 dmg/tick)`,
+                `Ignora defensa, daño directo al HP`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──

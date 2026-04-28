@@ -6,12 +6,14 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 
-// ── Grid Layout: 2 rows ──
+// ── Grid Layout: 3 rows ──
 // Row 0: GOJO, SUKUNA, TOJI, KENJAKU
-// Row 1: ISHIGORI, KUROROSHI  (centered)
+// Row 1: ISHIGORI, KUROROSHI, YUJI, MAHITO
+// Row 2: SUKUNA_20
 const GRID = [
     ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU'],
-    ['ISHIGORI', 'KUROROSHI', 'SUKUNA_20'],
+    ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO'],
+    ['SUKUNA_20'],
 ];
 
 // Map character key → menu avatar texture key
@@ -22,7 +24,9 @@ const MENU_KEY = {
     KENJAKU: 'menu_kenjaku',
     ISHIGORI: 'menu_ishigori',
     KUROROSHI: 'menu_kuroroshi',
-    SUKUNA_20: 'menu_sukuna',  // Reuse Sukuna portrait for now
+    YUJI: 'menu_sukuna',       // Placeholder portrait
+    MAHITO: 'menu_kuroroshi',  // Placeholder portrait
+    SUKUNA_20: 'menu_sukuna',
 };
 
 // Iconic JJK titles for each character
@@ -33,6 +37,8 @@ const CHAR_TITLES = {
     KENJAKU: 'THE DISGRACED ONE',
     ISHIGORI: 'THE REINCARNATED SORCERER',
     KUROROSHI: 'THE CURSED COCKROACH',
+    YUJI: 'BLACK FLASH MASTER',
+    MAHITO: 'IDLE TRANSFIGURATION',
     SUKUNA_20: 'TRUE FORM — 20 FINGERS',
 };
 
