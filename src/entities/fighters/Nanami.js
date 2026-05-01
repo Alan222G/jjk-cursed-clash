@@ -209,6 +209,12 @@ export default class Nanami extends Fighter {
         this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 3.5) * 2.0; // Doble regeneración
         this.ceRegen = this.charData.stats.ceRegen; // Aplicar regeneración extra
         
+        // Efecto visual instantáneo de desatarse la corbata
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x44AAFF, 200, 0.4);
+            this.scene.screenEffects.shake(0.02, 300);
+        }
+        
         this.scene.time.delayedCall(1000, () => {
             if (this.scene.cancelDomain) {
                 this.scene.cancelDomain(this);
@@ -216,5 +222,39 @@ export default class Nanami extends Fighter {
                 this.scene.onDomainEnd(this);
             }
         });
+    }
+
+    drawAura(dt) {
+        super.drawAura(dt);
+        if (this.isDead) return;
+
+        const ag = this.auraGraphics;
+        const x = this.sprite.x; 
+        const y = this.sprite.y;
+        const t = this.scene.time.now;
+
+        if (this.overtimeActive) {
+            // Intense office-worker blue/gold aura indicating Overtime
+            const pulse = 0.2 + Math.sin(t * 0.01) * 0.15;
+            ag.fillStyle(0x0088FF, pulse);
+            ag.fillEllipse(x, y - 25, 60, 100);
+
+            // Clock hands spinning around him
+            ag.lineStyle(2, 0xFFCC00, 0.6);
+            const angle1 = t * 0.005;
+            const angle2 = t * 0.001;
+            ag.beginPath();
+            ag.moveTo(x, y - 30);
+            ag.lineTo(x + Math.cos(angle1) * 35, y - 30 + Math.sin(angle1) * 35);
+            ag.moveTo(x, y - 30);
+            ag.lineTo(x + Math.cos(angle2) * 25, y - 30 + Math.sin(angle2) * 25);
+            ag.strokePath();
+        }
+
+        if (this.nanamiArmorActive) {
+            // Metallic/grey shield aura
+            ag.lineStyle(3, 0xAAAAAA, 0.5);
+            ag.strokeCircle(x, y - 20, 45);
+        }
     }
 }

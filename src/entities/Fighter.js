@@ -1404,6 +1404,24 @@ export default class Fighter {
             ag.strokeCircle(x, y - 10, 60 + Math.sin(this.animTimer * 0.01) * 20);
         }
 
+        // Simple Domain Visual (Cylinder field)
+        if (this.hasSimpleDomain) {
+            ag.lineStyle(3, 0x88CCFF, 0.7);
+            ag.strokeEllipse(x, y + 25, 90, 25); // Bottom ring
+            ag.fillStyle(0x88CCFF, 0.15);
+            ag.fillEllipse(x, y + 25, 90, 25);
+            // walls
+            ag.lineStyle(1, 0x88CCFF, 0.3);
+            ag.beginPath();
+            ag.moveTo(x - 90, y + 25);
+            ag.lineTo(x - 90, y - 60);
+            ag.moveTo(x + 90, y + 25);
+            ag.lineTo(x + 90, y - 60);
+            ag.strokePath();
+            // Top ring
+            ag.strokeEllipse(x, y - 60, 90, 25);
+        }
+
         // Fatigue visual (dim, flickering)
         if (this.ceSystem.isFatigued) {
             const flicker = Math.random() * 0.3;
