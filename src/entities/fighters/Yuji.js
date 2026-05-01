@@ -246,7 +246,7 @@ export default class Yuji extends Fighter {
     tryActivateDomain() {
         if (this.yujiAwakened) return;
 
-        if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
+        if (!this.ceSystem.spend(80)) return;
         
         this.yujiAwakened = true;
         this.yujiAwakenedTimer = 15000;
