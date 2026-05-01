@@ -320,7 +320,7 @@ export default class Projectile {
 
         // Apply damage
         if (target && target.takeDamage) {
-            target.takeDamage(this.damage, this.knockbackX * this.direction, this.knockbackY, this.stunDuration);
+            target.takeDamage(this.damage, this.knockbackX * this.direction, this.knockbackY, this.stunDuration, true);
             if ((this.type === 'burn' || this.type === 'fire_arrow') && target.applyBurn) {
                 target.applyBurn(5000); // 5 seconds burn
             }

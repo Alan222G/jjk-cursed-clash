@@ -6,6 +6,9 @@ export default class Nanami extends Fighter {
         super(scene, x, y, playerIndex, CHARACTERS.NANAMI);
         this.overtimeActive = false;
         this.overtimeTimer = 0;
+        this.nanamiArmorActive = false;
+        this.nanamiArmorTimer = 0;
+        this.nextHitGuaranteedBlackFlash = false;
         this.isCasting = false;
     }
 
@@ -20,13 +23,25 @@ export default class Nanami extends Fighter {
                 this.defense = this.charData.stats.defense || 0.9;
             }
         }
+
+        if (this.nanamiArmorActive) {
+            this.nanamiArmorTimer -= dt;
+            if (this.nanamiArmorTimer <= 0) {
+                this.nanamiArmorActive = false;
+            }
+        }
     }
 
     _check73Crit(target) {
+        if (this.nextHitGuaranteedBlackFlash) {
+            return true;
+        }
         if (!target) return false;
         const dist = Math.abs(this.sprite.x - target.sprite.x);
-        const minDist = this.overtimeActive ? 80 : 110;
-        const maxDist = this.overtimeActive ? 180 : 150;
+        // "solo haz que si se da un golpe excato en el extremo del golpe sea un black flash asegurado"
+        // Tip of the weapon range:
+        const minDist = this.overtimeActive ? 60 : 65;
+        const maxDist = this.overtimeActive ? 180 : 85;
         return dist >= minDist && dist <= maxDist;
     }
 
@@ -34,23 +49,24 @@ export default class Nanami extends Fighter {
         const cx = (this.sprite.x + target.sprite.x) / 2;
         const cy = target.sprite.y;
 
-        const txt = this.scene.add.text(cx, cy - 80, '⚡ BLACK FLASH! ⚡', {
-            fontFamily: 'Arial Black', fontSize: '30px', color: '#FF0000', stroke: '#000000', strokeThickness: 6
-        }).setOrigin(0.5).setDepth(40);
+        const img = this.scene.add.image(cx, cy - 80, 'black_flash')
+            .setOrigin(0.5).setDepth(40).setScale(0.5);
+            
         this.scene.tweens.add({
-            targets: txt, y: txt.y - 50, scaleX: 1.5, scaleY: 1.5, alpha: 0, duration: 1000, onComplete: () => txt.destroy()
+            targets: img, y: img.y - 50, scaleX: 0.8, scaleY: 0.8, alpha: 0, duration: 1000, onComplete: () => img.destroy()
         });
 
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0xAA0000, 200, 0.7);
-            this.scene.screenEffects.shake(0.02, 300);
+            this.scene.screenEffects.flash(0x000000, 200, 0.7);
+            this.scene.screenEffects.shake(0.04, 300);
         }
-        try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e) {}
+        try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
     }
 
     onHitOpponent(opponent) {
         const isCrit = this._check73Crit(opponent);
         if (isCrit) {
+            this.nextHitGuaranteedBlackFlash = false; // consume mark
             const originalPower = this.power;
             this.power *= 2.5;
             this._applyBlackFlash(opponent);
@@ -61,6 +77,17 @@ export default class Nanami extends Fighter {
         }
     }
 
+    takeDamage(damage, kbX, kbY, stunDuration, isProjectile = false) {
+        if (this.nanamiArmorActive && !isProjectile) {
+            damage = Math.floor(damage * 0.5);
+            kbX = 0;
+            kbY = 0;
+            stunDuration = 0;
+            if (this.scene.screenEffects) this.scene.screenEffects.flash(0xAAAAAA, 50, 0.3);
+        }
+        super.takeDamage(damage, kbX, kbY, stunDuration);
+    }
+
     trySpecialAttack() {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
@@ -69,30 +96,46 @@ export default class Nanami extends Fighter {
             this.executeRafaga();
         } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.executeColapso();
+        } else if (tier >= 1 && this.input.isDown('DOWN')) {
+            this.executeArmor();
         } else if (tier >= 1) {
-            this.executeTajo();
+            this.executeMarca();
         }
     }
 
-    executeTajo() {
+    executeMarca() {
         if (!this.ceSystem.spend(this.charData.skills.skill1.cost)) return;
         this.isCasting = true;
-        this.stateMachine.lock(500);
-        this.sprite.body.setVelocityX(0);
+        this.stateMachine.lock(400);
 
-        this.scene.time.delayedCall(200, () => {
-            if (!this.isCasting) return;
-            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-            const isCrit = this._check73Crit(target);
-            const dmg = isCrit ? 45 * 2.5 : 45;
-            
-            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 160) {
-                if (isCrit) this._applyBlackFlash(target);
-                target.takeDamage(Math.floor(dmg * this.power), 300 * this.facing, -100, 400);
-            }
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'MARCA 7:3', {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#FF0000', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
+
+        this.nextHitGuaranteedBlackFlash = true;
+
+        this.scene.time.delayedCall(400, () => {
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            this.stateMachine.setState('idle');
         });
+    }
 
-        this.scene.time.delayedCall(500, () => {
+    executeArmor() {
+        if (!this.ceSystem.spend(this.charData.skills.skill2.cost)) return;
+        this.isCasting = true;
+        this.stateMachine.lock(400);
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'ARMOR', {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
+
+        this.nanamiArmorActive = true;
+        this.nanamiArmorTimer = 5000; // 5 seconds of armor
+
+        this.scene.time.delayedCall(400, () => {
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');

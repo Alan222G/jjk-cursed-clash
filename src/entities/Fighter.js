@@ -558,7 +558,7 @@ export default class Fighter {
         this.hitbox.body.enable = false;
     }
 
-    takeDamage(damage, kbX, kbY, stunDuration) {
+    takeDamage(damage, kbX, kbY, stunDuration, isProjectile = false) {
         if (this.isInvulnerable) return;
         if (this.isDead) return;
 
