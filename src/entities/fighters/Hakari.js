@@ -1,7 +1,6 @@
 // ========================================================
 // Kinji Hakari — The Gambler
-// Canon: Brawler with "rough" CE, Idle Death Gamble domain
-// Jackpot = unlimited CE + RCT instant heal
+// Fever meter passive, Jackpot domain, God-state buff
 // ========================================================
 
 import Phaser from 'phaser';
@@ -14,7 +13,7 @@ export default class Hakari extends Fighter {
         super(scene, x, y, playerIndex, CHARACTERS.HAKARI);
         this._baseSpeed = this.speed;
         this.isCasting = false;
-        // Fever system — rough CE
+        // Fever system
         this.feverMeter = 0;
         this.feverMax = 100;
         this.feverActive = false;
@@ -23,9 +22,16 @@ export default class Hakari extends Fighter {
         this.jackpotActive = false;
         this.jackpotTimer = 0;
         this.jackpotRegenRate = 60;
+        // Probability shift buff
+        this.probShiftTimer = 0;
         // Cooldowns
-        this.roughStrikeCd = 0;
-        this.serrateCd = 0;
+        this.shutterCd = 0;
+        this.pachinkoCd = 0;
+        // Domain minigame state
+        this._domainAttempts = 0;
+        this._domainMaxAttempts = 3;
+        this._domainRoundTimer = null;
+        this._domainTexts = [];
     }
 
     trySpecialAttack() {
@@ -33,146 +39,164 @@ export default class Hakari extends Fighter {
         const tier = this.ceSystem.getTier();
 
         if (tier >= 3 && this.input.isDown('DOWN')) {
-            // Rough CE Barrage — rapid multi-hit combo
-            this.castRoughBarrage();
+            this.castRushCombo();
         } else if (tier >= 2 && this.input.isDown('UP')) {
-            // CE-reinforced uppercut
-            this.castRoughUppercut();
+            this.castProbabilityShift();
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            // Serrated rush — dash + multi-hit
-            this.castSerratedRush();
+            this.castPachinkoBalls();
         } else if (tier >= 1) {
-            // Rough Strike — enhanced punch
-            this.castRoughStrike();
+            this.castShutterDoors();
         }
     }
 
     // ═══════════════════════════════════════
-    // SKILL 1: Rough Strike — CE-reinforced hit
-    // "Like being hit by a serrated bat"
+    // SKILL 1: Shutter Doors — trap + pull
     // ═══════════════════════════════════════
-    castRoughStrike() {
-        if (this.roughStrikeCd > 0) return;
-        if (!this.ceSystem.spend(12)) return;
-        this.roughStrikeCd = 1200;
+    castShutterDoors() {
+        if (this.shutterCd > 0) return;
+        const cost = this.probShiftTimer > 0 ? 8 : 15;
+        if (!this.ceSystem.spend(cost)) return;
+        this.shutterCd = this.probShiftTimer > 0 ? 1500 : 3000;
         this.isCasting = true;
-        this.stateMachine.lock(600);
+        this.stateMachine.lock(800);
 
-        try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
-
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 130) {
-            const dmg = Math.floor(50 * this.power * (this.feverActive ? 1.2 : 1));
-            target.takeDamage(dmg, 350 * this.facing, -100, 400);
-            this.addFever(12);
-
-            // Rough CE VFX — jagged sparks on impact
-            const g = this.scene.add.graphics().setDepth(16);
-            const ox = target.sprite.x; const oy = target.sprite.y - 20;
-            g.lineStyle(3, 0xFFCC00, 0.9);
-            for (let i = 0; i < 5; i++) {
-                const a = Math.random() * Math.PI * 2;
-                const r = 10 + Math.random() * 15;
-                g.beginPath(); g.moveTo(ox, oy);
-                g.lineTo(ox + Math.cos(a) * r, oy + Math.sin(a) * r); g.strokePath();
-            }
-            this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
-        }
-        this._endCast(500);
-    }
-
-    // ═══════════════════════════════════════
-    // SKILL 2: Serrated Rush — dash + 3 hits
-    // ═══════════════════════════════════════
-    castSerratedRush() {
-        if (this.serrateCd > 0) return;
-        if (!this.ceSystem.spend(22)) return;
-        this.serrateCd = 2500;
-        this.isCasting = true;
-        this.stateMachine.lock(900);
-
-        // Dash forward
-        this.sprite.body.setVelocityX(600 * this.facing);
         try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
 
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        if (!target || target.isDead) { this._endCast(600); return; }
 
-        // 3 rapid hits with slight delays
-        for (let i = 0; i < 3; i++) {
-            this.scene.time.delayedCall(150 + i * 120, () => {
-                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 150) {
-                    const dmg = Math.floor(22 * this.power);
-                    target.takeDamage(dmg, 120 * this.facing, -30, 200);
-                    this.addFever(5);
-                    // Hit spark
-                    const g = this.scene.add.graphics().setDepth(16);
-                    g.fillStyle(0xFFDD00, 0.8);
-                    g.fillCircle(target.sprite.x + (Math.random() - 0.5) * 20, target.sprite.y - 20 + (Math.random() - 0.5) * 15, 6);
-                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 150, onComplete: () => g.destroy() });
+        const tx = target.sprite.x;
+        const ty = target.sprite.y;
+        const dist = Math.abs(tx - this.sprite.x);
+
+        const g = this.scene.add.graphics().setDepth(16);
+        const doorW = 30; const doorH = 100;
+        g.fillStyle(0xFFCC00, 0.7);
+        g.fillRect(tx - 80, ty - 50, doorW, doorH);
+        g.fillRect(tx + 50, ty - 50, doorW, doorH);
+        this.scene.tweens.add({
+            targets: { offset: 50 },
+            offset: 0,
+            duration: 300,
+            onUpdate: (tw, obj) => {
+                g.clear();
+                g.fillStyle(0xFFCC00, 0.7);
+                g.fillRect(tx - 30 - obj.offset, ty - 50, doorW, doorH);
+                g.fillRect(tx + obj.offset, ty - 50, doorW, doorH);
+            },
+            onComplete: () => {
+                g.destroy();
+                if (dist < 350) {
+                    target.sprite.body.setVelocityX((this.sprite.x - tx) * 3);
+                    target.takeDamage(Math.floor(30 * this.power), 0, 0, 600);
+                    target.stateMachine.lock(1500);
+                    this.scene.time.delayedCall(1500, () => target.stateMachine.unlock());
+                    this.addFever(15);
                 }
-            });
-        }
-        this.addFever(8);
+            }
+        });
         this._endCast(700);
     }
 
     // ═══════════════════════════════════════
-    // SKILL 3: Rough CE Uppercut
+    // SKILL 2: Pachinko Balls — guard-break
     // ═══════════════════════════════════════
-    castRoughUppercut() {
-        if (!this.ceSystem.spend(18)) return;
+    castPachinkoBalls() {
+        if (this.pachinkoCd > 0) return;
+        const cost = this.probShiftTimer > 0 ? 10 : 20;
+        if (!this.ceSystem.spend(cost)) return;
+        this.pachinkoCd = this.probShiftTimer > 0 ? 1000 : 2000;
         this.isCasting = true;
-        this.stateMachine.lock(700);
-        this.sprite.body.setVelocityY(-350);
+        this.stateMachine.lock(600);
 
-        try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
+        try { this.scene.sound.play('sfx_slash', { volume: 0.5 }); } catch(e) {}
 
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 120) {
-            target.takeDamage(Math.floor(40 * this.power), 200 * this.facing, -500, 500);
-            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.02, 200);
-            this.addFever(10);
+        for (let i = 0; i < 3; i++) {
+            this.scene.time.delayedCall(i * 100, () => {
+                const proj = new Projectile(this.scene, this.sprite.x + 30 * this.facing, this.sprite.y - 40 + i * 15, {
+                    owner: this, damage: Math.floor(20 * this.power),
+                    knockbackX: 100, knockbackY: 0, stunDuration: 150,
+                    speed: 1000, direction: this.facing, color: 0xFFDD00,
+                    size: { w: 15, h: 15 }, lifetime: 800, type: 'circle',
+                    guardBreak: true,
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+            });
         }
-        this._endCast(600);
+        this.addFever(8);
+        this._endCast(500);
     }
 
     // ═══════════════════════════════════════
-    // SKILL 4: Rough Barrage — relentless combo
+    // SKILL 3 (U+DOWN): Rush Combo — rapid punches
     // ═══════════════════════════════════════
-    castRoughBarrage() {
+    castRushCombo() {
         if (!this.ceSystem.spend(30)) return;
         this.isCasting = true;
         this.stateMachine.lock(1200);
 
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
 
-        for (let i = 0; i < 6; i++) {
-            this.scene.time.delayedCall(i * 100, () => {
-                try { this.scene.sound.play('sfx_slash', { volume: 0.4 }); } catch(e) {}
-                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 140) {
-                    const dmg = Math.floor(18 * this.power);
-                    target.takeDamage(dmg, 80 * this.facing, -20, 150);
-                    this.addFever(3);
+        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        const totalHits = 6;
+
+        for (let i = 0; i < totalHits; i++) {
+            this.scene.time.delayedCall(i * 150, () => {
+                if (!target || target.isDead) return;
+                if (Math.abs(target.sprite.x - this.sprite.x) < 140) {
+                    target.takeDamage(Math.floor(12 * this.power), 80 * this.facing, -20, 200);
+                    // Punch spark VFX
+                    const g = this.scene.add.graphics().setDepth(16);
+                    const ox = target.sprite.x + (Math.random() - 0.5) * 20;
+                    const oy = target.sprite.y - 25 + (Math.random() - 0.5) * 30;
+                    g.fillStyle(0xFFCC00, 0.8);
+                    g.fillCircle(ox, oy, 5 + Math.random() * 4);
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 120, onComplete: () => g.destroy() });
+                    try { this.scene.sound.play('sfx_slash', { volume: 0.3 }); } catch(e2) {}
                 }
             });
         }
 
-        // Final heavy hit
-        this.scene.time.delayedCall(700, () => {
-            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 150) {
-                target.takeDamage(Math.floor(45 * this.power), 600 * this.facing, -250, 600);
-                if (this.scene.screenEffects) this.scene.screenEffects.shake(0.03, 300);
-                this.addFever(15);
+        // Final big punch
+        this.scene.time.delayedCall(totalHits * 150, () => {
+            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 160) {
+                target.takeDamage(Math.floor(35 * this.power), 600 * this.facing, -300, 500);
+                if (this.scene.screenEffects) this.scene.screenEffects.shake(0.02, 200);
+                const g = this.scene.add.graphics().setDepth(16);
+                g.fillStyle(0xFFDD00, 0.6);
+                g.fillCircle(target.sprite.x, target.sprite.y - 20, 18);
+                this.scene.tweens.add({ targets: g, alpha: 0, scaleX: 2, scaleY: 2, duration: 200, onComplete: () => g.destroy() });
             }
         });
+
+        this.addFever(20);
         this._endCast(1100);
     }
 
     // ═══════════════════════════════════════
-    // FEVER — passive attack speed / power buff
+    // SKILL 4 (U+UP): Probability Shift
+    // ═══════════════════════════════════════
+    castProbabilityShift() {
+        if (!this.ceSystem.spend(20)) return;
+        this.probShiftTimer = 8000;
+        this.isCasting = true;
+        this.stateMachine.lock(400);
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, '⚡ PROBABILITY SHIFT', {
+            fontFamily: 'Arial Black', fontSize: '12px', color: '#FFDD00',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(20);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 1200, onComplete: () => txt.destroy() });
+
+        this.addFever(5);
+        this._endCast(350);
+    }
+
+    // ═══════════════════════════════════════
+    // FEVER SYSTEM
     // ═══════════════════════════════════════
     addFever(amount) {
-        if (this.jackpotActive) return;
+        if (this.feverActive || this.jackpotActive) return;
         this.feverMeter = Math.min(this.feverMax, this.feverMeter + amount);
         if (this.feverMeter >= this.feverMax) {
             this.feverActive = true;
@@ -188,8 +212,7 @@ export default class Hakari extends Fighter {
     }
 
     // ═══════════════════════════════════════
-    // DOMAIN — Idle Death Gamble
-    // Pachinko RNG → Jackpot = unkillable mode
+    // DOMAIN — Idle Death Gamble (36s, 3 attempts)
     // ═══════════════════════════════════════
     tryActivateDomain() {
         if (this.isCasting) return;
@@ -206,104 +229,158 @@ export default class Hakari extends Fighter {
         if (!this.ceSystem.spend(80)) return;
         this.domainActive = true;
         this.ceSystem.startDomain();
-        this.isCasting = true;
-        this.stateMachine.lock(99999);
 
         try { this.scene.sound.play('sfx_purple', { volume: 0.8 }); } catch(e) {}
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'idle_death_gamble');
 
-        this._runJackpotSequence();
+        // Start the 3-attempt system (1 attempt every 12s, 36s total max)
+        this._domainAttempts = 0;
+        this._domainJackpotWon = false;
+
+        // Show domain timer
+        this._domainTimerText = this.scene.add.text(this.sprite.x, this.sprite.y - 140, '36', {
+            fontFamily: 'Arial Black', fontSize: '14px', color: '#FFD700',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(30);
+
+        this._domainStartTime = this.scene.time.now;
+        this._scheduleNextAttempt();
     }
 
-    _runJackpotSequence() {
+    _scheduleNextAttempt() {
+        if (this._domainJackpotWon) return;
+        if (this._domainAttempts >= this._domainMaxAttempts) {
+            this._endDomain();
+            return;
+        }
+
+        // Delay before each spin (12s per attempt window)
+        const delay = this._domainAttempts === 0 ? 1000 : 12000;
+
+        this._domainRoundTimer = this.scene.time.delayedCall(delay, () => {
+            if (this._domainJackpotWon) return;
+            this._domainAttempts++;
+            this._runSlotSpin();
+        });
+    }
+
+    _runSlotSpin() {
+        this.isCasting = true;
+        this.stateMachine.lock(99999);
+        this.sprite.body.setVelocity(0, 0);
+
         const symbols = ['🎰', '💀', '⭐', '🔥', '💎', '7️⃣'];
         let spinCount = 0;
         const maxSpins = 20;
-        const resultTexts = [];
+        const reelTexts = [];
+
+        // Attempt counter
+        const attemptTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 120, `Attempt ${this._domainAttempts}/3`, {
+            fontFamily: 'Arial Black', fontSize: '11px', color: '#FFCC00',
+            stroke: '#000000', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(30);
 
         for (let i = 0; i < 3; i++) {
             const t = this.scene.add.text(this.sprite.x - 30 + i * 30, this.sprite.y - 100, '?', {
                 fontFamily: 'Arial Black', fontSize: '20px', color: '#FFDD00',
                 stroke: '#000000', strokeThickness: 3
-            }).setOrigin(0.5).setDepth(25);
-            resultTexts.push(t);
+            }).setOrigin(0.5).setDepth(30);
+            reelTexts.push(t);
         }
 
         const spinInterval = this.scene.time.addEvent({
             delay: 80,
             callback: () => {
                 spinCount++;
-                resultTexts.forEach(t => t.setText(symbols[Math.floor(Math.random() * symbols.length)]));
+                reelTexts.forEach(t => {
+                    t.setText(symbols[Math.floor(Math.random() * symbols.length)]);
+                });
                 if (spinCount >= maxSpins) {
                     spinInterval.remove();
-                    this._resolveJackpot(resultTexts);
+                    this._resolveSlot(reelTexts, attemptTxt);
                 }
             },
             loop: true
         });
     }
 
-    _resolveJackpot(reelTexts) {
+    _resolveSlot(reelTexts, attemptTxt) {
         const isJackpot = Math.random() < 0.65;
 
         if (isJackpot) {
+            // JACKPOT!
             reelTexts.forEach(t => t.setText('7️⃣'));
-            this.scene.time.delayedCall(600, () => {
-                reelTexts.forEach(t => t.destroy());
-                this._activateJackpotState();
-            });
+            this._domainJackpotWon = true;
 
-            const jTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 140, '🎰 JACKPOT!!! 🎰', {
+            const jTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 150, '🎰 JACKPOT!!! 🎰', {
                 fontFamily: 'Arial Black', fontSize: '22px', color: '#FFD700',
                 stroke: '#FF0000', strokeThickness: 4
-            }).setOrigin(0.5).setDepth(25);
-            this.scene.tweens.add({ targets: jTxt, scaleX: 1.5, scaleY: 1.5, duration: 400, yoyo: true, repeat: 2, onComplete: () => jTxt.destroy() });
+            }).setOrigin(0.5).setDepth(30);
+            this.scene.tweens.add({
+                targets: jTxt, scaleX: 1.5, scaleY: 1.5,
+                duration: 400, yoyo: true, repeat: 2,
+                onComplete: () => jTxt.destroy()
+            });
             if (this.scene.screenEffects) {
                 this.scene.screenEffects.flash(0xFFDD00, 300, 0.8);
                 this.scene.screenEffects.shake(0.05, 500);
             }
+
+            this.scene.time.delayedCall(1500, () => {
+                reelTexts.forEach(t => t.destroy());
+                attemptTxt.destroy();
+                this._activateJackpotState();
+            });
         } else {
+            // MISS
             reelTexts.forEach(t => {
                 t.setText('💀');
-                this.scene.tweens.add({ targets: t, alpha: 0, duration: 600, onComplete: () => t.destroy() });
+                this.scene.tweens.add({ targets: t, alpha: 0, duration: 800, onComplete: () => t.destroy() });
             });
-            const loseTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 130, 'MISS...', {
-                fontFamily: 'Arial Black', fontSize: '16px', color: '#888888',
+            const loseTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 140, 'MISS...', {
+                fontFamily: 'Arial Black', fontSize: '14px', color: '#888888',
                 stroke: '#000000', strokeThickness: 3
-            }).setOrigin(0.5).setDepth(25);
-            this.scene.tweens.add({ targets: loseTxt, y: loseTxt.y - 20, alpha: 0, duration: 1000, onComplete: () => loseTxt.destroy() });
+            }).setOrigin(0.5).setDepth(30);
+            this.scene.tweens.add({ targets: loseTxt, y: loseTxt.y - 20, alpha: 0, duration: 800, onComplete: () => loseTxt.destroy() });
+            attemptTxt.destroy();
 
-            this.scene.time.delayedCall(400, () => {
-                this.domainActive = false;
-                this.ceSystem.endDomain();
+            // Unlock between attempts
+            this.scene.time.delayedCall(500, () => {
                 this.isCasting = false;
                 this.stateMachine.unlock();
                 this.stateMachine.setState('idle');
+                this._scheduleNextAttempt();
             });
         }
     }
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 15000; // 15s god state
-        this.domainActive = false;
-        this.ceSystem.endDomain();
-        this.isCasting = false;
-        this.stateMachine.unlock();
-        this.stateMachine.setState('idle');
+        this.jackpotTimer = 15000;
+        this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
         this.speed = this._baseSpeed * 1.3;
         this.power *= 1.4;
 
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 100, '∞ UNKILLABLE ∞', {
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 100, '∞ UNLIMITED ∞', {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#FFD700',
             stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(20);
         this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 2000, onComplete: () => txt.destroy() });
     }
 
-    applySureHitTick(opponent) {}
+    _endDomain() {
+        this.domainActive = false;
+        this.ceSystem.endDomain();
+        this.isCasting = false;
+        this.stateMachine.unlock();
+        this.stateMachine.setState('idle');
+        if (this._domainTimerText) { this._domainTimerText.destroy(); this._domainTimerText = null; }
+        if (this._domainRoundTimer) { this._domainRoundTimer.remove(); this._domainRoundTimer = null; }
+    }
+
+    applySureHitTick(opponent) { }
 
     _endCast(delay) {
         this.scene.time.delayedCall(delay, () => {
@@ -315,15 +392,13 @@ export default class Hakari extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
-        if (this.roughStrikeCd > 0) this.roughStrikeCd -= dt;
-        if (this.serrateCd > 0) this.serrateCd -= dt;
+        if (this.shutterCd > 0) this.shutterCd -= dt;
+        if (this.pachinkoCd > 0) this.pachinkoCd -= dt;
+        if (this.probShiftTimer > 0) this.probShiftTimer -= dt;
 
         if (this.feverActive) {
             this.feverTimer -= dt;
-            if (this.feverTimer <= 0) {
-                this.feverActive = false;
-                this.speed = this._baseSpeed;
-            }
+            if (this.feverTimer <= 0) { this.feverActive = false; this.speed = this._baseSpeed; }
         }
 
         if (this.jackpotActive) {
@@ -336,11 +411,21 @@ export default class Hakari extends Fighter {
                 this.power = this.charData.stats.power || 1.0;
             }
         }
+
+        // Domain timer display
+        if (this.domainActive && this._domainTimerText && this._domainStartTime) {
+            const elapsed = (time - this._domainStartTime) / 1000;
+            const remaining = Math.max(0, 36 - elapsed);
+            this._domainTimerText.setText(Math.ceil(remaining) + 's');
+            this._domainTimerText.setPosition(this.sprite.x, this.sprite.y - 140);
+            if (remaining <= 0 && !this._domainJackpotWon) {
+                this._endDomain();
+            }
+        }
     }
 
     // ═══════════════════════════════════════
-    // DRAW — Hakari: shorter, brawler build
-    // Messy blonde hair, open jacket, streetwear
+    // DRAW — Full-height Hakari (Gojo-scale)
     // ═══════════════════════════════════════
     drawBody(dt) {
         const g = this.graphics;
@@ -348,91 +433,113 @@ export default class Hakari extends Fighter {
         const x = this.sprite.x; const y = this.sprite.y;
         const f = this.facing;
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
-        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 70, 22); return; }
+        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
-        // Shorter character — masterY offset +8 compared to standard
-        const masterY = y + bobY + 8;
+        const masterY = y + bobY;
         const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
-        const jacketColor = isFlashing ? 0xFFFFFF : 0x1A1A1A;
-        const pantsColor = isFlashing ? 0xFFFFFF : 0x2A2A2A;
-        const hairColor = isFlashing ? 0xFFFFFF : 0xCC9933;
-        const armExtend = this.attackSwing * 35;
+        const jacketColor = isFlashing ? 0xFFFFFF : 0x222222;
+        const pantsColor = isFlashing ? 0xFFFFFF : 0x333333;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xBB8833;
+        const armExtend = this.attackSwing * 40;
         const t = (this.animTimer || 0) * 0.003;
 
         // Jackpot golden aura
         if (this.jackpotActive) {
             const pulse = 0.3 + Math.sin(t * 4) * 0.15;
             g.fillStyle(0xFFDD00, pulse);
-            g.fillEllipse(x, masterY - 15, 50, 60);
+            g.fillEllipse(x, masterY - 20, 70, 90);
+            g.lineStyle(2, 0xFFD700, pulse * 0.5);
+            g.strokeEllipse(x, masterY - 20, 75, 95);
         }
-        // Fever aura
         if (this.feverActive) {
             g.fillStyle(0xFF4400, 0.1 + Math.sin(t * 3) * 0.05);
-            g.fillEllipse(x, masterY - 10, 40, 48);
+            g.fillEllipse(x, masterY - 15, 55, 70);
         }
 
-        // LEGS — shorter
-        const legY = masterY + 6;
-        let leftLeg = 30, rightLeg = 30;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.3; rightLeg -= this.walkCycle * 1.3; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 18; rightLeg = 18; }
-        g.lineStyle(7, pantsColor, 1);
-        g.beginPath(); g.moveTo(x - 5 * f, legY); g.lineTo(x - 5 * f, legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 5 * f, legY); g.lineTo(x + 5 * f, legY + rightLeg); g.strokePath();
-        g.fillStyle(0x111111, 1);
-        g.fillEllipse(x - 5 * f, legY + leftLeg + 3, 9, 4);
-        g.fillEllipse(x + 5 * f, legY + rightLeg + 3, 9, 4);
+        // LEGS
+        const legY = masterY + 5;
+        let leftLeg = 35, rightLeg = 35;
+        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
+        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 20; rightLeg = 20; }
+        g.fillStyle(pantsColor, 0.85);
+        g.fillTriangle(x - 10, legY, x - 10 - 10, legY + leftLeg, x - 10 + 10, legY + leftLeg - 5);
+        g.fillStyle(pantsColor, 1);
+        g.fillTriangle(x + 10, legY, x + 10 - 12 * f, legY + rightLeg, x + 10 + 12 * f, legY + rightLeg - 2);
 
-        // TORSO — open jacket, compact
+        // TORSO
         g.fillStyle(jacketColor, 1);
-        g.fillRoundedRect(x - 12, masterY - 15, 24, 24, 3);
-        g.fillStyle(0xDDDDDD, 1);
-        g.fillRect(x - 6, masterY - 13, 12, 20);
-        g.lineStyle(1, 0xCC4444, 0.5);
-        g.beginPath(); g.moveTo(x, masterY - 12); g.lineTo(x, masterY + 5); g.strokePath();
-
-        // ARMS — brawler
-        g.lineStyle(5, skinColor, 1);
-        g.beginPath(); g.moveTo(x - 14, masterY - 10);
-        g.lineTo(x - 14 - 10 * f, masterY + 3 + armExtend * 0.3); g.strokePath();
-        g.beginPath(); g.moveTo(x + 14, masterY - 10);
-        g.lineTo(x + 14 + (8 + armExtend) * f, masterY - 4); g.strokePath();
-        g.fillStyle(skinColor, 1);
-        g.fillCircle(x - 14 - 10 * f, masterY + 5 + armExtend * 0.3, 4);
-        g.fillCircle(x + 14 + (8 + armExtend) * f, masterY - 4, 4);
-
-        // HEAD — smaller
-        g.fillStyle(skinColor, 1);
-        g.fillCircle(x + 2 * f, masterY - 25, 11);
-        // Hair — messy spiked blonde
-        g.fillStyle(hairColor, 1);
         g.beginPath();
-        g.moveTo(x - 10, masterY - 30);
-        g.lineTo(x - 7, masterY - 43);
-        g.lineTo(x - 1, masterY - 37);
-        g.lineTo(x + 3, masterY - 45);
-        g.lineTo(x + 7, masterY - 38);
-        g.lineTo(x + 11, masterY - 42);
-        g.lineTo(x + 12, masterY - 30);
+        g.moveTo(x - 16, masterY - 38);
+        g.lineTo(x + 16, masterY - 38);
+        g.lineTo(x + 12, masterY + 12);
+        g.lineTo(x - 12, masterY + 12);
         g.fillPath();
+        // Shirt underneath
+        g.fillStyle(0xEEEEEE, 1);
+        g.fillRect(x - 6, masterY - 35, 12, 40);
+        g.lineStyle(2, 0xFF4444, 0.6);
+        g.beginPath(); g.moveTo(x, masterY - 34); g.lineTo(x, masterY + 8); g.strokePath();
+        // Jacket line details
+        g.lineStyle(1, 0x333333, 0.4);
+        g.beginPath(); g.moveTo(x, masterY - 38); g.lineTo(x, masterY + 10); g.strokePath();
+
+        // BACK ARM
+        const armY = masterY - 34;
+        g.lineStyle(10, jacketColor, 0.8);
+        g.beginPath();
+        g.moveTo(x - 12 * f, armY + 2);
+        g.lineTo(x - 22 * f, armY + 18);
+        g.strokePath();
+
+        // HEAD
+        const hx = x; const hy = masterY - 56;
+        g.fillStyle(skinColor, 1);
+        g.fillRect(hx - 4, hy + 5, 8, 8); // Neck
+        g.beginPath();
+        g.moveTo(hx - 12, hy - 10);
+        g.lineTo(hx + 12, hy - 10);
+        g.lineTo(hx + 8, hy + 12);
+        g.lineTo(hx - 8, hy + 12);
+        g.fillPath();
+
+        // Hair — messy/spiked blonde
+        g.fillStyle(hairColor, 1);
+        for (let i = -14; i <= 14; i += 4) {
+            const spikeH = 12 + Math.cos((i / 14) * (Math.PI / 2)) * 8;
+            const slant = (i * 0.5) * f;
+            g.fillTriangle(hx + i, hy - 8, hx + i + 2, hy - 8, hx + i + slant, hy - 8 - spikeH);
+        }
+
         // Eyes
         g.fillStyle(0x000000, 1);
-        g.fillCircle(x - 3 * f, masterY - 27, 1.5);
-        g.fillCircle(x + 5 * f, masterY - 27, 1.5);
+        g.fillCircle(hx - 5 * f, hy - 2, 2.5);
+        g.fillCircle(hx + 5 * f, hy - 2, 2.5);
         // Smirk
-        g.lineStyle(1, 0x000000, 0.7);
-        g.beginPath(); g.moveTo(x - 1 * f, masterY - 22);
-        g.lineTo(x + 6 * f, masterY - 23); g.strokePath();
+        g.lineStyle(1, 0x000000, 0.8);
+        g.beginPath(); g.moveTo(hx - 3 * f, hy + 6);
+        g.lineTo(hx + 6 * f, hy + 5); g.strokePath();
+
+        // FRONT ARM (attack arm)
+        g.lineStyle(10, jacketColor, 1);
+        g.beginPath();
+        g.moveTo(x + 12 * f, armY + 2);
+        g.lineTo(x + (22 + armExtend) * f, armY + 5);
+        g.strokePath();
+        // Fists
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(x - 22 * f, armY + 20, 5);
+        g.fillCircle(x + (22 + armExtend) * f, armY + 7, 6);
 
         // Fever meter bar (above head)
         if (!this.jackpotActive) {
-            const barW = 26; const barH = 3;
-            const barX = x - barW / 2; const barY = masterY - 48;
+            const barW = 30; const barH = 4;
+            const barX = x - barW / 2; const barY = hy - 22;
             g.fillStyle(0x333333, 0.6); g.fillRect(barX, barY, barW, barH);
             const fillW = (this.feverMeter / this.feverMax) * barW;
             g.fillStyle(this.feverActive ? 0xFF4400 : 0xFFCC00, 0.8);
             g.fillRect(barX, barY, fillW, barH);
+            g.lineStyle(1, 0x666666, 0.5); g.strokeRect(barX, barY, barW, barH);
         }
     }
 }

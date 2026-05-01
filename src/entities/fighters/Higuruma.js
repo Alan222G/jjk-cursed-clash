@@ -1,8 +1,8 @@
 // ========================================================
 // Hiromi Higuruma — The Judge
-// Canon: Gavel shape-shifting, Deadly Sentencing domain
-// Executioner's Sword = instant kill on next hit
+// Gavel attacks, Judgeman tribunal domain, Executioner's Sword
 // ========================================================
+
 import Phaser from 'phaser';
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
@@ -11,45 +11,61 @@ import { CHARACTERS, CE_COSTS, DOMAIN } from '../../config.js';
 export default class Higuruma extends Fighter {
     constructor(scene, x, y, playerIndex) {
         super(scene, x, y, playerIndex, CHARACTERS.HIGURUMA);
+        this._baseSpeed = this.speed;
         this.isCasting = false;
-        this.gavelSize = 1.0;
+        // Gavel scaling
+        this.gavelSize = 1.0; 
         this.gavelSizeTimer = 0;
+        // Executioner's Sword state
         this.hasExecutionerSword = false;
         this.executionerTimer = 0;
-        this.confiscatedTarget = null;
-        this.confiscateTimer = 0;
+        // Cooldowns
         this.sentenceCd = 0;
         this.hammerCd = 0;
+        this.leapCd = 0;
+        
+        // Domain state
+        this._domainPoints = 0;
+        this._domainAttempt = 0;
+        this._domainMaxAttempts = 6;
+        this.trialUI = [];
     }
 
     trySpecialAttack() {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
+
         if (tier >= 3 && this.input.isDown('DOWN')) {
-            this.castGavelHook();
+            this.castGavelDrop(); // Reworked U+Down
         } else if (tier >= 2 && this.input.isDown('UP')) {
-            this.castGavelVault();
+            this.castLawLeap();
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            this.castHammerSlam();
+            this.castHammerJustice();
         } else if (tier >= 1) {
-            this.castGavelSwing();
+            this.castGavelSentence();
         }
     }
 
-    // U — Gavel Swing (extends gavel, pulls enemy)
-    castGavelSwing() {
+    // ═══════════════════════════════════════
+    // SKILL 1: Gavel Sentence — long range pull
+    // ═══════════════════════════════════════
+    castGavelSentence() {
         if (this.sentenceCd > 0) return;
         if (!this.ceSystem.spend(15)) return;
-        this.sentenceCd = 1800;
+        this.sentenceCd = 2000;
         this.isCasting = true;
-        this.stateMachine.lock(700);
-        this.gavelSize = 1.8;
-        this.gavelSizeTimer = 2500;
+        this.stateMachine.lock(800);
+
         try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
+
+        this.gavelSize = 1.8;
+        this.gavelSizeTimer = 3000;
+
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 280) {
+        if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 300) {
+            const dmg = this.hasExecutionerSword ? target.charData.stats.maxHp : Math.floor(40 * this.power);
             if (this.hasExecutionerSword) {
-                target.takeDamage(target.charData.stats.maxHp, 100 * this.facing, 0, 1000);
+                target.takeDamage(dmg, 100 * this.facing, 0, 1000);
                 this.hasExecutionerSword = false;
                 this.executionerTimer = 0;
                 if (this.scene.screenEffects) {
@@ -62,85 +78,142 @@ export default class Higuruma extends Fighter {
                 }).setOrigin(0.5).setDepth(25);
                 this.scene.tweens.add({ targets: eTxt, y: eTxt.y - 30, alpha: 0, duration: 1500, onComplete: () => eTxt.destroy() });
             } else {
-                target.takeDamage(Math.floor(40 * this.power), -200 * this.facing, -50, 300);
+                target.takeDamage(dmg, -200 * this.facing, -50, 300);
                 target.sprite.body.setVelocityX((this.sprite.x - target.sprite.x) * 2);
             }
-            const gv = this.scene.add.graphics().setDepth(16);
-            gv.lineStyle(6, 0x666666, 0.8);
-            gv.beginPath(); gv.moveTo(this.sprite.x + 20 * this.facing, this.sprite.y - 30);
-            gv.lineTo(target.sprite.x, target.sprite.y - 20); gv.strokePath();
-            gv.fillStyle(0x444444, 1);
-            gv.fillRect(target.sprite.x - 10, target.sprite.y - 30, 20, 20);
-            this.scene.tweens.add({ targets: gv, alpha: 0, duration: 300, onComplete: () => gv.destroy() });
+            
+            const g = this.scene.add.graphics().setDepth(16);
+            g.lineStyle(6, 0x666666, 0.8);
+            g.beginPath(); g.moveTo(this.sprite.x + 20 * this.facing, this.sprite.y - 30);
+            g.lineTo(target.sprite.x, target.sprite.y - 20); g.strokePath();
+            g.fillStyle(0x444444, 1);
+            g.fillRect(target.sprite.x - 10, target.sprite.y - 30, 20, 20);
+            this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
         }
-        this._endCast(600);
+        this._endCast(700);
     }
 
-    // U+dir — Hammer Slam (jump + AOE ground pound)
-    castHammerSlam() {
+    // ═══════════════════════════════════════
+    // SKILL 2: Hammer of Justice — AOE ground slam
+    // ═══════════════════════════════════════
+    castHammerJustice() {
         if (this.hammerCd > 0) return;
         if (!this.ceSystem.spend(25)) return;
-        this.hammerCd = 2500;
+        this.hammerCd = 3000;
         this.isCasting = true;
         this.stateMachine.lock(900);
+
         this.sprite.body.setVelocityY(-400);
         try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
+
         this.scene.time.delayedCall(300, () => {
             this.sprite.body.setVelocityY(800);
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+
             this.scene.time.delayedCall(200, () => {
                 if (this.scene.screenEffects) this.scene.screenEffects.shake(0.03, 400);
-                const gfx = this.scene.add.graphics().setDepth(16);
-                gfx.fillStyle(0x666666, 0.4);
-                gfx.fillEllipse(this.sprite.x, this.sprite.y + 15, 120, 30);
-                this.scene.tweens.add({ targets: gfx, alpha: 0, duration: 400, onComplete: () => gfx.destroy() });
+                const g = this.scene.add.graphics().setDepth(16);
+                g.fillStyle(0x666666, 0.4);
+                g.fillEllipse(this.sprite.x, this.sprite.y + 15, 120, 30);
+                g.lineStyle(3, 0xFFCC00, 0.6);
+                g.strokeEllipse(this.sprite.x, this.sprite.y + 15, 120, 30);
+                this.scene.tweens.add({
+                    targets: g, alpha: 0, scaleX: 1.5, scaleY: 1.5,
+                    duration: 400, onComplete: () => g.destroy()
+                });
+
                 if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 150) {
-                    target.takeDamage(Math.floor(55 * this.power), 300 * this.facing, -500, 600);
+                    target.takeDamage(Math.floor(60 * this.power), 300 * this.facing, -500, 600);
                 }
             });
         });
         this._endCast(800);
     }
 
-    // U+up — Gavel Vault (mobility leap)
-    castGavelVault() {
-        if (!this.ceSystem.spend(10)) return;
+    // ═══════════════════════════════════════
+    // SKILL 3: Law Leap — gavel-assisted mobility
+    // ═══════════════════════════════════════
+    castLawLeap() {
+        if (this.leapCd > 0) return;
+        if (!this.ceSystem.spend(12)) return;
+        this.leapCd = 1500;
         this.isCasting = true;
-        this.stateMachine.lock(450);
-        this.sprite.body.setVelocityY(-500);
-        this.sprite.body.setVelocityX(450 * this.facing);
-        this._endCast(350);
+        this.stateMachine.lock(500);
+
+        this.sprite.body.setVelocityY(-550);
+        this.sprite.body.setVelocityX(500 * this.facing);
+
+        const g = this.scene.add.graphics().setDepth(16);
+        g.lineStyle(4, 0x666666, 0.7);
+        g.beginPath(); g.moveTo(this.sprite.x, this.sprite.y);
+        g.lineTo(this.sprite.x - 20 * this.facing, this.sprite.y + 30); g.strokePath();
+        this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+
+        this._endCast(400);
     }
 
-    // U+down — Gavel Hook (extending gavel grabs and slams enemy down)
-    castGavelHook() {
+    // ═══════════════════════════════════════
+    // SKILL 4: Gavel Drop (U+Down) - Replaces the broken citation
+    // Drops a giant gavel from above to crush the opponent
+    // ═══════════════════════════════════════
+    castGavelDrop() {
         if (!this.ceSystem.spend(20)) return;
         this.isCasting = true;
-        this.stateMachine.lock(800);
-        this.gavelSize = 2.0;
-        this.gavelSizeTimer = 2000;
-        try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
+        this.stateMachine.lock(700);
+
+        try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
+
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 250) {
-            target.takeDamage(Math.floor(35 * this.power), 150 * this.facing, 400, 500);
-            const gfx = this.scene.add.graphics().setDepth(16);
-            gfx.lineStyle(5, 0x8B7355, 0.8);
-            gfx.beginPath(); gfx.moveTo(this.sprite.x + 15 * this.facing, this.sprite.y - 25);
-            gfx.lineTo(target.sprite.x, target.sprite.y); gfx.strokePath();
-            this.scene.tweens.add({ targets: gfx, alpha: 0, duration: 250, onComplete: () => gfx.destroy() });
-        }
-        this._endCast(700);
+        const tx = target ? target.sprite.x : this.sprite.x + 100 * this.facing;
+        const ty = this.sprite.y;
+
+        const g = this.scene.add.graphics().setDepth(16);
+        
+        // Handle falling
+        g.fillStyle(0x8B7355, 1);
+        g.fillRect(tx - 10, ty - 300, 20, 80);
+        // Head
+        g.fillStyle(0x444444, 1);
+        g.fillRect(tx - 40, ty - 220, 80, 50);
+
+        this.scene.tweens.add({
+            targets: g, y: 220, duration: 300, ease: 'Power2',
+            onComplete: () => {
+                g.clear();
+                // Slam visual
+                g.fillStyle(0x444444, 1);
+                g.fillRect(tx - 40, ty, 80, 50);
+                g.fillStyle(0x8B7355, 1);
+                g.fillRect(tx - 10, ty - 80, 20, 80);
+                
+                if (this.scene.screenEffects) this.scene.screenEffects.shake(0.04, 300);
+                
+                if (target && !target.isDead && Math.abs(target.sprite.x - tx) < 80) {
+                    target.takeDamage(Math.floor(45 * this.power), 100 * this.facing, -100, 500);
+                    // Confiscates some CE on hit
+                    target.ceSystem.ce = Math.max(0, target.ceSystem.ce - 25);
+                    const tTxt = this.scene.add.text(tx, ty - 80, 'CE DRAINED', {
+                        fontFamily: 'Arial Black', fontSize: '14px', color: '#FF8800', stroke: '#000000', strokeThickness: 3
+                    }).setOrigin(0.5).setDepth(20);
+                    this.scene.tweens.add({ targets: tTxt, y: tTxt.y - 30, alpha: 0, duration: 1000, onComplete: () => tTxt.destroy() });
+                }
+                
+                this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, delay: 200, onComplete: () => g.destroy() });
+            }
+        });
+
+        this._endCast(600);
     }
 
-    // DOMAIN — Deadly Sentencing
+    // ═══════════════════════════════════════
+    // DOMAIN — Deadly Sentencing (Prediction Minigame)
+    // 6 Attempts. Guesses: U (Confess), I (Silence), S (Deny)
+    // ═══════════════════════════════════════
     tryActivateDomain() {
-        if (this.isCasting) return;
-        if (this.ceSystem.isFatigued) return;
-        if (this.ceSystem.ce < 100) return;
+        if (this.isCasting || this.ceSystem.isFatigued || this.ceSystem.ce < 100) return;
         if (this.scene.domainActive || this.scene.domainPhase1) {
             if (this.scene.domainOwner !== this) {
-                const clash = this.scene.attemptDomainClash(this);
-                if (!clash) return;
+                if (!this.scene.attemptDomainClash(this)) return;
             } else return;
         } else if (this.domainActive) return;
 
@@ -148,79 +221,179 @@ export default class Higuruma extends Fighter {
         this.domainActive = true;
         this.ceSystem.startDomain();
         this.isCasting = true;
-        this.stateMachine.lock(99999);
+        
         try { this.scene.sound.play('sfx_purple', { volume: 0.8 }); } catch(e) {}
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'deadly_sentencing');
 
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && !target.isDead) {
-            target.stateMachine.lock(99999);
-            target.sprite.body.setVelocity(0, 0);
+        this.target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        if (this.target && !this.target.isDead) {
+            this.target.stateMachine.lock(99999);
+            this.target.sprite.body.setVelocity(0, 0);
         }
+        this.stateMachine.lock(99999);
         this.sprite.body.setVelocity(0, 0);
 
-        // Judgeman text
-        const jm = this.scene.add.text(this.sprite.x, this.sprite.y - 130, '👤 JUDGEMAN', {
-            fontFamily: 'Arial Black', fontSize: '16px', color: '#FFFFFF',
-            stroke: '#444444', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(25);
-
-        const crimes = ['Uso de técnica maldita', 'Agresión injustificada', 'Resistencia al juicio',
-            'Intención de daño', 'Violación de orden', 'Ataque premeditado'];
-        const crime = crimes[Math.floor(Math.random() * crimes.length)];
-        const crimeTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 100, `Crimen: "${crime}"`, {
-            fontFamily: 'Arial', fontSize: '11px', color: '#CCCCCC',
-            stroke: '#000000', strokeThickness: 2
-        }).setOrigin(0.5).setDepth(25);
+        this._domainPoints = 0;
+        this._domainAttempt = 0;
+        this._domainMaxAttempts = 6;
+        
+        // Judgeman appears
+        this.jmText = this.scene.add.text(this.sprite.x, this.sprite.y - 130, '👤 JUDGEMAN TRIBUNAL', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#FFFFFF', stroke: '#444444', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(30);
 
         this.scene.time.delayedCall(3000, () => {
-            jm.destroy();
-            crimeTxt.destroy();
-            const isDeathPenalty = Math.random() < 0.40;
-
-            if (isDeathPenalty) {
-                this.hasExecutionerSword = true;
-                this.executionerTimer = 20000;
-                const dpTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 120, '⚔️ PENA DE MUERTE ⚔️', {
-                    fontFamily: 'Arial Black', fontSize: '18px', color: '#FF0000',
-                    stroke: '#000000', strokeThickness: 4
-                }).setOrigin(0.5).setDepth(25);
-                this.scene.tweens.add({ targets: dpTxt, scaleX: 1.3, scaleY: 1.3, duration: 300, yoyo: true, repeat: 2 });
-                this.scene.tweens.add({ targets: dpTxt, y: dpTxt.y - 30, alpha: 0, delay: 1500, duration: 800, onComplete: () => dpTxt.destroy() });
-                if (this.scene.screenEffects) {
-                    this.scene.screenEffects.flash(0xFF0000, 200, 0.6);
-                    this.scene.screenEffects.shake(0.04, 500);
-                }
-            } else {
-                if (target && !target.isDead) {
-                    this.confiscatedTarget = target;
-                    this.confiscateTimer = 15000;
-                    target._confiscated = true;
-                    target._origTrySpecial = target.trySpecialAttack;
-                    target.trySpecialAttack = function() {};
-                }
-                const confTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 120, '🔒 CONFISCACIÓN 🔒', {
-                    fontFamily: 'Arial Black', fontSize: '16px', color: '#FF8800',
-                    stroke: '#000000', strokeThickness: 3
-                }).setOrigin(0.5).setDepth(25);
-                this.scene.tweens.add({ targets: confTxt, y: confTxt.y - 30, alpha: 0, delay: 1000, duration: 800, onComplete: () => confTxt.destroy() });
-            }
-
-            this.scene.time.delayedCall(500, () => {
-                this.domainActive = false;
-                this.ceSystem.endDomain();
-                this.isCasting = false;
-                this.stateMachine.unlock();
-                this.stateMachine.setState('idle');
-                if (target && !target.isDead) {
-                    target.stateMachine.unlock();
-                    if (!target.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) target.stateMachine.setState('idle');
-                }
-            });
+            this._startTrialRound();
         });
     }
 
-    applySureHitTick(opponent) {}
+    _startTrialRound() {
+        if (this._domainAttempt >= this._domainMaxAttempts || this._domainPoints >= 3 || this.isDead || (this.target && this.target.isDead)) {
+            this._resolveDomain();
+            return;
+        }
+        this._domainAttempt++;
+        
+        let higuChoice = null;
+        let oppChoice = null;
+        let timeLeft = 5000;
+        
+        if (this.trialUI) this.trialUI.forEach(el => el.destroy());
+        this.trialUI = [];
+        
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY - 100;
+        
+        const title = this.scene.add.text(cx, cy, `TRIAL ${this._domainAttempt}/6 - CHOOSE!`, {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#FFFFFF', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(30);
+        
+        const timerTxt = this.scene.add.text(cx, cy + 35, '5.0s', {
+            fontFamily: 'Arial Black', fontSize: '22px', color: '#FFCC00', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(30);
+        
+        const hint1 = this.scene.add.text(cx, cy + 70, `PRESS:  [U] Confess  |  [I] Silence  |  [S / DOWN] Deny`, {
+            fontFamily: 'Arial Black', fontSize: '14px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(30);
+        
+        const statusTxt = this.scene.add.text(cx, cy + 105, `Points: ${this._domainPoints}/3`, {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#00FF00', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(30);
+        
+        this.trialUI.push(title, timerTxt, hint1, statusTxt);
+
+        const getChoice = (player) => {
+            if (player.input.isDown('SKILL1')) return 'CONFESS'; // U equivalent
+            if (player.input.isDown('SKILL2')) return 'SILENCE'; // I equivalent
+            if (player.input.isDown('DOWN')) return 'DENY';      // S equivalent
+            return null;
+        };
+
+        const pollEvent = this.scene.time.addEvent({
+            delay: 100,
+            loop: true,
+            callback: () => {
+                timeLeft -= 100;
+                timerTxt.setText((timeLeft/1000).toFixed(1) + 's');
+                
+                // AI fallback
+                if (this.target && this.target.isAI && oppChoice === null && Math.random() < 0.1) {
+                    const choices = ['CONFESS', 'SILENCE', 'DENY'];
+                    oppChoice = choices[Math.floor(Math.random() * choices.length)];
+                }
+
+                if (!higuChoice) higuChoice = getChoice(this);
+                if (this.target && !oppChoice && !this.target.isAI) oppChoice = getChoice(this.target);
+                
+                if (timeLeft <= 0 || (higuChoice && oppChoice)) {
+                    pollEvent.remove();
+                    
+                    if (!higuChoice) higuChoice = 'SILENCE';
+                    if (!oppChoice) oppChoice = 'SILENCE';
+                    
+                    this._resolveRound(higuChoice, oppChoice);
+                }
+            }
+        });
+    }
+
+    _resolveRound(h1, p2) {
+        let pts = 0;
+        let msg = '';
+        if (h1 === p2) {
+            if (h1 === 'CONFESS') {
+                pts = 3;
+                msg = 'FULL CONFESSION! +3 POINTS';
+            } else {
+                pts = 1;
+                msg = `PREDICTION MATCH (${h1})! +1 PT`;
+            }
+        } else {
+            msg = `OBJECTION! (Judge:${h1} vs Def:${p2})`;
+        }
+        
+        this._domainPoints += pts;
+        
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY;
+        const resTxt = this.scene.add.text(cx, cy + 30, msg, {
+            fontFamily: 'Arial Black', fontSize: '20px', color: pts > 0 ? '#00FF00' : '#FF0000',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(30);
+        this.trialUI.push(resTxt);
+        
+        this.scene.time.delayedCall(1500, () => {
+            this._startTrialRound();
+        });
+    }
+
+    _resolveDomain() {
+        if (this.trialUI) this.trialUI.forEach(el => el.destroy());
+        this.trialUI = [];
+        if (this.jmText) { this.jmText.destroy(); this.jmText = null; }
+        
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY;
+        
+        if (this._domainPoints >= 3) {
+            // Death Penalty
+            this.hasExecutionerSword = true;
+            this.executionerTimer = 20000;
+            const txt = this.scene.add.text(cx, cy, '⚔️ DEATH PENALTY ⚔️\nExecutioner\'s Sword Active!', {
+                fontFamily: 'Arial Black', fontSize: '28px', color: '#FF0000', align: 'center', stroke: '#000000', strokeThickness: 5
+            }).setOrigin(0.5).setDepth(30);
+            this.scene.tweens.add({ targets: txt, scaleX: 1.2, scaleY: 1.2, duration: 500, yoyo: true, repeat: 2, onComplete: () => txt.destroy() });
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.flash(0xFF0000, 300, 0.8);
+                this.scene.screenEffects.shake(0.06, 600);
+            }
+        } else {
+            // Confiscation
+            if (this.target && !this.target.isDead) {
+                this.target.ceSystem.ce = 0; // Drain ALL CE
+            }
+            const txt = this.scene.add.text(cx, cy, '🔒 CONFISCATION 🔒\nOpponent Cursed Energy Drained!', {
+                fontFamily: 'Arial Black', fontSize: '24px', color: '#FF8800', align: 'center', stroke: '#000000', strokeThickness: 5
+            }).setOrigin(0.5).setDepth(30);
+            this.scene.tweens.add({ targets: txt, y: cy - 50, alpha: 0, duration: 2500, onComplete: () => txt.destroy() });
+        }
+        
+        this.scene.time.delayedCall(2000, () => {
+            this.domainActive = false;
+            this.ceSystem.endDomain();
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            this.stateMachine.setState('idle');
+            if (this.target && !this.target.isDead) {
+                this.target.stateMachine.unlock();
+                if (!this.target.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
+                    this.target.stateMachine.setState('idle');
+                }
+            }
+        });
+    }
+
+    applySureHitTick(opponent) { }
 
     _endCast(delay) {
         this.scene.time.delayedCall(delay, () => {
@@ -234,98 +407,148 @@ export default class Higuruma extends Fighter {
         super.update(time, dt);
         if (this.sentenceCd > 0) this.sentenceCd -= dt;
         if (this.hammerCd > 0) this.hammerCd -= dt;
-        if (this.gavelSizeTimer > 0) { this.gavelSizeTimer -= dt; if (this.gavelSizeTimer <= 0) this.gavelSize = 1.0; }
-        if (this.executionerTimer > 0) { this.executionerTimer -= dt; if (this.executionerTimer <= 0) this.hasExecutionerSword = false; }
-        if (this.confiscateTimer > 0) {
-            this.confiscateTimer -= dt;
-            if (this.confiscateTimer <= 0 && this.confiscatedTarget) {
-                if (this.confiscatedTarget._origTrySpecial) {
-                    this.confiscatedTarget.trySpecialAttack = this.confiscatedTarget._origTrySpecial;
-                    this.confiscatedTarget._origTrySpecial = null;
-                    this.confiscatedTarget._confiscated = false;
-                }
-                this.confiscatedTarget = null;
-            }
+        if (this.leapCd > 0) this.leapCd -= dt;
+
+        if (this.gavelSizeTimer > 0) {
+            this.gavelSizeTimer -= dt;
+            if (this.gavelSizeTimer <= 0) this.gavelSize = 1.0;
+        }
+
+        if (this.executionerTimer > 0) {
+            this.executionerTimer -= dt;
+            if (this.executionerTimer <= 0) this.hasExecutionerSword = false;
         }
     }
 
-    // DRAW — Higuruma: shorter, suit + gavel
+    // ═══════════════════════════════════════
+    // DRAW — Full-height Higuruma (Gojo-scale)
+    // ═══════════════════════════════════════
     drawBody(dt) {
-        const g = this.graphics; g.clear();
+        const g = this.graphics;
+        g.clear();
         const x = this.sprite.x; const y = this.sprite.y;
         const f = this.facing;
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
-        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 70, 22); return; }
+        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
-        const masterY = y + bobY + 8; // shorter
+        const masterY = y + bobY;
         const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
         const suitColor = isFlashing ? 0xFFFFFF : 0x1A1A2E;
         const tieColor = isFlashing ? 0xFFFFFF : 0x8B0000;
         const hairColor = isFlashing ? 0xFFFFFF : 0x111122;
-        const armExtend = this.attackSwing * 35;
+        const armExtend = this.attackSwing * 40;
 
         if (this.hasExecutionerSword) {
             const pulse = 0.4 + Math.sin((this.animTimer || 0) * 0.005) * 0.2;
             g.fillStyle(0xFF0000, pulse * 0.3);
-            g.fillEllipse(x, masterY - 12, 45, 55);
+            g.fillEllipse(x, masterY - 15, 60, 90);
         }
 
-        // LEGS
-        const legY = masterY + 6;
-        let lL = 30, rL = 30;
-        if (this.stateMachine.is('walk')) { lL += this.walkCycle * 1.3; rL -= this.walkCycle * 1.3; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { lL = 18; rL = 18; }
-        g.lineStyle(6, suitColor, 1);
-        g.beginPath(); g.moveTo(x - 5 * f, legY); g.lineTo(x - 5 * f, legY + lL); g.strokePath();
-        g.beginPath(); g.moveTo(x + 5 * f, legY); g.lineTo(x + 5 * f, legY + rL); g.strokePath();
-        g.fillStyle(0x222222, 1);
-        g.fillEllipse(x - 5 * f, legY + lL + 3, 9, 4);
-        g.fillEllipse(x + 5 * f, legY + rL + 3, 9, 4);
+        // LEGS (Gojo scale: Y+5, 35 height)
+        const legY = masterY + 5;
+        let leftLeg = 35, rightLeg = 35;
+        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
+        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 20; rightLeg = 20; }
+        g.fillStyle(suitColor, 0.85);
+        g.fillTriangle(x - 10, legY, x - 10 - 10, legY + leftLeg, x - 10 + 10, legY + leftLeg - 5);
+        g.fillStyle(suitColor, 1);
+        g.fillTriangle(x + 10, legY, x + 10 - 12 * f, legY + rightLeg, x + 10 + 12 * f, legY + rightLeg - 2);
 
         // TORSO
         g.fillStyle(suitColor, 1);
-        g.fillRoundedRect(x - 12, masterY - 15, 24, 24, 3);
-        g.fillStyle(0xEEEEEE, 1); g.fillRect(x - 4, masterY - 13, 8, 20);
+        g.beginPath();
+        g.moveTo(x - 16, masterY - 38);
+        g.lineTo(x + 16, masterY - 38);
+        g.lineTo(x + 12, masterY + 12);
+        g.lineTo(x - 12, masterY + 12);
+        g.fillPath();
+        
+        // Shirt & Tie
+        g.fillStyle(0xEEEEEE, 1);
+        g.fillRect(x - 6, masterY - 35, 12, 35);
         g.fillStyle(tieColor, 1);
-        g.beginPath(); g.moveTo(x - 2, masterY - 12); g.lineTo(x + 2, masterY - 12);
-        g.lineTo(x, masterY + 5); g.fillPath();
+        g.beginPath();
+        g.moveTo(x - 4, masterY - 35);
+        g.lineTo(x + 4, masterY - 35);
+        g.lineTo(x + 2, masterY - 5);
+        g.lineTo(x, masterY);
+        g.lineTo(x - 2, masterY - 5);
+        g.fillPath();
 
-        // ARMS
-        g.lineStyle(5, suitColor, 1);
-        g.beginPath(); g.moveTo(x - 14, masterY - 10); g.lineTo(x - 14 - 7 * f, masterY + 6); g.strokePath();
-        g.beginPath(); g.moveTo(x + 14, masterY - 10); g.lineTo(x + 14 + (10 + armExtend) * f, masterY - 8); g.strokePath();
+        // BACK ARM
+        const armY = masterY - 34;
+        g.lineStyle(10, suitColor, 0.8);
+        g.beginPath();
+        g.moveTo(x - 12 * f, armY + 2);
+        g.lineTo(x - 22 * f, armY + 18);
+        g.strokePath();
+
+        // FRONT ARM
+        g.lineStyle(10, suitColor, 1);
+        g.beginPath();
+        g.moveTo(x + 12 * f, armY + 2);
+        g.lineTo(x + (22 + armExtend) * f, armY + 5);
+        g.strokePath();
+        // Hands
         g.fillStyle(skinColor, 1);
-        g.fillCircle(x - 14 - 7 * f, masterY + 8, 4);
-        g.fillCircle(x + 14 + (10 + armExtend) * f, masterY - 8, 4);
+        g.fillCircle(x - 22 * f, armY + 20, 5);
+        g.fillCircle(x + (22 + armExtend) * f, armY + 5, 5);
 
-        // GAVEL
+        // GAVEL (held in front hand)
         const gs = this.gavelSize;
-        const gx = x + (18 + armExtend) * f; const gy = masterY - 12;
+        const gx = x + (22 + armExtend) * f;
+        const gy = armY + 5;
         g.lineStyle(3, 0x8B7355, 1);
-        g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + 12 * gs * f, gy - 4 * gs); g.strokePath();
+        g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + 20 * gs * f, gy - 15 * gs); g.strokePath();
         const headColor = this.hasExecutionerSword ? 0xFF0000 : 0x555555;
         g.fillStyle(headColor, 1);
-        g.fillRect(gx + 9 * gs * f - 4 * gs, gy - 8 * gs, 8 * gs, 10 * gs);
+        g.fillRect(gx + 18 * gs * f - 8 * gs, gy - 15 * gs - 15 * gs, 16 * gs, 30 * gs);
+
         if (this.hasExecutionerSword) {
             const pulse = 0.7 + Math.sin((this.animTimer || 0) * 0.006) * 0.3;
-            g.fillStyle(0xFFDD00, pulse);
-            g.beginPath(); g.moveTo(gx + 8 * f, gy - 10);
-            g.lineTo(gx + 40 * f, gy - 18); g.lineTo(gx + 42 * f, gy - 12);
-            g.lineTo(gx + 12 * f, gy - 3); g.fillPath();
+            g.fillStyle(0xFF0000, pulse);
+            g.beginPath();
+            g.moveTo(gx + 15 * f, gy - 18);
+            g.lineTo(gx + 60 * f, gy - 30);
+            g.lineTo(gx + 65 * f, gy - 20);
+            g.lineTo(gx + 20 * f, gy - 5);
+            g.fillPath();
+            g.lineStyle(2, 0xFFAAAA, pulse * 0.8); g.strokePath();
         }
 
         // HEAD
-        g.fillStyle(skinColor, 1); g.fillCircle(x + 2 * f, masterY - 25, 11);
+        const hx = x; const hy = masterY - 56;
+        g.fillStyle(skinColor, 1);
+        g.fillRect(hx - 4, hy + 5, 8, 8); // Neck
+        g.beginPath();
+        g.moveTo(hx - 12, hy - 10);
+        g.lineTo(hx + 12, hy - 10);
+        g.lineTo(hx + 8, hy + 12);
+        g.lineTo(hx - 8, hy + 12);
+        g.fillPath();
+
+        // Hair
         g.fillStyle(hairColor, 1);
-        g.beginPath(); g.moveTo(x - 11, masterY - 28); g.lineTo(x - 8, masterY - 40);
-        g.lineTo(x - 2, masterY - 38); g.lineTo(x + 3, masterY - 40);
-        g.lineTo(x + 8, masterY - 38); g.lineTo(x + 11, masterY - 28); g.fillPath();
+        g.beginPath();
+        g.moveTo(hx - 14, hy - 5);
+        g.lineTo(hx - 12, hy - 18);
+        g.lineTo(hx - 4, hy - 16);
+        g.lineTo(hx + 4, hy - 18);
+        g.lineTo(hx + 12, hy - 16);
+        g.lineTo(hx + 14, hy - 5);
+        g.fillPath();
+
+        // Eyes
         g.fillStyle(0x000000, 1);
-        g.fillCircle(x - 3 * f, masterY - 26, 1.5);
-        g.fillCircle(x + 5 * f, masterY - 26, 1.5);
+        g.fillCircle(hx - 5 * f, hy - 2, 2.5);
+        g.fillCircle(hx + 5 * f, hy - 2, 2.5);
+        // Eyebrows
         g.lineStyle(2, hairColor, 1);
-        g.beginPath(); g.moveTo(x - 6 * f, masterY - 30); g.lineTo(x - 1 * f, masterY - 29); g.strokePath();
-        g.beginPath(); g.moveTo(x + 2 * f, masterY - 30); g.lineTo(x + 7 * f, masterY - 29); g.strokePath();
+        g.beginPath(); g.moveTo(hx - 8 * f, hy - 6); g.lineTo(hx - 2 * f, hy - 5); g.strokePath();
+        g.beginPath(); g.moveTo(hx + 2 * f, hy - 6); g.lineTo(hx + 8 * f, hy - 5); g.strokePath();
+        // Mouth
+        g.lineStyle(1, 0x000000, 0.6);
+        g.beginPath(); g.moveTo(hx - 4 * f, hy + 6); g.lineTo(hx + 4 * f, hy + 6); g.strokePath();
     }
 }
