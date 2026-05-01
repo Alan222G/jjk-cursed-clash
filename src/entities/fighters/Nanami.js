@@ -1,9 +1,9 @@
 import Fighter from '../Fighter.js';
-import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../../config.js';
+import { CHARACTERS, GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../../config.js';
 
 export default class Nanami extends Fighter {
     constructor(scene, x, y, playerIndex) {
-        super(scene, x, y, playerIndex, 'NANAMI');
+        super(scene, x, y, playerIndex, CHARACTERS.NANAMI);
         this.overtimeActive = false;
         this.overtimeTimer = 0;
         this.colapsoCd = 0;

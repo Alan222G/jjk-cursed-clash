@@ -1,9 +1,9 @@
 import Fighter from '../Fighter.js';
-import { GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../../config.js';
+import { CHARACTERS, GAME_WIDTH, GAME_HEIGHT, PHYSICS } from '../../config.js';
 
 export default class Todo extends Fighter {
     constructor(scene, x, y, playerIndex) {
-        super(scene, x, y, playerIndex, 'TODO');
+        super(scene, x, y, playerIndex, CHARACTERS.TODO);
         this.tagTeamActive = false;
         this.tagTeamTimer = 0;
         this.boogieCd = 0;
