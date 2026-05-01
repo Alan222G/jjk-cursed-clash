@@ -125,7 +125,7 @@ export default class Nanami extends Fighter {
         this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
 
         this.nanamiArmorActive = true;
-        this.nanamiArmorTimer = 5000; // 5 seconds of armor
+        this.nanamiArmorTimer = 8000; // 8 seconds of armor
 
         this.scene.time.delayedCall(400, () => {
             this.isCasting = false;
@@ -199,8 +199,7 @@ export default class Nanami extends Fighter {
         if (this.overtimeActive) return; // Ya está activo
 
         if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
-        
-        this.scene.onDomainActivated(this, 'OVERTIME');
+
         this.overtimeActive = true;
         this.overtimeTimer = 15000;
         
@@ -208,20 +207,17 @@ export default class Nanami extends Fighter {
         this.defense = (this.charData.stats.defense || 0.9) * 1.5;
         this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 3.5) * 2.0; // Doble regeneración
         this.ceRegen = this.charData.stats.ceRegen; // Aplicar regeneración extra
-        
+
         // Efecto visual instantáneo de desatarse la corbata
         if (this.scene.screenEffects) {
             this.scene.screenEffects.flash(0x44AAFF, 200, 0.4);
             this.scene.screenEffects.shake(0.02, 300);
         }
         
-        this.scene.time.delayedCall(1000, () => {
-            if (this.scene.cancelDomain) {
-                this.scene.cancelDomain(this);
-            } else if (this.scene.onDomainEnd) {
-                this.scene.onDomainEnd(this);
-            }
-        });
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'OVERTIME!', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#0088FF', stroke: '#000000', strokeThickness: 5
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
     }
 
     drawAura(dt) {
@@ -249,12 +245,6 @@ export default class Nanami extends Fighter {
             ag.moveTo(x, y - 30);
             ag.lineTo(x + Math.cos(angle2) * 25, y - 30 + Math.sin(angle2) * 25);
             ag.strokePath();
-        }
-
-        if (this.nanamiArmorActive) {
-            // Metallic/grey shield aura
-            ag.lineStyle(3, 0xAAAAAA, 0.5);
-            ag.strokeCircle(x, y - 20, 45);
         }
     }
 }

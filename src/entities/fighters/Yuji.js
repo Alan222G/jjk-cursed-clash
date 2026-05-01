@@ -248,7 +248,6 @@ export default class Yuji extends Fighter {
 
         if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
         
-        this.scene.onDomainActivated(this, 'AWAKENING');
         this.yujiAwakened = true;
         this.yujiAwakenedTimer = 15000;
         
@@ -256,14 +255,18 @@ export default class Yuji extends Fighter {
         this.power = (this.charData.stats.power || 1.0) * 1.5;
         this.speed = (this.charData.stats.speed || 300) * 1.3;
         this.blackFlashMultiplier = 2.0;
-        
-        this.scene.time.delayedCall(1000, () => {
-            if (this.scene.cancelDomain) {
-                this.scene.cancelDomain(this);
-            } else if (this.scene.onDomainEnd) {
-                this.scene.onDomainEnd(this);
-            }
-        });
+
+        // Visual feedback
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xFF6600, 200, 0.4);
+            this.scene.screenEffects.shake(0.03, 300);
+        }
+        try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.7 }); } catch(e) {}
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'AWAKENING!', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#FF6600', stroke: '#000000', strokeThickness: 5
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
     }
 
     // ═══════════════════════════════════════
