@@ -183,6 +183,8 @@ export default class GameScene extends Phaser.Scene {
             HIGURUMA: { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x666666, bg: 0x0A0A15, lineColor: 0x888888, textColor: '#AAAAAA', name: 'RYŌIKI TENKAI — CHITSUJO' },
             NANAMI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xEEDDCC, bg: 0x0A0A0A, lineColor: 0xFF0000, textColor: '#FF0000', name: 'OVERTIME MODE' },
             TODO:     { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xAA22AA, bg: 0x111111, lineColor: 0xAA22AA, textColor: '#AA22AA', name: 'RYŌIKI TENKAI — BEST FRIEND TAG-TEAM' },
+            JOGO:     { voice: 'sukuna_domain_voice',  sign: 'jogo_sign',   color: 0xFF4400, bg: 0x220A00, lineColor: 0xFF2200, textColor: '#FF4400', name: 'RYŌIKI TENKAI — GAIGAN TESSENSAN' },
+            DAGON:    { voice: 'gojo_domain_voice',    sign: 'dagon_sign',  color: 0x0088FF, bg: 0x001122, lineColor: 0x00CCFF, textColor: '#0088FF', name: 'RYŌIKI TENKAI — TŌIN DONSHI' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;
@@ -397,7 +399,9 @@ export default class GameScene extends Phaser.Scene {
                     const domainImgMap = {
                         'gojo_void': 'assets/domains/gojo_void.jpg',
                         'sukuna_shrine': 'assets/domains/sukuna_shrine.png',
-                        'kenjaku_domain': 'assets/domains/kenjaku_domain.jpg'
+                        'kenjaku_domain': 'assets/domains/kenjaku_domain.jpg',
+                        'jogo_domain': 'assets/domains/jogo_domain.jpg',
+                        'dagon_domain': 'assets/domains/dagon_domain.jpg'
                     };
                     const bgImg = document.getElementById('game-bg-img');
                     if (bgImg && domainImgMap[bgKey]) {

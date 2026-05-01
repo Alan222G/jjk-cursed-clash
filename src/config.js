@@ -544,10 +544,10 @@ export const CHARACTERS = {
         colors: { primary: 0x112244, secondary: 0x0088FF, energy: 0x00CCFF, accent: 0x0066AA, skin: 0x992222, hair: 0x000000 },
         stats: { maxHp: 4500, speed: 250, power: 0.9, defense: 1.40, ceRegen: 3.5, weight: 150, jumpForce: -550, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
-            skill1: { name: 'Shikigami Swarm', cost: 25, damage: 60, type: 'projectile' },
-            skill2: { name: 'Tide Disaster', cost: 30, damage: 50, type: 'projectile' },
+            skill1: { name: 'Water Prison', cost: 20, damage: 20, type: 'projectile' },
+            skill2: { name: 'Shikigami Swarm', cost: 25, damage: 40, type: 'seeking' },
             domain: { name: 'Horizon of the Captivating Skandha', cost: 100, sureHitType: 'dps' },
-            maximum: { name: 'Death Swarm', cost: 80, damage: 150, type: 'aoe' },
+            maximum: { name: 'Leviathan Crash', cost: 100, damage: 500, type: 'aoe' },
         },
         domainBg: 'dagon_domain',
     },
