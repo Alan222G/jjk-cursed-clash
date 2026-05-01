@@ -196,38 +196,7 @@ export default class Nanami extends Fighter {
     }
 
     tryActivateDomain() {
-        if (this.overtimeActive) {
-            if (!this.ceSystem.spend(50)) return;
-            this.isCasting = true;
-            this.stateMachine.lock(1000);
-            
-            if (this.scene.screenEffects) this.scene.screenEffects.slowMotion(0.1, 500);
-            
-            this.scene.time.delayedCall(500, () => {
-                if (!this.isCasting) return;
-                const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 160) {
-                    const isCrit = this._check73Crit(target);
-                    let dmg = 50; 
-                    if (isCrit) {
-                        dmg = target.maxHp * 0.40;
-                        this._applyBlackFlash(target);
-                        const txt = this.scene.add.text(target.sprite.x, target.sprite.y - 120, 'RATIO MAXIMO!', {
-                            fontFamily: 'Arial Black', fontSize: '35px', color: '#FF0000', stroke: '#000000', strokeThickness: 6
-                        }).setOrigin(0.5).setDepth(50);
-                        this.scene.tweens.add({ targets: txt, scale: 1.5, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
-                    }
-                    target.takeDamage(Math.floor(dmg), 400 * this.facing, -200, 800);
-                }
-            });
-
-            this.scene.time.delayedCall(1000, () => {
-                this.isCasting = false;
-                this.stateMachine.unlock();
-                this.stateMachine.setState('idle');
-            });
-            return;
-        }
+        if (this.overtimeActive) return; // Ya está activo
 
         if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
         
@@ -237,6 +206,8 @@ export default class Nanami extends Fighter {
         
         this.power = (this.charData.stats.power || 1.1) * 1.5;
         this.defense = (this.charData.stats.defense || 0.9) * 1.5;
+        this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 3.5) * 2.0; // Doble regeneración
+        this.ceRegen = this.charData.stats.ceRegen; // Aplicar regeneración extra
         
         this.scene.time.delayedCall(1000, () => {
             if (this.scene.cancelDomain) {

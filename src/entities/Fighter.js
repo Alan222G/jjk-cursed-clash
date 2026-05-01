@@ -669,22 +669,28 @@ export default class Fighter {
         if (this.fighterId !== 'sukuna') {
             const bfMult = this.blackFlashMultiplier || 1.0;
             const rand = Math.random() * 100;
-            if (atk.type === 'HEAVY' && rand <= 10 * bfMult) isBlackFlash = true;
-            else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
-            else if (atk.type === 'LIGHT' && rand <= 2 * bfMult) isBlackFlash = true;
-            // COMBO: 4th hit (heavy finisher) → 7.5%, hits 1-3 → 2%
-            else if (atk.type === 'COMBO') {
-                if (atk.comboHit === 4 && rand <= 7.5 * bfMult) isBlackFlash = true;
-                else if (rand <= 2 * bfMult) isBlackFlash = true;
+            
+            if (this.fighterId === 'yuji') {
+                if (atk.type === 'HEAVY' && rand <= 16) isBlackFlash = true;
+                else if (atk.type === 'COMBO' && atk.comboHit === 4 && rand <= 16) isBlackFlash = true;
+                else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
+                else if (atk.type === 'LIGHT' && rand <= 2 * bfMult) isBlackFlash = true;
+                else if (atk.type === 'COMBO' && rand <= 2 * bfMult) isBlackFlash = true;
+            } else {
+                if (atk.type === 'HEAVY' && rand <= 10 * bfMult) isBlackFlash = true;
+                else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
+                else if (atk.type === 'LIGHT' && rand <= 2 * bfMult) isBlackFlash = true;
+                else if (atk.type === 'COMBO') {
+                    if (atk.comboHit === 4 && rand <= 7.5 * bfMult) isBlackFlash = true;
+                    else if (rand <= 2 * bfMult) isBlackFlash = true;
+                }
             }
         }
 
         if (isBlackFlash) {
             dmg = Math.floor(dmg * 2.5);
             this.ceSystem.gain(30); // CE boost on Black Flash
-            try {
-                this.scene.sound.play('black_flash_sfx', { volume: 1.0 });
-            } catch(e) {}
+            this.applyBlackFlashVisuals(opponent);
         }
 
         // Pass attack data to scene for block mechanics
@@ -1426,6 +1432,24 @@ export default class Fighter {
 
     getPosition() {
         return { x: this.sprite.x, y: this.sprite.y };
+    }
+
+    applyBlackFlashVisuals(target) {
+        const cx = (this.sprite.x + target.sprite.x) / 2;
+        const cy = target.sprite.y;
+
+        const img = this.scene.add.image(cx, cy - 80, 'black_flash')
+            .setOrigin(0.5).setDepth(40).setScale(0.5);
+            
+        this.scene.tweens.add({
+            targets: img, y: img.y - 50, scaleX: 0.8, scaleY: 0.8, alpha: 0, duration: 1000, onComplete: () => img.destroy()
+        });
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x000000, 200, 0.7);
+            this.scene.screenEffects.shake(0.04, 300);
+        }
+        try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
     }
 
     destroy() {
