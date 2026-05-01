@@ -302,20 +302,20 @@ function getCharacterControls(charKey, playerIndex) {
         sections.push({
             title: 'HABILIDADES — EL APOSTADOR',
             lines: [
-                `${atkKeys.special} — Shutter Doors  (15 CE)`,
-                `  Dos puertas atrapan y arrastran al rival`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Pachinko Balls  (20 CE)`,
-                `  3 bolas rápidas que rompen guardia`,
-                `${atkKeys.special}+${moveKeys.up} — Probability Shift  (20 CE)`,
-                `  Reduce cooldowns a la mitad por 8s`,
-                `${atkKeys.special}+${moveKeys.down} — Push Kick  (25 CE)`,
-                `  Patada con gran knockback`,
+                `${atkKeys.special} — Rough Strike  (12 CE)`,
+                `  Golpe reforzado con CE rugosa (daño extra)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Serrated Rush  (22 CE)`,
+                `  Dash + 3 golpes rápidos`,
+                `${atkKeys.special}+${moveKeys.up} — Rough Uppercut  (18 CE)`,
+                `  Uppercut que lanza por los aires`,
+                `${atkKeys.special}+${moveKeys.down} — Rough Barrage  (30 CE)`,
+                `  Combo de 6 golpes + golpe final pesado`,
             ]
         });
         sections.push({
             title: 'PASIVA: MEDIDOR DE FIEBRE',
             lines: [
-                `Cada habilidad llena la barra de Fiebre`,
+                `Cada golpe especial llena la barra de Fiebre`,
                 `Al llenarse → +15% velocidad por 10s`,
             ]
         });
@@ -324,40 +324,34 @@ function getCharacterControls(charKey, playerIndex) {
             lines: [
                 `${atkKeys.domain} — Zashinko  (80 CE)`,
                 `Minijuego de tragamonedas: 65% Jackpot`,
-                `Jackpot → 15s de estado "DIOS"`,
-                `Regen HP instantánea + CE infinita + 1.4x poder`,
-                `Si pierde → vulnerable sin dominio`,
+                `Jackpot → 15s INMORTAL (RCT instantánea)`,
+                `Regen HP cada frame + CE infinita + 1.4x poder`,
+                `Si pierde → vulnerable, sin buff`,
             ]
         });
     } else if (charKey === 'HIGURUMA') {
         sections.push({
             title: 'HABILIDADES — EL JUEZ',
             lines: [
-                `${atkKeys.special} — Gavel Sentence  (15 CE)`,
+                `${atkKeys.special} — Gavel Swing  (15 CE)`,
                 `  Mazo extensible que arrastra al rival`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Hammer of Justice  (25 CE)`,
-                `  Salto + golpe AOE que lanza por los aires`,
-                `${atkKeys.special}+${moveKeys.up} — Law Leap  (12 CE)`,
+                `  Con Executioner's Sword = MUERTE INSTANTÁNEA`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Hammer Slam  (25 CE)`,
+                `  Salto + golpe AOE al suelo`,
+                `${atkKeys.special}+${moveKeys.up} — Gavel Vault  (10 CE)`,
                 `  Impulso con el mazo (movilidad)`,
-                `${atkKeys.special}+${moveKeys.down} — Judicial Citation  (20 CE)`,
-                `  Proyectil que marca "CULPABLE" (-40% defensa)`,
-            ]
-        });
-        sections.push({
-            title: 'PASIVA: EL MAZO DEL JUEZ',
-            lines: [
-                `Los ataques agrandan el mazo temporalmente`,
-                `Con Executioner's Sword: siguiente golpe = KO`,
+                `${atkKeys.special}+${moveKeys.down} — Gavel Hook  (20 CE)`,
+                `  Gancho de mazo que slams al rival al suelo`,
             ]
         });
         sections.push({
             title: 'DOMINIO: DEADLY SENTENCING',
             lines: [
                 `${atkKeys.domain} — Tribunal de Judgeman  (100 CE)`,
-                `Zona de no-agresión → nadie puede atacar`,
+                `Ambos quedan congelados durante el juicio`,
                 `Judgeman dicta veredicto aleatorio:`,
                 `  40% → Pena de Muerte → Executioner's Sword`,
-                `    Siguiente golpe = MUERTE INSTANTÁNEA`,
+                `    Tu próximo Gavel Swing = KO instantáneo`,
                 `  60% → Confiscación → Rival sin especiales 15s`,
             ]
         });
