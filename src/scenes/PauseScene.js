@@ -366,27 +366,29 @@ function getCharacterControls(charKey, playerIndex) {
         sections.push({
             title: 'HABILIDADES — EL OFICINISTA',
             lines: [
-                `${atkKeys.special} — Derrumbe (Collapse)  (15 CE)`,
-                `  Golpea el suelo y crea una ola de escombros que eleva al rival.`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Desmembrar (Sever)  (25 CE)`,
-                `  Embestida veloz. Si impacta, causa "Flujo Cortado", drenando CE.`,
-                `${atkKeys.special}+${moveKeys.up} — Estallido de Horas Extras  (30 CE)`,
-                `  Se quita la corbata. +30% Velocidad y facilita dar Black Flash (7s).`,
+                `${atkKeys.special} — Tajo de Relojería  (15 CE)`,
+                `  Corte horizontal rompe-guardia en Crítico`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Colapso  (25 CE)`,
+                `  Golpe al suelo que lanza escombros (Stun)`,
+                `${atkKeys.special}+${moveKeys.up} — Ráfaga Embotada  (30 CE)`,
+                `  Combo de 4 golpes rápidos (4to garantizado CRÍTICO)`,
             ]
         });
         sections.push({
             title: 'PASIVA: TÉCNICA 7:3',
             lines: [
                 `Si golpeas al rival con la punta del arma (distancia exacta):`,
-                `Daño multiplicado x2.5 + BLACK FLASH CANÓNICO ASEGURADO.`,
+                `Daño multiplicado x2.5 + BLACK FLASH ASEGURADO.`,
             ]
         });
         sections.push({
-            title: 'AWAKENING: RATIO MÁXIMO',
+            title: 'AWAKENING: ESTOY EN HORAS EXTRA',
             lines: [
-                `${atkKeys.domain} — Ratio Máximo  (80 CE)`,
-                `Cinemática mortal: Embiste al enemigo, crea una regla gigante`,
-                `en pantalla y destruye el punto 7:3. Daño inbloqueable (40% de vida).`,
+                `${atkKeys.domain} — Overtime  (80 CE)`,
+                `Aumenta Daño y Defensa x1.5 por 15 segundos`,
+                `Amplía muchísimo la ventana de crítico del 7:3`,
+                `Si pulsas DOMINIO durante Overtime (50 CE):`,
+                `RATIO MÁXIMO: Tajo brutal (40% de vida máxima) si acierta 7:3.`,
             ]
         });
     } else if (charKey === 'TODO') {
