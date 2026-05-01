@@ -670,7 +670,7 @@ export default class Fighter {
             const bfMult = this.blackFlashMultiplier || 1.0;
             const rand = Math.random() * 100;
             
-            if (this.fighterId === 'yuji') {
+            if (this.fighterId === 'nanami') {
                 if (atk.type === 'HEAVY' && rand <= 16) isBlackFlash = true;
                 else if (atk.type === 'COMBO' && atk.comboHit === 4 && rand <= 16) isBlackFlash = true;
                 else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;

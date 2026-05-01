@@ -17,8 +17,9 @@ export default class Yuji extends Fighter {
         this.piercingBloodCooldown = 0;
         this.superBlackFlashReady = false;
         this.consecutiveBlackFlash = 0;
-        // Override: Yuji has DOUBLE Black Flash probability
-        this.blackFlashMultiplier = 2.0;
+        this.blackFlashMultiplier = 1.0; // Base rate
+        this.yujiAwakened = false;
+        this.yujiAwakenedTimer = 0;
     }
 
     // ═══════════════════════════════════════
@@ -217,39 +218,18 @@ export default class Yuji extends Fighter {
                     const dmg = Math.floor((this.charData.skills.maximum.damage / 5) * this.power * 2.5);
                     target.takeDamage(dmg, (i === 4 ? 500 : 80) * this.facing, i === 4 ? -300 : -30, i === 4 ? 800 : 200);
 
-                    // Black Flash visual — black + red lightning
-                    const ex = target.sprite.x; const ey = target.sprite.y - 30;
-                    const g = this.scene.add.graphics().setDepth(17);
-
-                    // Black impact core
-                    g.fillStyle(0x000000, 0.9); g.fillCircle(ex, ey, 25);
-                    g.fillStyle(0xFF0000, 0.6); g.fillCircle(ex, ey, 15);
-
-                    // Lightning bolts
-                    g.lineStyle(3, 0x000000, 0.9);
-                    for (let j = 0; j < 4; j++) {
-                        const angle = (j / 4) * Math.PI * 2 + Math.random();
-                        const len = 30 + Math.random() * 25;
-                        const mx = ex + Math.cos(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
-                        const my = ey + Math.sin(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
-                        g.beginPath(); g.moveTo(ex, ey); g.lineTo(mx, my);
-                        g.lineTo(ex + Math.cos(angle) * len, ey + Math.sin(angle) * len); g.strokePath();
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.hitFreeze(150);
+                        this.scene.screenEffects.flash(0x000000, 150, 0.4);
+                        if (i === 4) {
+                            this.scene.screenEffects.shake(0.05, 600);
+                            this.scene.screenEffects.flash(0x000000, 400, 0.7);
+                        } else {
+                            this.scene.screenEffects.shake(0.02, 200);
+                        }
                     }
-                    // Red sparks
-                    g.lineStyle(1, 0xFF2200, 0.7);
-                    for (let j = 0; j < 3; j++) {
-                        const a = Math.random() * Math.PI * 2;
-                        g.lineBetween(ex, ey, ex + Math.cos(a) * 35, ey + Math.sin(a) * 35);
-                    }
-                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
-
-                    // Sound
-                    try { this.scene.sound.play('black_flash_sfx', { volume: 0.8 }); } catch(e) {}
-
-                    if (i === 4 && this.scene.screenEffects) {
-                        this.scene.screenEffects.shake(0.05, 600);
-                        this.scene.screenEffects.flash(0x000000, 400, 0.7);
-                    }
+                    try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
+                    this.spawnBlackFlashEffect(target.sprite.x, target.sprite.y);
                 });
             }
 
@@ -264,13 +244,26 @@ export default class Yuji extends Fighter {
     // NO DOMAIN — Yuji has no domain expansion
     // ═══════════════════════════════════════
     tryActivateDomain() {
-        // Yuji cannot use Domain Expansion
-        // Show visual feedback
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'NO DOMAIN!', {
-            fontFamily: 'Arial Black', fontSize: '14px', color: '#FF4444',
-            stroke: '#000000', strokeThickness: 2
-        }).setOrigin(0.5).setDepth(20);
-        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+        if (this.yujiAwakened) return;
+
+        if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
+        
+        this.scene.onDomainActivated(this, 'AWAKENING');
+        this.yujiAwakened = true;
+        this.yujiAwakenedTimer = 15000;
+        
+        // Boosts
+        this.power = (this.charData.stats.power || 1.0) * 1.5;
+        this.speed = (this.charData.stats.speed || 300) * 1.3;
+        this.blackFlashMultiplier = 2.0;
+        
+        this.scene.time.delayedCall(1000, () => {
+            if (this.scene.cancelDomain) {
+                this.scene.cancelDomain(this);
+            } else if (this.scene.onDomainEnd) {
+                this.scene.onDomainEnd(this);
+            }
+        });
     }
 
     // ═══════════════════════════════════════
@@ -279,6 +272,16 @@ export default class Yuji extends Fighter {
     update(time, dt) {
         super.update(time, dt);
         if (this.piercingBloodCooldown > 0) this.piercingBloodCooldown -= dt;
+        
+        if (this.yujiAwakened) {
+            this.yujiAwakenedTimer -= dt;
+            if (this.yujiAwakenedTimer <= 0) {
+                this.yujiAwakened = false;
+                this.power = this.charData.stats.power || 1.0;
+                this.speed = this.charData.stats.speed || 300;
+                this.blackFlashMultiplier = 1.0;
+            }
+        }
     }
 
     // ═══════════════════════════════════════
