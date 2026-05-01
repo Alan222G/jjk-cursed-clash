@@ -45,23 +45,7 @@ export default class Nanami extends Fighter {
         return dist >= minDist && dist <= maxDist;
     }
 
-    _applyBlackFlash(target) {
-        const cx = (this.sprite.x + target.sprite.x) / 2;
-        const cy = target.sprite.y;
 
-        const img = this.scene.add.image(cx, cy - 80, 'black_flash')
-            .setOrigin(0.5).setDepth(40).setScale(0.5);
-            
-        this.scene.tweens.add({
-            targets: img, y: img.y - 50, scaleX: 0.8, scaleY: 0.8, alpha: 0, duration: 1000, onComplete: () => img.destroy()
-        });
-
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0x000000, 200, 0.7);
-            this.scene.screenEffects.shake(0.04, 300);
-        }
-        try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
-    }
 
     onHitOpponent(opponent) {
         const isCrit = this._check73Crit(opponent);
@@ -69,7 +53,15 @@ export default class Nanami extends Fighter {
             this.nextHitGuaranteedBlackFlash = false; // consume mark
             const originalPower = this.power;
             this.power *= 2.5;
-            this._applyBlackFlash(opponent);
+            
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.hitFreeze(150);
+                this.scene.screenEffects.flash(0x000000, 150, 0.4);
+                this.scene.screenEffects.shake(0.04, 300);
+            }
+            try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
+            this.spawnBlackFlashEffect(opponent.sprite.x, opponent.sprite.y);
+            
             super.onHitOpponent(opponent);
             this.power = originalPower;
         } else {
@@ -182,7 +174,15 @@ export default class Nanami extends Fighter {
                 if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 140) {
                     const isCrit = (i === 3) || this._check73Crit(target);
                     const dmg = isCrit ? 20 * 2.5 : 20;
-                    if (isCrit) this._applyBlackFlash(target);
+                    if (isCrit) {
+                        if (this.scene.screenEffects) {
+                            this.scene.screenEffects.hitFreeze(150);
+                            this.scene.screenEffects.flash(0x000000, 150, 0.4);
+                            this.scene.screenEffects.shake(0.04, 300);
+                        }
+                        try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
+                        this.spawnBlackFlashEffect(target.sprite.x, target.sprite.y);
+                    }
                     target.takeDamage(Math.floor(dmg * this.power), i === 3 ? 400 * this.facing : 50 * this.facing, i === 3 ? -200 : 0, 300);
                 }
             });

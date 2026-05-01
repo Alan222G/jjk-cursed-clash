@@ -99,15 +99,13 @@ export default class Todo extends Fighter {
                 const cx = (this.sprite.x + this.opponent.sprite.x) / 2;
                 const cy = this.opponent.sprite.y;
                 
-                const img = this.scene.add.image(cx, cy - 80, 'black_flash')
-                    .setOrigin(0.5).setDepth(40).setScale(0.5);
-                this.scene.tweens.add({ targets: img, y: img.y - 50, scaleX: 0.8, scaleY: 0.8, alpha: 0, duration: 1500, onComplete: () => img.destroy() });
-
                 if (this.scene.screenEffects) {
-                    this.scene.screenEffects.flash(0x000000, 300, 0.8);
+                    this.scene.screenEffects.hitFreeze(150);
+                    this.scene.screenEffects.flash(0x000000, 150, 0.4);
                     this.scene.screenEffects.shake(0.04, 500);
                 }
                 try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
+                this.spawnBlackFlashEffect(this.opponent.sprite.x, this.opponent.sprite.y);
                 
                 this.opponent.takeDamage(Math.floor(100 * this.power), 600 * this.facing, -300, 800);
             }
