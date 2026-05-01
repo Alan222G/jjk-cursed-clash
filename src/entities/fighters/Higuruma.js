@@ -256,7 +256,7 @@ export default class Higuruma extends Fighter {
         
         let higuChoice = null;
         let oppChoice = null;
-        let timeLeft = 5000;
+        let timeLeft = 8000;
         
         if (this.trialUI) this.trialUI.forEach(el => el.destroy());
         this.trialUI = [];
@@ -268,19 +268,36 @@ export default class Higuruma extends Fighter {
             fontFamily: 'Arial Black', fontSize: '24px', color: '#FFFFFF', stroke: '#000000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(30);
         
-        const timerTxt = this.scene.add.text(cx, cy + 35, '5.0s', {
+        const timerTxt = this.scene.add.text(cx, cy + 35, '8.0s', {
             fontFamily: 'Arial Black', fontSize: '22px', color: '#FFCC00', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
         
-        const hint1 = this.scene.add.text(cx, cy + 70, `PRESS:  [U] Confess  |  [I] Silence  |  [S / DOWN] Deny`, {
+        const hint1 = this.scene.add.text(cx, cy + 70, `P1: [U] Confess | [I] Silence | [DOWN] Deny`, {
+            fontFamily: 'Arial Black', fontSize: '14px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(30);
+
+        const hint2 = this.scene.add.text(cx, cy + 90, `P2: [Num1] Confess | [Num2] Silence | [DOWN] Deny`, {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
         
-        const statusTxt = this.scene.add.text(cx, cy + 105, `Points: ${this._domainPoints}/3`, {
-            fontFamily: 'Arial Black', fontSize: '20px', color: '#00FF00', stroke: '#000000', strokeThickness: 4
-        }).setOrigin(0.5).setDepth(30);
+        // Progress Bar for points
+        const barW = 200;
+        const barH = 20;
+        const barX = cx - barW / 2;
+        const barY = cy + 120;
+        const gBar = this.scene.add.graphics().setDepth(30);
         
-        this.trialUI.push(title, timerTxt, hint1, statusTxt);
+        gBar.fillStyle(0x333333, 0.8);
+        gBar.fillRect(barX, barY, barW, barH);
+        
+        const fillW = (this._domainPoints / 3) * barW;
+        gBar.fillStyle(0x00FF00, 1);
+        gBar.fillRect(barX, barY, fillW, barH);
+        
+        gBar.lineStyle(3, 0xFFFFFF, 1);
+        gBar.strokeRect(barX, barY, barW, barH);
+        
+        this.trialUI.push(title, timerTxt, hint1, hint2, gBar);
 
         const getChoice = (player) => {
             if (player.input.isDown('SKILL1')) return 'CONFESS'; // U equivalent

@@ -21,7 +21,7 @@ export default class Hakari extends Fighter {
         // Jackpot state
         this.jackpotActive = false;
         this.jackpotTimer = 0;
-        this.jackpotRegenRate = 60;
+        this.jackpotRegenRate = 6; // progressive, not instantaneous
         // Probability shift buff
         this.probShiftTimer = 0;
         // Cooldowns
@@ -233,12 +233,12 @@ export default class Hakari extends Fighter {
         try { this.scene.sound.play('sfx_purple', { volume: 0.8 }); } catch(e) {}
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'idle_death_gamble');
 
-        // Start the 3-attempt system (1 attempt every 12s, 36s total max)
+        // Start the 3-attempt system (1 attempt every 15s, 45s total max)
         this._domainAttempts = 0;
         this._domainJackpotWon = false;
 
         // Show domain timer
-        this._domainTimerText = this.scene.add.text(this.sprite.x, this.sprite.y - 140, '36', {
+        this._domainTimerText = this.scene.add.text(this.sprite.x, this.sprite.y - 140, '45', {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#FFD700',
             stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
@@ -254,8 +254,8 @@ export default class Hakari extends Fighter {
             return;
         }
 
-        // Delay before each spin (12s per attempt window)
-        const delay = this._domainAttempts === 0 ? 1000 : 12000;
+        // Delay before each spin (15s per attempt window)
+        const delay = this._domainAttempts === 0 ? 1000 : 15000;
 
         this._domainRoundTimer = this.scene.time.delayedCall(delay, () => {
             if (this._domainJackpotWon) return;
@@ -274,16 +274,19 @@ export default class Hakari extends Fighter {
         const maxSpins = 20;
         const reelTexts = [];
 
-        // Attempt counter
-        const attemptTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 120, `Attempt ${this._domainAttempts}/3`, {
-            fontFamily: 'Arial Black', fontSize: '11px', color: '#FFCC00',
-            stroke: '#000000', strokeThickness: 2
+        // Attempt counter (center of screen)
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY;
+        
+        const attemptTxt = this.scene.add.text(cx, cy - 100, `ATTEMPT ${this._domainAttempts}/3`, {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#FFCC00',
+            stroke: '#000000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(30);
 
         for (let i = 0; i < 3; i++) {
-            const t = this.scene.add.text(this.sprite.x - 30 + i * 30, this.sprite.y - 100, '?', {
-                fontFamily: 'Arial Black', fontSize: '20px', color: '#FFDD00',
-                stroke: '#000000', strokeThickness: 3
+            const t = this.scene.add.text(cx - 100 + i * 100, cy, '?', {
+                fontFamily: 'Arial Black', fontSize: '80px', color: '#FFDD00',
+                stroke: '#000000', strokeThickness: 6
             }).setOrigin(0.5).setDepth(30);
             reelTexts.push(t);
         }
@@ -312,9 +315,9 @@ export default class Hakari extends Fighter {
             reelTexts.forEach(t => t.setText('7️⃣'));
             this._domainJackpotWon = true;
 
-            const jTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 150, '🎰 JACKPOT!!! 🎰', {
-                fontFamily: 'Arial Black', fontSize: '22px', color: '#FFD700',
-                stroke: '#FF0000', strokeThickness: 4
+            const jTxt = this.scene.add.text(cx, cy - 160, '🎰 JACKPOT!!! 🎰', {
+                fontFamily: 'Arial Black', fontSize: '40px', color: '#FFD700',
+                stroke: '#FF0000', strokeThickness: 6
             }).setOrigin(0.5).setDepth(30);
             this.scene.tweens.add({
                 targets: jTxt, scaleX: 1.5, scaleY: 1.5,
@@ -337,9 +340,9 @@ export default class Hakari extends Fighter {
                 t.setText('💀');
                 this.scene.tweens.add({ targets: t, alpha: 0, duration: 800, onComplete: () => t.destroy() });
             });
-            const loseTxt = this.scene.add.text(this.sprite.x, this.sprite.y - 140, 'MISS...', {
-                fontFamily: 'Arial Black', fontSize: '14px', color: '#888888',
-                stroke: '#000000', strokeThickness: 3
+            const loseTxt = this.scene.add.text(cx, cy - 140, 'MISS...', {
+                fontFamily: 'Arial Black', fontSize: '30px', color: '#888888',
+                stroke: '#000000', strokeThickness: 4
             }).setOrigin(0.5).setDepth(30);
             this.scene.tweens.add({ targets: loseTxt, y: loseTxt.y - 20, alpha: 0, duration: 800, onComplete: () => loseTxt.destroy() });
             attemptTxt.destroy();
@@ -415,7 +418,7 @@ export default class Hakari extends Fighter {
         // Domain timer display
         if (this.domainActive && this._domainTimerText && this._domainStartTime) {
             const elapsed = (time - this._domainStartTime) / 1000;
-            const remaining = Math.max(0, 36 - elapsed);
+            const remaining = Math.max(0, 45 - elapsed);
             this._domainTimerText.setText(Math.ceil(remaining) + 's');
             this._domainTimerText.setPosition(this.sprite.x, this.sprite.y - 140);
             if (remaining <= 0 && !this._domainJackpotWon) {
