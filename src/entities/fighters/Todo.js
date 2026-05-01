@@ -194,7 +194,6 @@ export default class Todo extends Fighter {
     tryActivateDomain() {
         if (this.tagTeamActive || !this.ceSystem.spend(this.charData.skills.domain.cost)) return;
 
-        this.scene.onDomainActivated(this, 'TODO_TAG');
         this.tagTeamActive = true;
         this.tagTeamTimer = 10000;
         
@@ -203,18 +202,14 @@ export default class Todo extends Fighter {
             this.hasSimpleDomain = false;
         });
 
-        this.scene.time.delayedCall(1000, () => {
-            if (this.scene.cancelDomain) {
-                this.scene.cancelDomain(this);
-            } else if (this.scene.onDomainEnd) {
-                this.scene.onDomainEnd(this);
-            }
-            
-            this.scene.domainBg = this.scene.add.rectangle(
-                GAME_WIDTH / 2, GAME_HEIGHT / 2, 
-                GAME_WIDTH, GAME_HEIGHT, 
-                0x111111, 0.6
-            ).setDepth(2);
-        });
+        // Cinematic flash instead of a full domain
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xAA22AA, 300, 0.7);
+        }
+        
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'BEST FRIEND TAG-TEAM', {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#FF44FF', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
     }
 }

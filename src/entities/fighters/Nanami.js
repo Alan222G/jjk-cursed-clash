@@ -181,11 +181,10 @@ export default class Nanami extends Fighter {
     tryActivateDomain() {
         if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
         
-        this.scene.onDomainActivated(this, 'OVERTIME');
         this.isCasting = true;
         this.stateMachine.lock(2500);
         
-        this.scene.domainBg = this.scene.add.rectangle(
+        const bg = this.scene.add.rectangle(
             GAME_WIDTH / 2, GAME_HEIGHT / 2, 
             GAME_WIDTH, GAME_HEIGHT, 
             0x000000, 0.85
@@ -224,10 +223,7 @@ export default class Nanami extends Fighter {
         });
 
         this.scene.time.delayedCall(1500, () => {
-            if (this.scene.domainBg) { this.scene.domainBg.destroy(); this.scene.domainBg = null; }
-            if (this.scene.cancelDomain) this.scene.cancelDomain(this);
-            else if (this.scene.onDomainEnd) this.scene.onDomainEnd(this);
-            
+            bg.destroy();
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
