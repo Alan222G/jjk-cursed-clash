@@ -453,6 +453,20 @@ export const CHARACTERS = {
         },
         domainBg: 'yuta_domain',
     },
+    NAOYA: {
+        id: 'naoya',
+        name: 'Naoya Zenin',
+        title: 'Projection Sorcery',
+        colors: { primary: 0x222255, secondary: 0x00CCAA, energy: 0x00FFCC, accent: 0x00AA88, skin: 0xF0D0B0, hair: 0xCCBB77 },
+        stats: { maxHp: 2600, speed: 380, power: 1.05, defense: 0.85, ceRegen: 3.5, weight: 80, jumpForce: -680, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Projection Dash', cost: 15, damage: 30, type: 'teleport' },
+            skill2: { name: 'Speed Combo', cost: 30, damage: 72, type: 'multi_hit' },
+            domain: { name: 'Time Cell Moon Palace', cost: 100, sureHitType: 'movement_cuts' },
+            maximum: { name: 'Subsonic Charge', cost: 80, damage: 160, type: 'dash' },
+        },
+        domainBg: null,
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────

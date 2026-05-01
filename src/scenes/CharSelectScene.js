@@ -13,7 +13,7 @@ import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 const GRID = [
     ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU'],
     ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO'],
-    ['YUTA', 'SUKUNA_20'],
+    ['YUTA', 'NAOYA', 'SUKUNA_20'],
 ];
 
 // Map character key → menu avatar texture key
@@ -27,6 +27,7 @@ const MENU_KEY = {
     YUJI: 'menu_sukuna',       // Placeholder portrait
     MAHITO: 'menu_kuroroshi',  // Placeholder portrait
     YUTA: 'menu_gojo',         // Placeholder portrait
+    NAOYA: 'menu_sukuna',      // Placeholder portrait
     SUKUNA_20: 'menu_sukuna',
 };
 
@@ -41,6 +42,7 @@ const CHAR_TITLES = {
     YUJI: 'BLACK FLASH MASTER',
     MAHITO: 'IDLE TRANSFIGURATION',
     YUTA: 'RIKA — PURE LOVE',
+    NAOYA: 'PROJECTION SORCERY',
     SUKUNA_20: 'TRUE FORM — 20 FINGERS',
 };
 

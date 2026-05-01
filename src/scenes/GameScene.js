@@ -13,6 +13,7 @@ import Kuroroshi from '../entities/fighters/Kuroroshi.js';
 import Yuji from '../entities/fighters/Yuji.js';
 import Mahito from '../entities/fighters/Mahito.js';
 import Yuta from '../entities/fighters/Yuta.js';
+import Naoya from '../entities/fighters/Naoya.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -118,6 +119,7 @@ export default class GameScene extends Phaser.Scene {
             'YUJI': Yuji,
             'MAHITO': Mahito,
             'YUTA': Yuta,
+            'NAOYA': Naoya,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();
@@ -164,6 +166,7 @@ export default class GameScene extends Phaser.Scene {
             SUKUNA_20:{ voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFF0000, bg: 0x0A0000, lineColor: 0xFF2200, textColor: '#FF2200', name: 'RYŌIKI TENKAI — FUKUMA MIZUSHI (BARRIERLESS)' },
             MAHITO:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x00CCAA, bg: 0x001A1A, lineColor: 0x00FFAA, textColor: '#00FFAA', name: 'RYŌIKI TENKAI — JIHEI ENDONKA' },
             YUTA:     { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xFF66AA, bg: 0x1A0011, lineColor: 0xFF88CC, textColor: '#FF88CC', name: 'RYŌIKI TENKAI — REN-AI JŌJITSU' },
+            NAOYA:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x00FFCC, bg: 0x001A1A, lineColor: 0x00CCAA, textColor: '#00FFCC', name: 'RYŌIKI TENKAI — JIKAN SAIBŌ GEPPAKU' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;

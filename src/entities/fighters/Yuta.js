@@ -240,11 +240,13 @@ export default class Yuta extends Fighter {
 
     // ═══════════════════════════════════════
     // DOMAIN — Authentic Mutual Love
-    // Lowest CE cost. Copies opponent's abilities
+    // NO upfront CE cost — drains from activation
+    // Copies ALL opponent special abilities
     // ═══════════════════════════════════════
     tryActivateDomain() {
         if (this.isCasting) return;
-        if (!this.ceSystem.canAfford(this.charData.skills.domain.cost)) return;
+        if (this.ceSystem.isFatigued) return;
+        if (this.ceSystem.ce < 10) return; // Need some CE to start drain
         if (this.scene.domainActive || this.scene.domainPhase1) {
             if (this.scene.domainOwner !== this) {
                 const clash = this.scene.attemptDomainClash(this);
@@ -252,20 +254,27 @@ export default class Yuta extends Fighter {
             } else return;
         } else if (this.domainActive) return;
 
-        this.ceSystem.spend(this.charData.skills.domain.cost);
+        // NO upfront spend — domain drains CE from the moment it activates
         this.domainActive = true;
         this.ceSystem.startDomain();
         if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
 
-        // Copy opponent's abilities
+        // ── COPY opponent's ENTIRE special attack method ──
         const opponent = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (opponent && opponent.charData) {
+        if (opponent) {
             this.copyActive = true;
             this.copyTimer = this.charData.stats.domainDuration;
-            this.copiedSkills = { ...opponent.charData.skills };
-            // Store original power for reverting
+            // Store originals
+            this._origTrySpecialAttack = this.trySpecialAttack.bind(this);
             this._origPower = this.power;
             this.power = Math.max(this.power, opponent.power || 1.0);
+            // Deep-copy the opponent's trySpecialAttack by binding it to Yuta
+            this._copiedOpponent = opponent;
+            this.trySpecialAttack = function() {
+                if (this.isCasting) return;
+                // Use opponent's special attack logic but with Yuta as 'this'
+                opponent.trySpecialAttack.call(this);
+            };
         }
 
         try { this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx ?? 50) / 100 }); } catch(e){}
@@ -274,7 +283,6 @@ export default class Yuta extends Fighter {
 
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
-        // Rika attacks with copied abilities — random damage ticks
         const soulDmg = 35 + Math.floor(Math.random() * 20);
         opponent.hp = Math.max(0, opponent.hp - soulDmg);
 
@@ -285,7 +293,6 @@ export default class Yuta extends Fighter {
             }).setDepth(15);
             this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
         }
-        // Rika hit VFX
         const g = this.scene.add.graphics().setDepth(15);
         g.fillStyle(0xFF66AA, 0.3); g.fillCircle(ox, oy, 25);
         this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
@@ -297,10 +304,16 @@ export default class Yuta extends Fighter {
         if (this.thinIceCooldown > 0) this.thinIceCooldown -= dt;
         if (this.copyActive) {
             this.copyTimer -= dt;
-            if (this.copyTimer <= 0) {
+            if (this.copyTimer <= 0 || !this.ceSystem.isDomainActive) {
                 this.copyActive = false;
                 this.copiedSkills = null;
+                this._copiedOpponent = null;
                 this.power = this._origPower || this.charData.stats.power || 1.0;
+                // Restore original trySpecialAttack
+                if (this._origTrySpecialAttack) {
+                    this.trySpecialAttack = Yuta.prototype.trySpecialAttack.bind(this);
+                    this._origTrySpecialAttack = null;
+                }
             }
         }
     }

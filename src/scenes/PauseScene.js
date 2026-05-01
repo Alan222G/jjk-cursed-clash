@@ -259,6 +259,45 @@ function getCharacterControls(charKey, playerIndex) {
                 `  (excepto dominios) durante toda la duración`,
             ]
         });
+    } else if (charKey === 'NAOYA') {
+        sections.push({
+            title: 'FORMA HUMANA — PROYECCIÓN',
+            lines: [
+                `${atkKeys.special} — Projection Dash  (15 CE)`,
+                `  Teleport instantáneo + golpe (congela 0.5s)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Speed Combo  (30 CE)`,
+                `  4 golpes desde ángulos distintos`,
+                `${atkKeys.special}+${moveKeys.up} — Counter  (20 CE)`,
+                `  Postura defensiva → auto-dodge + contraataque`,
+                `${atkKeys.special}+${moveKeys.down} — Subsonic Charge  (80 CE)`,
+                `  Embestida supersónica + explosión retardada`,
+            ]
+        });
+        sections.push({
+            title: 'PASIVA: 5 NIVELES DE VELOCIDAD',
+            lines: [
+                `Cada habilidad usada +10% velocidad (máx 5x)`,
+                `LV1-2: Sutil. LV3: Afterimages. LV5: Máximo`,
+                `Al morir → REVIVE como FORMA MALDICIÓN (60% HP)`,
+            ]
+        });
+        sections.push({
+            title: 'FORMA MALDICIÓN — TENTÁCULOS',
+            lines: [
+                `${atkKeys.special} — Tentacle Lash  (12 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Tentacle Grab  (25 CE, inmoviliza 2s)`,
+                `${atkKeys.special}+${moveKeys.down} — Tentacle Slam  (50 CE, AOE)`,
+            ]
+        });
+        sections.push({
+            title: 'DOMINIO (SOLO FORMA MALDICIÓN)',
+            lines: [
+                `${atkKeys.domain} — Time Cell Moon Palace  (100 CE)`,
+                `10 cortes/seg SOLO si el rival SE MUEVE`,
+                `Si se queda quieto → 0 daño`,
+                `Después del dominio → vuelve a forma humana`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──
