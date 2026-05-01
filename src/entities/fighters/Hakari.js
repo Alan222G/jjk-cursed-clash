@@ -309,6 +309,8 @@ export default class Hakari extends Fighter {
 
     _resolveSlot(reelTexts, attemptTxt) {
         const isJackpot = Math.random() < 0.65;
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY;
 
         if (isJackpot) {
             // JACKPOT!
