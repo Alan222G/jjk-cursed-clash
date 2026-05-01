@@ -362,6 +362,64 @@ function getCharacterControls(charKey, playerIndex) {
                 `Si fallas los 6 intentos → Confiscación (Drena CE rival a 0)`,
             ]
         });
+    } else if (charKey === 'NANAMI') {
+        sections.push({
+            title: 'HABILIDADES — EL OFICINISTA',
+            lines: [
+                `${atkKeys.special} — Tajo de Relojería  (15 CE)`,
+                `  Corte horizontal rompe-guardia en Crítico`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Colapso  (25 CE)`,
+                `  Golpe al suelo que lanza escombros (Stun)`,
+                `${atkKeys.special}+${moveKeys.up} — Ráfaga Embotada  (30 CE)`,
+                `  Combo de 4 golpes rápidos (4to garantizado CRÍTICO)`,
+            ]
+        });
+        sections.push({
+            title: 'PASIVA: TÉCNICA 7:3',
+            lines: [
+                `Si golpeas al rival con la punta del arma (distancia exacta):`,
+                `Daño multiplicado x2.5 + BLACK FLASH ASEGURADO.`,
+            ]
+        });
+        sections.push({
+            title: 'AWAKENING: ESTOY EN HORAS EXTRA',
+            lines: [
+                `${atkKeys.domain} — Overtime  (80 CE)`,
+                `Aumenta Daño y Defensa x1.5 por 15 segundos`,
+                `Amplía muchísimo la ventana de crítico del 7:3`,
+                `Si pulsas DOMINIO durante Overtime (50 CE):`,
+                `RATIO MÁXIMO: Tajo brutal (40% de vida máxima) si acierta 7:3.`,
+            ]
+        });
+    } else if (charKey === 'TODO') {
+        sections.push({
+            title: 'HABILIDADES — EL BROTHER',
+            lines: [
+                `${atkKeys.special} — Boogie Woogie  (10 CE)`,
+                `  Aplaude e intercambia posiciones al instante`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Patada de Gran Alcance  (20 CE)`,
+                `  Lanza al rival al otro lado del mapa`,
+                `${atkKeys.special}+${moveKeys.up} — Aplauso Falso  (15 CE)`,
+                `  Hace el gesto y sonido pero NO hay intercambio (Finta)`,
+                `${atkKeys.special}+${moveKeys.down} — Black Flash  (30 CE)`,
+                `  Impacto brutal imbloqueable con destello negro`,
+            ]
+        });
+        sections.push({
+            title: 'PASIVA: VIBRACIÓN DEL ALMA',
+            lines: [
+                `Tras hacer un Boogie Woogie exitoso:`,
+                `Daño aumentado un 30% durante 3 segundos.`,
+            ]
+        });
+        sections.push({
+            title: 'AWAKENING: BEST FRIEND TAG-TEAM',
+            lines: [
+                `${atkKeys.domain} — Dominio Simple  (80 CE)`,
+                `Gana armadura contra Dominios y el coste de`,
+                `Boogie Woogie se vuelve CERO (0 CE) por 10s.`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──

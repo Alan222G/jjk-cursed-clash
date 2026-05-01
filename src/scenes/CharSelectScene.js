@@ -7,14 +7,10 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 
 // ── Grid Layout: 3 rows ──
-// Row 0: GOJO, SUKUNA, TOJI, KENJAKU
-// Row 1: ISHIGORI, KUROROSHI, YUJI, MAHITO
-// Row 2: SUKUNA_20
 const GRID = [
-    ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU'],
-    ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO'],
-    ['YUTA', 'NAOYA', 'HAKARI', 'HIGURUMA'],
-    ['SUKUNA_20'],
+    ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU', 'YUTA'],
+    ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO', 'TODO'],
+    ['NAOYA', 'HAKARI', 'HIGURUMA', 'NANAMI', 'SUKUNA_20'],
 ];
 
 // Map character key → menu avatar texture key
@@ -27,10 +23,12 @@ const MENU_KEY = {
     KUROROSHI: 'menu_kuroroshi',
     YUJI: 'menu_sukuna',       // Placeholder portrait
     MAHITO: 'menu_kuroroshi',  // Placeholder portrait
-    YUTA: 'menu_gojo',         // Placeholder portrait
-    NAOYA: 'menu_sukuna',      // Placeholder portrait
-    HAKARI: 'menu_toji',        // Placeholder portrait
-    HIGURUMA: 'menu_kenjaku',   // Placeholder portrait
+    YUTA: 'menu_gojo',         
+    NAOYA: 'menu_sukuna',      
+    HAKARI: 'menu_toji',        
+    HIGURUMA: 'menu_kenjaku',   
+    NANAMI: 'menu_toji',
+    TODO: 'menu_sukuna',
     SUKUNA_20: 'menu_sukuna',
 };
 
@@ -48,6 +46,8 @@ const CHAR_TITLES = {
     NAOYA: 'PROJECTION SORCERY',
     HAKARI: 'THE GAMBLER',
     HIGURUMA: 'THE JUDGE',
+    NANAMI: 'THE 7:3 SORCERER',
+    TODO: 'THE BROTHER',
     SUKUNA_20: 'TRUE FORM — 20 FINGERS',
 };
 
@@ -118,11 +118,11 @@ export default class CharSelectScene extends Phaser.Scene {
         this.createBackButton();
         this.createAdminButton();
 
-        // ── Character Grid (2 rows, centered) ──
+        // ── Character Grid (centered properly) ──
         this.gridGraphics = this.add.graphics().setDepth(5);
-        this.slotSize = 120;
-        this.gridStartY = GAME_HEIGHT / 2 - 70;
-        this.rowGap = 20; // Vertical gap between rows
+        this.slotSize = 110; // Slightly smaller to fit 5 per row easily
+        this.gridStartY = 160; // Moved up to remove dead space
+        this.rowGap = 15; // Vertical gap between rows
 
         this.slots = []; // { key, char, x, y, row, col }
         this.slotImages = [];

@@ -16,6 +16,8 @@ import Yuta from '../entities/fighters/Yuta.js';
 import Naoya from '../entities/fighters/Naoya.js';
 import Hakari from '../entities/fighters/Hakari.js';
 import Higuruma from '../entities/fighters/Higuruma.js';
+import Nanami from '../entities/fighters/Nanami.js';
+import Todo from '../entities/fighters/Todo.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -124,6 +126,8 @@ export default class GameScene extends Phaser.Scene {
             'NAOYA': Naoya,
             'HAKARI': Hakari,
             'HIGURUMA': Higuruma,
+            'NANAMI': Nanami,
+            'TODO': Todo,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();
@@ -173,6 +177,8 @@ export default class GameScene extends Phaser.Scene {
             NAOYA:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x00FFCC, bg: 0x001A1A, lineColor: 0x00CCAA, textColor: '#00FFCC', name: 'RYŌIKI TENKAI — JIKAN SAIBŌ GEPPAKU' },
             HAKARI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xFFDD00, bg: 0x1A1000, lineColor: 0xFFCC00, textColor: '#FFD700', name: 'RYŌIKI TENKAI — ZASHINKO' },
             HIGURUMA: { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x666666, bg: 0x0A0A15, lineColor: 0x888888, textColor: '#AAAAAA', name: 'RYŌIKI TENKAI — CHITSUJO' },
+            NANAMI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xEEDDCC, bg: 0x0A0A0A, lineColor: 0xFF0000, textColor: '#FF0000', name: 'OVERTIME MODE' },
+            TODO:     { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xAA22AA, bg: 0x111111, lineColor: 0xAA22AA, textColor: '#AA22AA', name: 'RYŌIKI TENKAI — BEST FRIEND TAG-TEAM' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;

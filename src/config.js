@@ -495,6 +495,34 @@ export const CHARACTERS = {
         },
         domainBg: null,
     },
+    NANAMI: {
+        id: 'nanami',
+        name: 'Kento Nanami',
+        title: '7:3 Sorcerer',
+        colors: { primary: 0xEEDDCC, secondary: 0x444444, energy: 0x2288CC, accent: 0xFF0000, skin: 0xF0D0B0, hair: 0xDDCC88 },
+        stats: { maxHp: 2400, speed: 330, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 80, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Tajo de Relojería', cost: 15, damage: 45, type: 'melee' },
+            skill2: { name: 'Colapso', cost: 25, damage: 65, type: 'aoe' },
+            domain: { name: 'Overtime', cost: 80, sureHitType: 'buff' },
+            maximum: { name: 'Ráfaga Embotada', cost: 30, damage: 70, type: 'combo' },
+        },
+        domainBg: null,
+    },
+    TODO: {
+        id: 'todo',
+        name: 'Aoi Todo',
+        title: 'The Brother',
+        colors: { primary: 0x222222, secondary: 0x333333, energy: 0xAA22AA, accent: 0xAA22AA, skin: 0x996644, hair: 0x111111 },
+        stats: { maxHp: 2800, speed: 340, power: 1.15, defense: 0.95, ceRegen: 3.0, weight: 95, jumpForce: -670, domainDuration: 10000, domainPhase1: 5000 },
+        skills: {
+            skill1: { name: 'Boogie Woogie', cost: 10, damage: 0, type: 'utility' },
+            skill2: { name: 'Patada Gran Alcance', cost: 20, damage: 55, type: 'melee' },
+            domain: { name: 'Best Friend Tag-Team', cost: 80, sureHitType: 'buff' },
+            maximum: { name: 'Black Flash', cost: 30, damage: 100, type: 'melee' },
+        },
+        domainBg: null,
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────
