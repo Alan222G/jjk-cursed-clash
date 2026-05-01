@@ -366,12 +366,12 @@ function getCharacterControls(charKey, playerIndex) {
         sections.push({
             title: 'HABILIDADES — EL OFICINISTA',
             lines: [
-                `${atkKeys.special} — Derrumbe Terrestre (15 CE)`,
-                `  Golpe al suelo lanzando escombros que aturden y elevan.`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Desmembrar (25 CE)`,
-                `  Dash rápido que aplica el debuff "Flujo Cortado" (Drena CE).`,
-                `${atkKeys.special}+${moveKeys.down} — Estallido de Horas Extras (30 CE)`,
-                `  Se quita la corbata: +30% Velocidad y amplía brutalmente el 7:3 por 7s.`,
+                `${atkKeys.special} — Derrumbe (Collapse)  (15 CE)`,
+                `  Golpea el suelo y crea una ola de escombros que eleva al rival.`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Desmembrar (Sever)  (25 CE)`,
+                `  Embestida veloz. Si impacta, causa "Flujo Cortado", drenando CE.`,
+                `${atkKeys.special}+${moveKeys.up} — Estallido de Horas Extras  (30 CE)`,
+                `  Se quita la corbata. +30% Velocidad y facilita dar Black Flash (7s).`,
             ]
         });
         sections.push({
@@ -382,12 +382,11 @@ function getCharacterControls(charKey, playerIndex) {
             ]
         });
         sections.push({
-            title: 'DOMINIO: RATIO MÁXIMO',
+            title: 'AWAKENING: RATIO MÁXIMO',
             lines: [
                 `${atkKeys.domain} — Ratio Máximo  (80 CE)`,
-                `Carga hacia adelante oscureciendo el mapa.`,
-                `Si acierta a la distancia correcta, traza la línea 7:3 en toda la pantalla`,
-                `y asesta un impacto letal que reduce un 40% la vida máxima del rival.`,
+                `Cinemática mortal: Embiste al enemigo, crea una regla gigante`,
+                `en pantalla y destruye el punto 7:3. Daño inbloqueable (40% de vida).`,
             ]
         });
     } else if (charKey === 'TODO') {

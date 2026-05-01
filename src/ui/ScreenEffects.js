@@ -24,7 +24,6 @@ export default class ScreenEffects {
 
     /** White/colored screen flash */
     flash(color = 0xFFFFFF, duration = 300, alpha = 0.8) {
-        this.scene.tweens.killTweensOf(this.flashGraphics);
         this.flashGraphics.clear();
         this.flashGraphics.fillStyle(color, 1);
         this.flashGraphics.fillRect(0, 0, 1280, 720);

@@ -16,6 +16,19 @@ export default class Todo extends Fighter {
             this.tagTeamTimer -= dt;
             if (this.tagTeamTimer <= 0) {
                 this.tagTeamActive = false;
+                if (this.scene.domainBg) {
+                    this.scene.tweens.add({
+                        targets: this.scene.domainBg,
+                        alpha: 0,
+                        duration: 1000,
+                        onComplete: () => {
+                            if (this.scene.domainBg) {
+                                this.scene.domainBg.destroy();
+                                this.scene.domainBg = null;
+                            }
+                        }
+                    });
+                }
             }
         }
     }
@@ -99,13 +112,33 @@ export default class Todo extends Fighter {
                 // Canonical Black Flash Visuals
                 const ex = this.opponent.sprite.x;
                 const ey = this.opponent.sprite.y - 30;
+                const g = this.scene.add.graphics().setDepth(17);
 
-                this.spawnBlackFlashEffect(ex, ey);
+                // Black impact core
+                g.fillStyle(0x000000, 0.9); g.fillCircle(ex, ey, 25);
+                g.fillStyle(0xFF0000, 0.6); g.fillCircle(ex, ey, 15);
+
+                // Lightning bolts
+                g.lineStyle(3, 0x000000, 0.9);
+                for (let j = 0; j < 4; j++) {
+                    const angle = (j / 4) * Math.PI * 2 + Math.random();
+                    const len = 30 + Math.random() * 25;
+                    const mx = ex + Math.cos(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                    const my = ey + Math.sin(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                    g.beginPath(); g.moveTo(ex, ey); g.lineTo(mx, my);
+                    g.lineTo(ex + Math.cos(angle) * len, ey + Math.sin(angle) * len); g.strokePath();
+                }
+                // Red sparks
+                g.lineStyle(1, 0xFF2200, 0.7);
+                for (let j = 0; j < 3; j++) {
+                    const a = Math.random() * Math.PI * 2;
+                    g.lineBetween(ex, ey, ex + Math.cos(a) * 35, ey + Math.sin(a) * 35);
+                }
+                this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
 
                 if (this.scene.screenEffects) {
-                    this.scene.screenEffects.shake(0.015, 400);
-                    this.scene.screenEffects.hitFreeze(150);
-                    this.scene.screenEffects.flash(0x000000, 150, 0.4);
+                    this.scene.screenEffects.flash(0x000000, 300, 0.8);
+                    this.scene.screenEffects.shake(0.04, 500);
                 }
                 try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
                 
@@ -161,6 +194,7 @@ export default class Todo extends Fighter {
     tryActivateDomain() {
         if (this.tagTeamActive || !this.ceSystem.spend(this.charData.skills.domain.cost)) return;
 
+        this.scene.onDomainActivated(this, 'TODO_TAG');
         this.tagTeamActive = true;
         this.tagTeamTimer = 10000;
         
@@ -169,14 +203,18 @@ export default class Todo extends Fighter {
             this.hasSimpleDomain = false;
         });
 
-        // Cinematic flash instead of a full domain
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0xAA22AA, 300, 0.7);
-        }
-        
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'BEST FRIEND TAG-TEAM', {
-            fontFamily: 'Arial Black', fontSize: '20px', color: '#FF44FF', stroke: '#000000', strokeThickness: 4
-        }).setOrigin(0.5).setDepth(40);
-        this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+        this.scene.time.delayedCall(1000, () => {
+            if (this.scene.cancelDomain) {
+                this.scene.cancelDomain(this);
+            } else if (this.scene.onDomainEnd) {
+                this.scene.onDomainEnd(this);
+            }
+            
+            this.scene.domainBg = this.scene.add.rectangle(
+                GAME_WIDTH / 2, GAME_HEIGHT / 2, 
+                GAME_WIDTH, GAME_HEIGHT, 
+                0x111111, 0.6
+            ).setDepth(2);
+        });
     }
 }

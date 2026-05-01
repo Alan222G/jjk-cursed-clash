@@ -198,7 +198,7 @@ export default class Yuji extends Fighter {
         this.sprite.body.setVelocityX(0);
 
         if (this.scene.screenEffects) {
-            // No slow motion to prevent the game from feeling frozen
+            this.scene.screenEffects.slowMotion(0.2, 1500);
             this.scene.screenEffects.flash(0x000000, 800, 0.8);
         }
 
@@ -217,9 +217,31 @@ export default class Yuji extends Fighter {
                     const dmg = Math.floor((this.charData.skills.maximum.damage / 5) * this.power * 2.5);
                     target.takeDamage(dmg, (i === 4 ? 500 : 80) * this.facing, i === 4 ? -300 : -30, i === 4 ? 800 : 200);
 
-                    // Black Flash visual — canonical
+                    // Black Flash visual — black + red lightning
                     const ex = target.sprite.x; const ey = target.sprite.y - 30;
-                    this.spawnBlackFlashEffect(ex, ey);
+                    const g = this.scene.add.graphics().setDepth(17);
+
+                    // Black impact core
+                    g.fillStyle(0x000000, 0.9); g.fillCircle(ex, ey, 25);
+                    g.fillStyle(0xFF0000, 0.6); g.fillCircle(ex, ey, 15);
+
+                    // Lightning bolts
+                    g.lineStyle(3, 0x000000, 0.9);
+                    for (let j = 0; j < 4; j++) {
+                        const angle = (j / 4) * Math.PI * 2 + Math.random();
+                        const len = 30 + Math.random() * 25;
+                        const mx = ex + Math.cos(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                        const my = ey + Math.sin(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                        g.beginPath(); g.moveTo(ex, ey); g.lineTo(mx, my);
+                        g.lineTo(ex + Math.cos(angle) * len, ey + Math.sin(angle) * len); g.strokePath();
+                    }
+                    // Red sparks
+                    g.lineStyle(1, 0xFF2200, 0.7);
+                    for (let j = 0; j < 3; j++) {
+                        const a = Math.random() * Math.PI * 2;
+                        g.lineBetween(ex, ey, ex + Math.cos(a) * 35, ey + Math.sin(a) * 35);
+                    }
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
 
                     // Sound
                     try { this.scene.sound.play('black_flash_sfx', { volume: 0.8 }); } catch(e) {}

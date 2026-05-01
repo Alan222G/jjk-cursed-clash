@@ -18,16 +18,33 @@ export default class Nanami extends Fighter {
     }
 
     _applyBlackFlash(target) {
-        if (!target) return;
+        // Canonical Yuji Black Flash Visuals
         const ex = target.sprite.x;
         const ey = target.sprite.y - 30;
-        
-        this.spawnBlackFlashEffect(ex, ey);
-        
+        const g = this.scene.add.graphics().setDepth(17);
+
+        g.fillStyle(0x000000, 0.9); g.fillCircle(ex, ey, 25);
+        g.fillStyle(0xFF0000, 0.6); g.fillCircle(ex, ey, 15);
+
+        g.lineStyle(3, 0x000000, 0.9);
+        for (let j = 0; j < 4; j++) {
+            const angle = (j / 4) * Math.PI * 2 + Math.random();
+            const len = 30 + Math.random() * 25;
+            const mx = ex + Math.cos(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+            const my = ey + Math.sin(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+            g.beginPath(); g.moveTo(ex, ey); g.lineTo(mx, my);
+            g.lineTo(ex + Math.cos(angle) * len, ey + Math.sin(angle) * len); g.strokePath();
+        }
+        g.lineStyle(1, 0xFF2200, 0.7);
+        for (let j = 0; j < 3; j++) {
+            const a = Math.random() * Math.PI * 2;
+            g.lineBetween(ex, ey, ex + Math.cos(a) * 35, ey + Math.sin(a) * 35);
+        }
+        this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+
         if (this.scene.screenEffects) {
-            this.scene.screenEffects.shake(0.015, 400);
-            this.scene.screenEffects.hitFreeze(150);
-            this.scene.screenEffects.flash(0x000000, 150, 0.4);
+            this.scene.screenEffects.flash(0x000000, 300, 0.8);
+            this.scene.screenEffects.shake(0.04, 500);
         }
         try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
     }
@@ -49,7 +66,7 @@ export default class Nanami extends Fighter {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
         
-        if (tier >= 2 && this.input.isDown('DOWN')) {
+        if (tier >= 2 && this.input.isDown('UP')) {
             this.executeOvertimeBurst(); // Maximum
         } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.executeSever(); // Skill 2
@@ -164,10 +181,15 @@ export default class Nanami extends Fighter {
     tryActivateDomain() {
         if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
         
+        this.scene.onDomainActivated(this, 'OVERTIME');
         this.isCasting = true;
         this.stateMachine.lock(2500);
         
-        // No black background overlay as requested
+        this.scene.domainBg = this.scene.add.rectangle(
+            GAME_WIDTH / 2, GAME_HEIGHT / 2, 
+            GAME_WIDTH, GAME_HEIGHT, 
+            0x000000, 0.85
+        ).setDepth(15);
         
         this.sprite.body.setVelocityX(this.facing * 1000);
 
@@ -186,7 +208,8 @@ export default class Nanami extends Fighter {
                 line.fillStyle(0xFF0000, 1);
                 line.fillCircle(cx + 60, cy + 32, 12); // The 7:3 point on the line
 
-                // No slow motion as it freezes the game for 10 seconds
+                if (this.scene.screenEffects) this.scene.screenEffects.slowMotion(0.1, 1000);
+                
                 this.scene.time.delayedCall(600, () => {
                     line.destroy();
                     this._applyBlackFlash(target);
@@ -201,6 +224,10 @@ export default class Nanami extends Fighter {
         });
 
         this.scene.time.delayedCall(1500, () => {
+            if (this.scene.domainBg) { this.scene.domainBg.destroy(); this.scene.domainBg = null; }
+            if (this.scene.cancelDomain) this.scene.cancelDomain(this);
+            else if (this.scene.onDomainEnd) this.scene.onDomainEnd(this);
+            
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
