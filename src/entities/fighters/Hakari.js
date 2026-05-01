@@ -359,17 +359,19 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 15000;
+        this.jackpotTimer = 20000;
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
         this.speed = this._baseSpeed * 1.3;
         this.power *= 1.4;
 
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 100, '∞ UNLIMITED ∞', {
-            fontFamily: 'Arial Black', fontSize: '14px', color: '#FFD700',
-            stroke: '#000000', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(20);
+        const cx = this.scene.cameras.main.centerX;
+        const cy = this.scene.cameras.main.centerY;
+        const txt = this.scene.add.text(cx, cy - 80, '∞ UNLIMITED ∞', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#FFD700',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(30);
         this.scene.tweens.add({ targets: txt, y: txt.y - 30, alpha: 0, duration: 2000, onComplete: () => txt.destroy() });
     }
 
@@ -395,6 +397,12 @@ export default class Hakari extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+        
+        // Prevent default CE drain from ending domain early
+        if (this.domainActive) {
+            this.ceSystem.ce = this.ceSystem.maxCe;
+        }
+
         if (this.shutterCd > 0) this.shutterCd -= dt;
         if (this.pachinkoCd > 0) this.pachinkoCd -= dt;
         if (this.probShiftTimer > 0) this.probShiftTimer -= dt;
@@ -412,6 +420,7 @@ export default class Hakari extends Fighter {
                 this.jackpotActive = false;
                 this.speed = this._baseSpeed;
                 this.power = this.charData.stats.power || 1.0;
+                this.ceSystem.ce = 0; // Loses all CE when Jackpot ends
             }
         }
 

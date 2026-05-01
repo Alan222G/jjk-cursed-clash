@@ -300,9 +300,9 @@ export default class Higuruma extends Fighter {
         this.trialUI.push(title, timerTxt, hint1, hint2, gBar);
 
         const getChoice = (player) => {
-            if (player.input.isDown('SKILL1')) return 'CONFESS'; // U equivalent
-            if (player.input.isDown('SKILL2')) return 'SILENCE'; // I equivalent
-            if (player.input.isDown('DOWN')) return 'DENY';      // S equivalent
+            if (player.input.isDown('SKILL1')) return 'CONFESS'; // P1: U, P2: Numpad1
+            if (player.input.isDown('SKILL2')) return 'SILENCE'; // P1: I, P2: Numpad2
+            if (player.input.isDown('DOWN')) return 'DENY';      // P1: S, P2: DownArrow
             return null;
         };
 
@@ -313,10 +313,9 @@ export default class Higuruma extends Fighter {
                 timeLeft -= 100;
                 timerTxt.setText((timeLeft/1000).toFixed(1) + 's');
                 
-                // AI fallback
-                if (this.target && this.target.isAI && oppChoice === null && Math.random() < 0.1) {
-                    const choices = ['CONFESS', 'SILENCE', 'DENY'];
-                    oppChoice = choices[Math.floor(Math.random() * choices.length)];
+                // AI ALWAYS picks Silence (as requested by user)
+                if (this.target && this.target.isAI && oppChoice === null) {
+                    oppChoice = 'SILENCE';
                 }
 
                 if (!higuChoice) higuChoice = getChoice(this);
@@ -325,6 +324,7 @@ export default class Higuruma extends Fighter {
                 if (timeLeft <= 0 || (higuChoice && oppChoice)) {
                     pollEvent.remove();
                     
+                    // Default to Silence if nothing was pressed
                     if (!higuChoice) higuChoice = 'SILENCE';
                     if (!oppChoice) oppChoice = 'SILENCE';
                     
@@ -375,7 +375,7 @@ export default class Higuruma extends Fighter {
         if (this._domainPoints >= 3) {
             // Death Penalty
             this.hasExecutionerSword = true;
-            this.executionerTimer = 20000;
+            this.executionerTimer = 12000; // Lasts 12 seconds
             const txt = this.scene.add.text(cx, cy, '⚔️ DEATH PENALTY ⚔️\nExecutioner\'s Sword Active!', {
                 fontFamily: 'Arial Black', fontSize: '28px', color: '#FF0000', align: 'center', stroke: '#000000', strokeThickness: 5
             }).setOrigin(0.5).setDepth(30);
@@ -422,6 +422,12 @@ export default class Higuruma extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+        
+        // Prevent default CE drain from ending domain early
+        if (this.domainActive) {
+            this.ceSystem.ce = this.ceSystem.maxCe;
+        }
+
         if (this.sentenceCd > 0) this.sentenceCd -= dt;
         if (this.hammerCd > 0) this.hammerCd -= dt;
         if (this.leapCd > 0) this.leapCd -= dt;
