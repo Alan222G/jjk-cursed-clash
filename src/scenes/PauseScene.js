@@ -370,7 +370,7 @@ function getCharacterControls(charKey, playerIndex) {
                 `  Golpe al suelo lanzando escombros que aturden y elevan.`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Desmembrar (25 CE)`,
                 `  Dash rápido que aplica el debuff "Flujo Cortado" (Drena CE).`,
-                `${atkKeys.special}+${moveKeys.up} — Estallido de Horas Extras (30 CE)`,
+                `${atkKeys.special}+${moveKeys.down} — Estallido de Horas Extras (30 CE)`,
                 `  Se quita la corbata: +30% Velocidad y amplía brutalmente el 7:3 por 7s.`,
             ]
         });
