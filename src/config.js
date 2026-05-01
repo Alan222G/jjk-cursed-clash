@@ -467,6 +467,34 @@ export const CHARACTERS = {
         },
         domainBg: null,
     },
+    HAKARI: {
+        id: 'hakari',
+        name: 'Kinji Hakari',
+        title: 'Idle Death Gamble',
+        colors: { primary: 0x222222, secondary: 0xFFCC00, energy: 0xFFDD00, accent: 0xFF4400, skin: 0xF0D0B0, hair: 0xBB8833 },
+        stats: { maxHp: 2800, speed: 340, power: 1.0, defense: 0.95, ceRegen: 3.0, weight: 90, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Shutter Doors', cost: 15, damage: 30, type: 'trap' },
+            skill2: { name: 'Pachinko Balls', cost: 20, damage: 60, type: 'projectile' },
+            domain: { name: 'Idle Death Gamble', cost: 80, sureHitType: 'jackpot_rng' },
+            maximum: { name: 'Push Kick', cost: 25, damage: 45, type: 'melee' },
+        },
+        domainBg: null,
+    },
+    HIGURUMA: {
+        id: 'higuruma',
+        name: 'Hiromi Higuruma',
+        title: 'Deadly Sentencing',
+        colors: { primary: 0x1A1A2E, secondary: 0x8B0000, energy: 0x666666, accent: 0x8B7355, skin: 0xF0D0B0, hair: 0x111122 },
+        stats: { maxHp: 2500, speed: 310, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 85, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Gavel Sentence', cost: 15, damage: 40, type: 'melee' },
+            skill2: { name: 'Hammer of Justice', cost: 25, damage: 60, type: 'aoe' },
+            domain: { name: 'Deadly Sentencing', cost: 100, sureHitType: 'tribunal' },
+            maximum: { name: 'Judicial Citation', cost: 20, damage: 15, type: 'projectile' },
+        },
+        domainBg: null,
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────

@@ -299,8 +299,8 @@ export default class Naoya extends Fighter {
             this.scene.sound.play(`slash_${slashIdx}`, { volume: 0.8 });
         } catch (e) {}
 
-        // Extra CE drain per tick (moderate so domain lasts ~8-10 seconds)
-        this.ceSystem.ce = Math.max(0, this.ceSystem.ce - 5);
+        // Extra CE drain per tick (moderate so domain lasts longer)
+        this.ceSystem.ce = Math.max(0, this.ceSystem.ce - 2);
     }
 
     onDomainEnd() {
