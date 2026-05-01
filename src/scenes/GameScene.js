@@ -437,12 +437,14 @@ export default class GameScene extends Phaser.Scene {
                 this.onDomainEnd(owner);
             };
 
+            // Bind the end event NOW, after Phase 1 has ended.
             if (this.currentDomainVoice && this.currentDomainVoice.isPlaying) {
                 this.currentDomainVoice.once('complete', endDomain);
                 // Fallback max wait
                 const maxWait = owner.charData.stats.domainDuration + 5000;
                 this.domainTimeout = this.time.delayedCall(maxWait, endDomain);
             } else {
+                // If audio already finished during Phase 1, just use the normal domain duration!
                 const fallback = owner.charData.stats.domainDuration || 15000;
                 this.domainTimeout = this.time.delayedCall(fallback, endDomain);
             }
@@ -529,7 +531,8 @@ export default class GameScene extends Phaser.Scene {
         
         // Remove timer
         if (this.domainPhase1Timer) {
-            this.domainPhase1Timer.remove();
+            this.domainPhase1Timer.destroy();
+            this.domainPhase1Timer = null;
         }
 
         // Cleanup audio
