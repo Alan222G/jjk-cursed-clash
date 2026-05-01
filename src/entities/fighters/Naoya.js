@@ -244,17 +244,25 @@ export default class Naoya extends Fighter {
 
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
+
+        // End domain if CE is depleted
+        if (this.ceSystem.ce <= 0) {
+            this.ceSystem.endDomain();
+            this.domainActive = false;
+            return;
+        }
+
         // ONLY damages if opponent is MOVING
         const vx = Math.abs(opponent.sprite.body.velocity.x);
         const vy = Math.abs(opponent.sprite.body.velocity.y);
         const isMoving = vx > 10 || vy > 10 || opponent.stateMachine.isAny('walk', 'jump', 'fall', 'attack');
         if (!isMoving) return;
 
-        // 10x Sukuna's slashes — identical VFX, 10 times per tick
+        // 5x Sukuna's slashes — identical VFX
         const ox = opponent.sprite.x;
         const oy = opponent.sprite.y - 20;
 
-        for (let s = 0; s < 10; s++) {
+        for (let s = 0; s < 5; s++) {
             const g = this.scene.add.graphics().setDepth(15);
             const slX = ox + (Math.random() - 0.5) * 60;
             const slY = oy + (Math.random() - 0.5) * 70;
@@ -283,17 +291,16 @@ export default class Naoya extends Fighter {
             });
         }
 
-        // 10x Sukuna's damage per tick (50 * 10 = 500)
-        opponent.takeDamage(500, 30 * this.facing, 0, 150);
+        // 5x Sukuna's damage per tick (50 * 5 = 250)
+        opponent.takeDamage(250, 30 * this.facing, 0, 150);
 
-        // Play slash sound
         try {
             const slashIdx = Phaser.Math.Between(1, 11);
             this.scene.sound.play(`slash_${slashIdx}`, { volume: 0.8 });
         } catch (e) {}
 
-        // Drain CE 3x faster (domain burns out quickly)
-        this.ceSystem.ce = Math.max(0, this.ceSystem.ce - 15);
+        // Extra CE drain per tick (moderate so domain lasts ~8-10 seconds)
+        this.ceSystem.ce = Math.max(0, this.ceSystem.ce - 5);
     }
 
     onDomainEnd() {

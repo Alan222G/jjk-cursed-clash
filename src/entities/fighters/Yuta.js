@@ -43,97 +43,170 @@ export default class Yuta extends Fighter {
     }
 
     // ═══════════════════════════════════════
-    // COPY ABILITY — Generic system that reads
-    // opponent's charData.skills and fires matching
-    // projectiles/melee from Yuta's position
+    // COPY ABILITY — Pool of iconic abilities
+    // Random on each U press during domain
+    // All cost minimum CE (skill1 cost)
     // ═══════════════════════════════════════
     fireCopiedAbility() {
-        const opp = this._copiedOpponent;
-        const sk = opp.charData.skills;
-        if (!sk) return;
+        const minCost = 15;
+        if (!this.ceSystem.spend(minCost)) return;
 
-        if (this.input.isDown('DOWN') && sk.maximum) {
-            // Copy MAXIMUM (U+Down)
-            if (!this.ceSystem.spend(Math.floor(sk.maximum.cost * 0.7))) return;
-            this.fireCopiedProjectile(sk.maximum, 'maximum');
-        } else if (this.input.isDown('UP') && sk.skill2) {
-            // Copy SKILL2 as U+Up
-            if (!this.ceSystem.spend(Math.floor(sk.skill2.cost * 0.7))) return;
-            this.fireCopiedProjectile(sk.skill2, 'skill2');
-        } else if ((this.input.isDown('LEFT') || this.input.isDown('RIGHT')) && sk.skill2) {
-            // Copy SKILL2 as U+Dir
-            if (!this.ceSystem.spend(Math.floor(sk.skill2.cost * 0.7))) return;
-            this.fireCopiedProjectile(sk.skill2, 'skill2');
-        } else if (sk.skill1) {
-            // Copy SKILL1 (U)
-            if (!this.ceSystem.spend(Math.floor(sk.skill1.cost * 0.7))) return;
-            this.fireCopiedProjectile(sk.skill1, 'skill1');
-        }
+        // Pick random ability from pool
+        const pool = [
+            'granite_blast', 'dismantle', 'kenjaku_worm',
+            'purple', 'red', 'fuga', 'yuji_black_flash', 'mahito_blade'
+        ];
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        this.executeCopiedAbility(pick);
     }
 
-    fireCopiedProjectile(skillData, slotName) {
+    executeCopiedAbility(abilityKey) {
         this.isCasting = true;
-        this.stateMachine.lock(800);
+        this.stateMachine.lock(900);
         this.sprite.body.setVelocityX(0);
+        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
 
-        const opp = this._copiedOpponent;
-        const oppColor = opp.charData.colors?.energy || 0xFF66AA;
-        const dmg = Math.floor((skillData.damage || 50) * this.power);
-
-        // Show "COPY: [name]" text
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, `COPY: ${skillData.name}`, {
-            fontFamily: 'Arial Black', fontSize: '12px', color: '#FF88CC',
-            stroke: '#000000', strokeThickness: 2
+        // Name label
+        const names = {
+            granite_blast: 'Granite Blast', dismantle: 'Dismantle',
+            kenjaku_worm: 'Cursed Worm', purple: 'Hollow Purple',
+            red: 'Cursed Red', fuga: 'Fuga', yuji_black_flash: 'Black Flash',
+            mahito_blade: 'Soul Blade'
+        };
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 85, `COPY: ${names[abilityKey]}`, {
+            fontFamily: 'Arial Black', fontSize: '13px', color: '#FF88CC',
+            stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(20);
-        this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
-
-        try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
-
-        if (slotName === 'maximum') {
-            // Big projectile for maximum
-            if (this.scene.screenEffects) {
-                this.scene.screenEffects.flash(oppColor, 100, 0.3);
-                this.scene.screenEffects.shake(0.03, 400);
-            }
-            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 40, {
-                owner: this, damage: dmg,
-                knockbackX: 1000, knockbackY: -300,
-                stunDuration: 800, speed: 1200,
-                direction: this.facing, color: oppColor,
-                size: { w: 80, h: 50 }, lifetime: 1500, type: 'circle',
-            });
-            if (this.scene.projectiles) this.scene.projectiles.push(proj);
-        } else if (skillData.type === 'slash' || skillData.type === 'melee' || skillData.type === 'melee_combo') {
-            // Melee copy — direct hit
-            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 140) {
-                target.takeDamage(dmg, 250 * this.facing, -100, 400);
-                // Slash VFX in opponent's color
-                const g = this.scene.add.graphics().setDepth(16);
-                g.lineStyle(4, oppColor, 0.8);
-                g.beginPath(); g.moveTo(target.sprite.x - 20, target.sprite.y - 40);
-                g.lineTo(target.sprite.x + 20, target.sprite.y - 10); g.strokePath();
-                this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
-            }
-        } else {
-            // Projectile copy — generic energy ball
-            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 30, {
-                owner: this, damage: dmg,
-                knockbackX: 400, knockbackY: -100,
-                stunDuration: 400, speed: 800,
-                direction: this.facing, color: oppColor,
-                size: { w: 40, h: 30 }, lifetime: 1200, type: 'normal',
-            });
-            if (this.scene.projectiles) this.scene.projectiles.push(proj);
-        }
+        this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 900, onComplete: () => txt.destroy() });
 
         // Rika arm flash
-        const g2 = this.scene.add.graphics().setDepth(17);
-        g2.fillStyle(0xFF88CC, 0.4);
-        g2.fillEllipse(this.sprite.x + 30 * this.facing, this.sprite.y - 40, 30, 40);
-        this.scene.tweens.add({ targets: g2, alpha: 0, duration: 300, onComplete: () => g2.destroy() });
+        const gR = this.scene.add.graphics().setDepth(17);
+        gR.fillStyle(0xFF88CC, 0.5);
+        gR.fillEllipse(this.sprite.x + 30 * this.facing, this.sprite.y - 40, 35, 45);
+        this.scene.tweens.add({ targets: gR, alpha: 0, duration: 400, onComplete: () => gR.destroy() });
 
-        this.scene.time.delayedCall(600, () => {
+        switch (abilityKey) {
+            case 'granite_blast': {
+                // Ishigori's charged beam — cyan energy ball
+                try { this.scene.sound.play('sfx_charge', { volume: 0.5 }); } catch(e) {}
+                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 40, {
+                    owner: this, damage: Math.floor(70 * this.power),
+                    knockbackX: 800, knockbackY: -200, stunDuration: 600, speed: 900,
+                    direction: this.facing, color: 0x88DDFF,
+                    size: { w: 60, h: 45 }, lifetime: 1500, type: 'circle',
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                break;
+            }
+            case 'dismantle': {
+                // Sukuna's slash — X cut on target
+                try { this.scene.sound.play('sfx_slash', { volume: 0.7 }); } catch(e) {}
+                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 250) {
+                    target.takeDamage(Math.floor(55 * this.power), 200 * this.facing, -80, 400);
+                    const g = this.scene.add.graphics().setDepth(16);
+                    const ox = target.sprite.x; const oy = target.sprite.y - 20;
+                    g.lineStyle(6, 0xFFFFFF, 0.9);
+                    g.beginPath(); g.moveTo(ox - 25, oy - 25); g.lineTo(ox + 25, oy + 25); g.strokePath();
+                    g.beginPath(); g.moveTo(ox + 25, oy - 25); g.lineTo(ox - 25, oy + 25); g.strokePath();
+                    g.lineStyle(3, 0xFF1100, 1);
+                    g.beginPath(); g.moveTo(ox - 25, oy - 25); g.lineTo(ox + 25, oy + 25); g.strokePath();
+                    g.beginPath(); g.moveTo(ox + 25, oy - 25); g.lineTo(ox - 25, oy + 25); g.strokePath();
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+                }
+                break;
+            }
+            case 'kenjaku_worm': {
+                // Kenjaku's cursed worm projectile
+                const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 20, {
+                    owner: this, damage: Math.floor(45 * this.power),
+                    knockbackX: 300, knockbackY: -50, stunDuration: 500, speed: 500,
+                    direction: this.facing, color: 0x886644,
+                    size: { w: 50, h: 20 }, lifetime: 1500, type: 'normal',
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                break;
+            }
+            case 'purple': {
+                // Gojo's Hollow Purple — big purple sphere
+                try { this.scene.sound.play('sfx_purple', { volume: 0.8 }); } catch(e) {}
+                if (this.scene.screenEffects) this.scene.screenEffects.flash(0x8800FF, 100, 0.3);
+                const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 35, {
+                    owner: this, damage: Math.floor(90 * this.power),
+                    knockbackX: 1200, knockbackY: -400, stunDuration: 800, speed: 700,
+                    direction: this.facing, color: 0x8800FF,
+                    size: { w: 55, h: 55 }, lifetime: 2000, type: 'circle',
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                break;
+            }
+            case 'red': {
+                // Gojo's Cursed Red — red repulsion sphere
+                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 30, {
+                    owner: this, damage: Math.floor(50 * this.power),
+                    knockbackX: 900, knockbackY: -300, stunDuration: 500, speed: 1000,
+                    direction: this.facing, color: 0xFF2200,
+                    size: { w: 35, h: 35 }, lifetime: 1200, type: 'circle',
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                break;
+            }
+            case 'fuga': {
+                // Geto's Fuga — big energy blast
+                try { this.scene.sound.play('sfx_purple', { volume: 0.6 }); } catch(e) {}
+                const proj = new Projectile(this.scene, this.sprite.x + 50 * this.facing, this.sprite.y - 40, {
+                    owner: this, damage: Math.floor(80 * this.power),
+                    knockbackX: 1000, knockbackY: -250, stunDuration: 700, speed: 600,
+                    direction: this.facing, color: 0x4411AA,
+                    size: { w: 70, h: 70 }, lifetime: 2000, type: 'circle',
+                });
+                if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                break;
+            }
+            case 'yuji_black_flash': {
+                // Yuji's super Black Flash — melee hit with flash
+                try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
+                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 120) {
+                    target.takeDamage(Math.floor(85 * this.power), 400 * this.facing, -200, 600);
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.flash(0x000000, 60, 1.0);
+                        this.scene.screenEffects.shake(0.04, 300);
+                    }
+                    // Black flash sparks
+                    const g = this.scene.add.graphics().setDepth(16);
+                    const ox = target.sprite.x; const oy = target.sprite.y - 25;
+                    g.fillStyle(0x000000, 0.8); g.fillCircle(ox, oy, 20);
+                    g.lineStyle(3, 0xFF4400, 1);
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * Math.PI * 2;
+                        g.beginPath(); g.moveTo(ox, oy);
+                        g.lineTo(ox + Math.cos(a) * 30, oy + Math.sin(a) * 30); g.strokePath();
+                    }
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 250, onComplete: () => g.destroy() });
+                }
+                break;
+            }
+            case 'mahito_blade': {
+                // Mahito's blade hand mutation — extended melee range
+                try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
+                if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 180) {
+                    target.takeDamage(Math.floor(60 * this.power), 300 * this.facing, -100, 500);
+                    // Blade VFX
+                    const g = this.scene.add.graphics().setDepth(16);
+                    const bx = this.sprite.x + 30 * this.facing; const by = this.sprite.y - 35;
+                    g.fillStyle(0x00CCAA, 0.7);
+                    g.beginPath();
+                    g.moveTo(bx, by + 10); g.lineTo(bx + 60 * this.facing, by - 5);
+                    g.lineTo(bx + 65 * this.facing, by + 5); g.lineTo(bx, by + 15);
+                    g.fillPath();
+                    g.lineStyle(2, 0x00FFDD, 0.8);
+                    g.strokePath();
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.destroy() });
+                }
+                break;
+            }
+        }
+
+        this.scene.time.delayedCall(700, () => {
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
