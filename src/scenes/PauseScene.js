@@ -366,29 +366,28 @@ function getCharacterControls(charKey, playerIndex) {
         sections.push({
             title: 'HABILIDADES — EL OFICINISTA',
             lines: [
-                `${atkKeys.special} — Tajo de Relojería  (15 CE)`,
-                `  Corte horizontal rompe-guardia en Crítico`,
-                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Colapso  (25 CE)`,
-                `  Golpe al suelo que lanza escombros (Stun)`,
-                `${atkKeys.special}+${moveKeys.up} — Ráfaga Embotada  (30 CE)`,
-                `  Combo de 4 golpes rápidos (4to garantizado CRÍTICO)`,
+                `${atkKeys.special} — Derrumbe Terrestre (15 CE)`,
+                `  Golpe al suelo lanzando escombros que aturden y elevan.`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Desmembrar (25 CE)`,
+                `  Dash rápido que aplica el debuff "Flujo Cortado" (Drena CE).`,
+                `${atkKeys.special}+${moveKeys.up} — Estallido de Horas Extras (30 CE)`,
+                `  Se quita la corbata: +30% Velocidad y amplía brutalmente el 7:3 por 7s.`,
             ]
         });
         sections.push({
             title: 'PASIVA: TÉCNICA 7:3',
             lines: [
                 `Si golpeas al rival con la punta del arma (distancia exacta):`,
-                `Daño multiplicado x2.5 + BLACK FLASH ASEGURADO.`,
+                `Daño multiplicado x2.5 + BLACK FLASH CANÓNICO ASEGURADO.`,
             ]
         });
         sections.push({
-            title: 'AWAKENING: ESTOY EN HORAS EXTRA',
+            title: 'DOMINIO: RATIO MÁXIMO',
             lines: [
-                `${atkKeys.domain} — Overtime  (80 CE)`,
-                `Aumenta Daño y Defensa x1.5 por 15 segundos`,
-                `Amplía muchísimo la ventana de crítico del 7:3`,
-                `Si pulsas DOMINIO durante Overtime (50 CE):`,
-                `RATIO MÁXIMO: Tajo brutal (40% de vida máxima) si acierta 7:3.`,
+                `${atkKeys.domain} — Ratio Máximo  (80 CE)`,
+                `Carga hacia adelante oscureciendo el mapa.`,
+                `Si acierta a la distancia correcta, traza la línea 7:3 en toda la pantalla`,
+                `y asesta un impacto letal que reduce un 40% la vida máxima del rival.`,
             ]
         });
     } else if (charKey === 'TODO') {

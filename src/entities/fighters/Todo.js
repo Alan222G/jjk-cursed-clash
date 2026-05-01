@@ -109,19 +109,38 @@ export default class Todo extends Fighter {
             if (!this.isCasting || !this.opponent) return;
             
             if (!this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 140) {
-                const cx = (this.sprite.x + this.opponent.sprite.x) / 2;
-                const cy = this.opponent.sprite.y;
-                
-                const txt = this.scene.add.text(cx, cy - 80, '⚡ BLACK FLASH! ⚡', {
-                    fontFamily: 'Arial Black', fontSize: '40px', color: '#111111', stroke: '#FF0000', strokeThickness: 8
-                }).setOrigin(0.5).setDepth(40);
-                this.scene.tweens.add({ targets: txt, scale: 1.5, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+                // Canonical Black Flash Visuals
+                const ex = this.opponent.sprite.x;
+                const ey = this.opponent.sprite.y - 30;
+                const g = this.scene.add.graphics().setDepth(17);
+
+                // Black impact core
+                g.fillStyle(0x000000, 0.9); g.fillCircle(ex, ey, 25);
+                g.fillStyle(0xFF0000, 0.6); g.fillCircle(ex, ey, 15);
+
+                // Lightning bolts
+                g.lineStyle(3, 0x000000, 0.9);
+                for (let j = 0; j < 4; j++) {
+                    const angle = (j / 4) * Math.PI * 2 + Math.random();
+                    const len = 30 + Math.random() * 25;
+                    const mx = ex + Math.cos(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                    const my = ey + Math.sin(angle) * len * 0.5 + (Math.random() - 0.5) * 15;
+                    g.beginPath(); g.moveTo(ex, ey); g.lineTo(mx, my);
+                    g.lineTo(ex + Math.cos(angle) * len, ey + Math.sin(angle) * len); g.strokePath();
+                }
+                // Red sparks
+                g.lineStyle(1, 0xFF2200, 0.7);
+                for (let j = 0; j < 3; j++) {
+                    const a = Math.random() * Math.PI * 2;
+                    g.lineBetween(ex, ey, ex + Math.cos(a) * 35, ey + Math.sin(a) * 35);
+                }
+                this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
 
                 if (this.scene.screenEffects) {
                     this.scene.screenEffects.flash(0x000000, 300, 0.8);
                     this.scene.screenEffects.shake(0.04, 500);
                 }
-                try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
+                try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
                 
                 this.opponent.takeDamage(Math.floor(100 * this.power), 600 * this.facing, -300, 800);
             }
