@@ -12,6 +12,7 @@ import Ishigori from '../entities/fighters/Ishigori.js';
 import Kuroroshi from '../entities/fighters/Kuroroshi.js';
 import Yuji from '../entities/fighters/Yuji.js';
 import Mahito from '../entities/fighters/Mahito.js';
+import Yuta from '../entities/fighters/Yuta.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -116,6 +117,7 @@ export default class GameScene extends Phaser.Scene {
             'KUROROSHI': Kuroroshi,
             'YUJI': Yuji,
             'MAHITO': Mahito,
+            'YUTA': Yuta,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();
@@ -160,6 +162,8 @@ export default class GameScene extends Phaser.Scene {
             ISHIGORI: { voice: 'sukuna_domain_voice',  sign: 'ishigori_sign', color: 0xFFAA33, bg: 0x1A0A00, lineColor: 0xFFCC00, textColor: '#FFCC00', name: 'RYŌIKI TENKAI — JIKANKŌ GEPPAKU' },
             KUROROSHI:{ voice: 'sukuna_domain_voice',  sign: 'kuroroshi_sign', color: 0x664422, bg: 0x0A0500, lineColor: 0xAA7744, textColor: '#AA7744', name: 'RYŌIKI TENKAI — SHŌKEI GAICHU' },
             SUKUNA_20:{ voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xFF0000, bg: 0x0A0000, lineColor: 0xFF2200, textColor: '#FF2200', name: 'RYŌIKI TENKAI — FUKUMA MIZUSHI (BARRIERLESS)' },
+            MAHITO:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x00CCAA, bg: 0x001A1A, lineColor: 0x00FFAA, textColor: '#00FFAA', name: 'RYŌIKI TENKAI — JIHEI ENDONKA' },
+            YUTA:     { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xFF66AA, bg: 0x1A0011, lineColor: 0xFF88CC, textColor: '#FF88CC', name: 'RYŌIKI TENKAI — REN-AI JŌJITSU' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;
@@ -716,6 +720,27 @@ export default class GameScene extends Phaser.Scene {
             return true;
         });
 
+        // ── BEAM CLASH DETECTION ──
+        // Check if two opposing beams overlap (Love Beam vs any beam)
+        if (!this.beamClashActive) {
+            const beams = this.projectiles.filter(p => p.isAlive() && p.type === 'beam');
+            for (let i = 0; i < beams.length; i++) {
+                for (let j = i + 1; j < beams.length; j++) {
+                    const a = beams[i]; const b = beams[j];
+                    if (a.owner === b.owner) continue;
+                    if (a.direction === b.direction) continue;
+                    // Check overlap
+                    if (this.physics.overlap(a.getBody(), b.getBody())) {
+                        this.startBeamClash(a, b);
+                        break;
+                    }
+                }
+                if (this.beamClashActive) break;
+            }
+        } else {
+            this.updateBeamClash(delta);
+        }
+
         // Sure-Hit Ticks (only during Phase 2 — active domain combat)
         if (this.domainActive && this.domainOwner && !this.domainPhase1) {
             this.sureHitTimer += delta;
@@ -727,5 +752,81 @@ export default class GameScene extends Phaser.Scene {
                 this.domainOwner.applySureHitTick(target);
             }
         }
+    }
+
+    // ════════════════════════════════════════════════════════
+    // BEAM CLASH — Inline button-mashing QTE
+    // ════════════════════════════════════════════════════════
+    startBeamClash(beamA, beamB) {
+        this.beamClashActive = true;
+        this.beamA = beamA; this.beamB = beamB;
+        this.clashMeter = 50; // 0-100, 50 = center. <50 = B wins, >50 = A wins
+        this.clashTimer = 6000; // 6 seconds max
+        // Freeze both beams
+        beamA.sprite.body.setVelocityX(0); beamB.sprite.body.setVelocityX(0);
+        // Determine which is P1's beam
+        this.clashP1Beam = (beamA.owner === this.p1) ? 'A' : 'B';
+        // Create UI
+        const cx = GAME_WIDTH / 2; const cy = 80;
+        this.clashBg = this.add.graphics().setDepth(100);
+        this.clashBg.fillStyle(0x000000, 0.7); this.clashBg.fillRoundedRect(cx - 200, cy - 25, 400, 50, 8);
+        this.clashBg.lineStyle(3, 0xFFDD00, 1); this.clashBg.strokeRoundedRect(cx - 200, cy - 25, 400, 50, 8);
+        this.clashIndicator = this.add.graphics().setDepth(101);
+        this.clashText = this.add.text(cx, cy - 40, 'BEAM CLASH! MASH YOUR ATTACK KEY!', {
+            fontFamily: 'Arial Black', fontSize: '14px', color: '#FFDD00',
+            stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(101);
+        // Input listeners
+        this._clashP1Key = this.input.keyboard.addKey('J');
+        this._clashP2Key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE);
+    }
+
+    updateBeamClash(dt) {
+        if (!this.beamClashActive) return;
+        this.clashTimer -= dt;
+        // Mashing
+        if (Phaser.Input.Keyboard.JustDown(this._clashP1Key)) {
+            this.clashMeter += this.clashP1Beam === 'A' ? 3 : -3;
+        }
+        if (Phaser.Input.Keyboard.JustDown(this._clashP2Key)) {
+            this.clashMeter += this.clashP1Beam === 'A' ? -3 : 3;
+        }
+        this.clashMeter = Phaser.Math.Clamp(this.clashMeter, 0, 100);
+        // Draw meter
+        const cx = GAME_WIDTH / 2; const cy = 80;
+        this.clashIndicator.clear();
+        // P1 side (blue)
+        this.clashIndicator.fillStyle(0x4488FF, 0.8);
+        this.clashIndicator.fillRect(cx - 190, cy - 15, (this.clashMeter / 100) * 380, 30);
+        // P2 side (red)
+        this.clashIndicator.fillStyle(0xFF4444, 0.8);
+        this.clashIndicator.fillRect(cx - 190 + (this.clashMeter / 100) * 380, cy - 15, 380 - (this.clashMeter / 100) * 380, 30);
+        // Center marker
+        this.clashIndicator.fillStyle(0xFFDD00, 1);
+        this.clashIndicator.fillRect(cx - 190 + (this.clashMeter / 100) * 380 - 3, cy - 18, 6, 36);
+        // Check end
+        if (this.clashMeter <= 5 || this.clashMeter >= 95 || this.clashTimer <= 0) {
+            const p1Wins = this.clashMeter >= 50;
+            this.endBeamClash(p1Wins);
+        }
+    }
+
+    endBeamClash(p1Wins) {
+        const winner = p1Wins ? this.p1 : this.p2;
+        const loser = p1Wins ? this.p2 : this.p1;
+        // Destroy losing beam, keep winning beam going
+        const losingBeam = (this.beamA.owner === loser) ? this.beamA : this.beamB;
+        const winningBeam = (this.beamA.owner === winner) ? this.beamA : this.beamB;
+        if (losingBeam.isAlive()) losingBeam.destroy();
+        // Boost winning beam damage
+        if (winningBeam.isAlive()) winningBeam.damage = Math.floor(winningBeam.damage * 1.5);
+        // Loser takes splash damage
+        loser.takeDamage(80, (winner.sprite.x < loser.sprite.x ? 400 : -400), -200, 600);
+        if (this.screenEffects) { this.screenEffects.shake(0.05, 500); this.screenEffects.flash(0xFFFFFF, 200, 0.6); }
+        // Cleanup UI
+        if (this.clashBg) { this.clashBg.destroy(); this.clashBg = null; }
+        if (this.clashIndicator) { this.clashIndicator.destroy(); this.clashIndicator = null; }
+        if (this.clashText) { this.clashText.destroy(); this.clashText = null; }
+        this.beamClashActive = false;
     }
 }

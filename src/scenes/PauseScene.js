@@ -236,6 +236,29 @@ function getCharacterControls(charKey, playerIndex) {
                 `Ignora defensa, daño directo al HP`,
             ]
         });
+    } else if (charKey === 'YUTA') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS (YUTA + RIKA)',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `  Dash + 3 cortes de katana + golpe final de Rika`,
+                `${atkKeys.special}+${moveKeys.up} — Discurso Maldito  (25 CE)`,
+                `  Stun 2s en cono frontal (auto-daño 3%)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `  Onda de choque que IGNORA bloqueo`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `  Rayo de amor rosa gigante (CHOQUE con otros rayos)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `MENOR COSTO DE CE DEL JUEGO (60 CE)`,
+                `Efecto: COPIA las habilidades del rival`,
+                `  (excepto dominios) durante toda la duración`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──

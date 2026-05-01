@@ -422,6 +422,37 @@ export const CHARACTERS = {
         },
         domainBg: 'mahito_domain',
     },
+    YUTA: {
+        id: 'yuta',
+        name: 'Yuta Okkotsu',
+        title: 'Special Grade Sorcerer',
+        colors: {
+            primary: 0x111133,
+            secondary: 0xFF88CC,
+            energy: 0xFF66AA,
+            accent: 0xFF44AA,
+            skin: 0xF0D0B0,
+            hair: 0x222244,
+        },
+        stats: {
+            maxHp: 3200,
+            speed: 360,
+            power: 1.15,
+            defense: 1.0,
+            ceRegen: 4.0,
+            weight: 88,
+            jumpForce: -650,
+            domainDuration: 20000,
+            domainPhase1: 10000,
+        },
+        skills: {
+            skill1: { name: 'Katana Rush', cost: 18, damage: 60, type: 'melee_combo' },
+            skill2: { name: 'Thin Ice Breaker', cost: 30, damage: 75, type: 'shockwave' },
+            domain: { name: 'Authentic Mutual Love', cost: 60, sureHitType: 'copy' },
+            maximum: { name: 'Love Beam (Rika)', cost: 100, damage: 350, type: 'beam' },
+        },
+        domainBg: 'yuta_domain',
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────
