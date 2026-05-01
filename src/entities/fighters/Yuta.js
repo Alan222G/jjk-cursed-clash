@@ -282,20 +282,16 @@ export default class Yuta extends Fighter {
     }
 
     applySureHitTick(opponent) {
+        // Yuta's domain does NOT deal damage — it only lets him copy abilities
         if (!this.domainActive) return;
-        const soulDmg = 35 + Math.floor(Math.random() * 20);
-        opponent.hp = Math.max(0, opponent.hp - soulDmg);
-
-        const ox = opponent.sprite.x; const oy = opponent.sprite.y - 20;
-        if (Math.random() < 0.4) {
-            const txt = this.scene.add.text(ox + (Math.random()-0.5)*40, oy - 40, 'COPY', {
-                fontSize: '11px', color: '#FF88CC', stroke: '#000000', strokeThickness: 2
-            }).setDepth(15);
-            this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
+        // Visual reminder only
+        if (Math.random() < 0.2) {
+            const ox = opponent.sprite.x; const oy = opponent.sprite.y - 50;
+            const txt = this.scene.add.text(ox + (Math.random()-0.5)*30, oy, 'COPY ACTIVE', {
+                fontSize: '10px', color: '#FF88CC', stroke: '#000000', strokeThickness: 2
+            }).setOrigin(0.5).setDepth(15);
+            this.scene.tweens.add({ targets: txt, y: txt.y - 20, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
         }
-        const g = this.scene.add.graphics().setDepth(15);
-        g.fillStyle(0xFF66AA, 0.3); g.fillCircle(ox, oy, 25);
-        this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
     }
 
     update(time, dt) {

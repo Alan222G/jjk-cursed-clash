@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
 import { CHARACTERS, CE_COSTS, DOMAIN } from '../../config.js';
@@ -243,20 +244,56 @@ export default class Naoya extends Fighter {
 
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
-        // 10 cuts/sec ONLY if opponent is moving
+        // ONLY damages if opponent is MOVING
         const vx = Math.abs(opponent.sprite.body.velocity.x);
         const vy = Math.abs(opponent.sprite.body.velocity.y);
         const isMoving = vx > 10 || vy > 10 || opponent.stateMachine.isAny('walk', 'jump', 'fall', 'attack');
         if (!isMoving) return;
-        for (let i = 0; i < 10; i++) {
-            const ox = opponent.sprite.x + (Math.random() - 0.5) * 40;
-            const oy = opponent.sprite.y - 20 + (Math.random() - 0.5) * 50;
+
+        // 10x Sukuna's slashes — identical VFX, 10 times per tick
+        const ox = opponent.sprite.x;
+        const oy = opponent.sprite.y - 20;
+
+        for (let s = 0; s < 10; s++) {
             const g = this.scene.add.graphics().setDepth(15);
-            g.lineStyle(2, 0x00FFCC, 0.7);
-            g.beginPath(); g.moveTo(ox - 10, oy - 8); g.lineTo(ox + 10, oy + 8); g.strokePath();
-            this.scene.tweens.add({ targets: g, alpha: 0, duration: 100, onComplete: () => g.destroy() });
+            const slX = ox + (Math.random() - 0.5) * 60;
+            const slY = oy + (Math.random() - 0.5) * 70;
+            const isX = Math.random() > 0.5;
+
+            const drawCut = (startX, startY, endX, endY) => {
+                g.lineStyle(8, 0xFFFFFF, 0.9);
+                g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
+                g.lineStyle(4, 0x000000, 1);
+                g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
+            };
+
+            if (isX) {
+                drawCut(slX - 30, slY - 30, slX + 30, slY + 30);
+                drawCut(slX - 30, slY + 30, slX + 30, slY - 30);
+            } else {
+                for (let i = 0; i < 3; i++) {
+                    const yOff = (i - 1) * 20;
+                    drawCut(slX - 40, slY + yOff, slX + 40, slY + yOff);
+                }
+            }
+
+            this.scene.tweens.add({
+                targets: g, alpha: 0, duration: 120,
+                ease: 'Power2', onComplete: () => g.destroy()
+            });
         }
-        opponent.hp = Math.max(0, opponent.hp - 80);
+
+        // 10x Sukuna's damage per tick (50 * 10 = 500)
+        opponent.takeDamage(500, 30 * this.facing, 0, 150);
+
+        // Play slash sound
+        try {
+            const slashIdx = Phaser.Math.Between(1, 11);
+            this.scene.sound.play(`slash_${slashIdx}`, { volume: 0.8 });
+        } catch (e) {}
+
+        // Drain CE 3x faster (domain burns out quickly)
+        this.ceSystem.ce = Math.max(0, this.ceSystem.ce - 15);
     }
 
     onDomainEnd() {
