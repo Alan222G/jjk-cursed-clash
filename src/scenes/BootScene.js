@@ -72,6 +72,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('gojo_void', 'assets/domains/gojo_void.jpg');
         this.load.image('sukuna_shrine', 'assets/domains/sukuna_shrine.png');
         this.load.image('kenjaku_domain', 'assets/domains/kenjaku_domain.png');
+        this.load.image('jogo_domain', 'assets/domains/jogo_domain.jpg');
+        this.load.image('dagon_domain', 'assets/domains/dagon_domain.jpg');
         
         // Maps
         const maps = [
@@ -93,6 +95,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('portrait_kenjaku', 'assets/portraits/kenjaku_portrait.jpg');
         this.load.image('portrait_ishigori', 'assets/portraits/ishigori_portrait.jpg');
         this.load.image('portrait_kuroroshi', 'assets/portraits/kuroroshi_portrait.jpg');
+        this.load.image('portrait_jogo', 'assets/portraits/jogo_portrait.jpg');
+        this.load.image('portrait_dagon', 'assets/portraits/dagon_portrait.jpg');
 
         // Domain Clash Signs
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
@@ -100,6 +104,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('kenjaku_sign', 'assets/images/geto_sign.jpg');
         this.load.image('ishigori_sign', 'assets/images/ishigori_sign.jpg');
         this.load.image('kuroroshi_sign', 'assets/images/kuroroshi_sign.jpg');
+        this.load.image('jogo_sign', 'assets/images/jogo_sign.jpg');
+        this.load.image('dagon_sign', 'assets/images/dagon_sign.jpg');
         // Character Menu Avatars
         this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
@@ -107,6 +113,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_kenjaku', 'assets/menus/kenjaku_menu.jpg');
         this.load.image('menu_ishigori', 'assets/menus/ishigori_menu.jpg');
         this.load.image('menu_kuroroshi', 'assets/menus/kuroroshi_menu.jpg');
+        this.load.image('menu_jogo', 'assets/menus/jogo_menu.jpg');
+        this.load.image('menu_dagon', 'assets/menus/dagon_menu.jpg');
         // Character Sprites (Pixel Art)
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         

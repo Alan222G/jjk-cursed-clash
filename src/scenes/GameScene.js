@@ -18,6 +18,8 @@ import Hakari from '../entities/fighters/Hakari.js';
 import Higuruma from '../entities/fighters/Higuruma.js';
 import Nanami from '../entities/fighters/Nanami.js';
 import Todo from '../entities/fighters/Todo.js';
+import Jogo from '../entities/fighters/Jogo.js';
+import Dagon from '../entities/fighters/Dagon.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -128,6 +130,8 @@ export default class GameScene extends Phaser.Scene {
             'HIGURUMA': Higuruma,
             'NANAMI': Nanami,
             'TODO': Todo,
+            'JOGO': Jogo,
+            'DAGON': Dagon,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();

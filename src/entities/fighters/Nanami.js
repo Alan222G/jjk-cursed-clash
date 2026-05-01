@@ -52,7 +52,7 @@ export default class Nanami extends Fighter {
         if (isCrit) {
             this.nextHitGuaranteedBlackFlash = false; // consume mark
             const originalPower = this.power;
-            this.power *= 2.0;
+            this.power *= 2.6;
             
             if (this.scene.screenEffects) {
                 this.scene.screenEffects.hitFreeze(150);
@@ -173,7 +173,7 @@ export default class Nanami extends Fighter {
                 
                 if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 140) {
                     const isCrit = (i === 3) || this._check73Crit(target);
-                    const dmg = isCrit ? 20 * 2.0 : 20;
+                    const dmg = isCrit ? 20 * 2.6 : 20;
                     if (isCrit) {
                         if (this.scene.screenEffects) {
                             this.scene.screenEffects.hitFreeze(150);

@@ -523,6 +523,34 @@ export const CHARACTERS = {
         },
         domainBg: null,
     },
+    JOGO: {
+        id: 'jogo',
+        name: 'Jogo',
+        title: 'The Earth Disaster',
+        colors: { primary: 0x441111, secondary: 0xFF4400, energy: 0xFF6600, accent: 0xFF2200, skin: 0x665555, hair: 0x000000 },
+        stats: { maxHp: 2000, speed: 420, power: 1.6, defense: 0.70, ceRegen: 4.5, weight: 70, jumpForce: -700, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Ember Insects', cost: 20, damage: 45, type: 'projectile' },
+            skill2: { name: 'Volcanic Eruption', cost: 35, damage: 80, type: 'aoe' },
+            domain: { name: 'Coffin of Iron Mountain', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Maximum: Meteor', cost: 120, damage: 450, type: 'aoe' },
+        },
+        domainBg: 'jogo_domain',
+    },
+    DAGON: {
+        id: 'dagon',
+        name: 'Dagon',
+        title: 'The Sea Disaster',
+        colors: { primary: 0x112244, secondary: 0x0088FF, energy: 0x00CCFF, accent: 0x0066AA, skin: 0x992222, hair: 0x000000 },
+        stats: { maxHp: 4500, speed: 250, power: 0.9, defense: 1.40, ceRegen: 3.5, weight: 150, jumpForce: -550, domainDuration: 15000, domainPhase1: 8000 },
+        skills: {
+            skill1: { name: 'Shikigami Swarm', cost: 25, damage: 60, type: 'projectile' },
+            skill2: { name: 'Tide Disaster', cost: 30, damage: 50, type: 'projectile' },
+            domain: { name: 'Horizon of the Captivating Skandha', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Death Swarm', cost: 80, damage: 150, type: 'aoe' },
+        },
+        domainBg: 'dagon_domain',
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────
