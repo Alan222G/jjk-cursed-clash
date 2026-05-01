@@ -25,6 +25,12 @@ export default class Yuta extends Fighter {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
 
+        // ── COPY MODE: use opponent's abilities ──
+        if (this.copyActive && this._copiedOpponent) {
+            this.fireCopiedAbility();
+            return;
+        }
+
         if (tier >= 4 && this.input.isDown('DOWN')) {
             this.fireLoveBeam();
         } else if (tier >= 2 && this.input.isDown('UP')) {
@@ -34,6 +40,104 @@ export default class Yuta extends Fighter {
         } else if (tier >= 1) {
             this.castKatanaRush();
         }
+    }
+
+    // ═══════════════════════════════════════
+    // COPY ABILITY — Generic system that reads
+    // opponent's charData.skills and fires matching
+    // projectiles/melee from Yuta's position
+    // ═══════════════════════════════════════
+    fireCopiedAbility() {
+        const opp = this._copiedOpponent;
+        const sk = opp.charData.skills;
+        if (!sk) return;
+
+        if (this.input.isDown('DOWN') && sk.maximum) {
+            // Copy MAXIMUM (U+Down)
+            if (!this.ceSystem.spend(Math.floor(sk.maximum.cost * 0.7))) return;
+            this.fireCopiedProjectile(sk.maximum, 'maximum');
+        } else if (this.input.isDown('UP') && sk.skill2) {
+            // Copy SKILL2 as U+Up
+            if (!this.ceSystem.spend(Math.floor(sk.skill2.cost * 0.7))) return;
+            this.fireCopiedProjectile(sk.skill2, 'skill2');
+        } else if ((this.input.isDown('LEFT') || this.input.isDown('RIGHT')) && sk.skill2) {
+            // Copy SKILL2 as U+Dir
+            if (!this.ceSystem.spend(Math.floor(sk.skill2.cost * 0.7))) return;
+            this.fireCopiedProjectile(sk.skill2, 'skill2');
+        } else if (sk.skill1) {
+            // Copy SKILL1 (U)
+            if (!this.ceSystem.spend(Math.floor(sk.skill1.cost * 0.7))) return;
+            this.fireCopiedProjectile(sk.skill1, 'skill1');
+        }
+    }
+
+    fireCopiedProjectile(skillData, slotName) {
+        this.isCasting = true;
+        this.stateMachine.lock(800);
+        this.sprite.body.setVelocityX(0);
+
+        const opp = this._copiedOpponent;
+        const oppColor = opp.charData.colors?.energy || 0xFF66AA;
+        const dmg = Math.floor((skillData.damage || 50) * this.power);
+
+        // Show "COPY: [name]" text
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, `COPY: ${skillData.name}`, {
+            fontFamily: 'Arial Black', fontSize: '12px', color: '#FF88CC',
+            stroke: '#000000', strokeThickness: 2
+        }).setOrigin(0.5).setDepth(20);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+
+        try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
+
+        if (slotName === 'maximum') {
+            // Big projectile for maximum
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.flash(oppColor, 100, 0.3);
+                this.scene.screenEffects.shake(0.03, 400);
+            }
+            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 40, {
+                owner: this, damage: dmg,
+                knockbackX: 1000, knockbackY: -300,
+                stunDuration: 800, speed: 1200,
+                direction: this.facing, color: oppColor,
+                size: { w: 80, h: 50 }, lifetime: 1500, type: 'circle',
+            });
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        } else if (skillData.type === 'slash' || skillData.type === 'melee' || skillData.type === 'melee_combo') {
+            // Melee copy — direct hit
+            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 140) {
+                target.takeDamage(dmg, 250 * this.facing, -100, 400);
+                // Slash VFX in opponent's color
+                const g = this.scene.add.graphics().setDepth(16);
+                g.lineStyle(4, oppColor, 0.8);
+                g.beginPath(); g.moveTo(target.sprite.x - 20, target.sprite.y - 40);
+                g.lineTo(target.sprite.x + 20, target.sprite.y - 10); g.strokePath();
+                this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+            }
+        } else {
+            // Projectile copy — generic energy ball
+            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 30, {
+                owner: this, damage: dmg,
+                knockbackX: 400, knockbackY: -100,
+                stunDuration: 400, speed: 800,
+                direction: this.facing, color: oppColor,
+                size: { w: 40, h: 30 }, lifetime: 1200, type: 'normal',
+            });
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        }
+
+        // Rika arm flash
+        const g2 = this.scene.add.graphics().setDepth(17);
+        g2.fillStyle(0xFF88CC, 0.4);
+        g2.fillEllipse(this.sprite.x + 30 * this.facing, this.sprite.y - 40, 30, 40);
+        this.scene.tweens.add({ targets: g2, alpha: 0, duration: 300, onComplete: () => g2.destroy() });
+
+        this.scene.time.delayedCall(600, () => {
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            this.stateMachine.setState('idle');
+        });
     }
 
     castWithAudio(sfxKey, callback, fallbackMs) {
@@ -259,22 +363,14 @@ export default class Yuta extends Fighter {
         this.ceSystem.startDomain();
         if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
 
-        // ── COPY opponent's ENTIRE special attack method ──
+        // ── Store opponent ref for copy system ──
         const opponent = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (opponent) {
             this.copyActive = true;
             this.copyTimer = this.charData.stats.domainDuration;
-            // Store originals
-            this._origTrySpecialAttack = this.trySpecialAttack.bind(this);
+            this._copiedOpponent = opponent;
             this._origPower = this.power;
             this.power = Math.max(this.power, opponent.power || 1.0);
-            // Deep-copy the opponent's trySpecialAttack by binding it to Yuta
-            this._copiedOpponent = opponent;
-            this.trySpecialAttack = function() {
-                if (this.isCasting) return;
-                // Use opponent's special attack logic but with Yuta as 'this'
-                opponent.trySpecialAttack.call(this);
-            };
         }
 
         try { this.scene.sound.play('sfx_purple', { volume: (window.gameSettings?.sfx ?? 50) / 100 }); } catch(e){}
@@ -302,14 +398,8 @@ export default class Yuta extends Fighter {
             this.copyTimer -= dt;
             if (this.copyTimer <= 0 || !this.ceSystem.isDomainActive) {
                 this.copyActive = false;
-                this.copiedSkills = null;
                 this._copiedOpponent = null;
                 this.power = this._origPower || this.charData.stats.power || 1.0;
-                // Restore original trySpecialAttack
-                if (this._origTrySpecialAttack) {
-                    this.trySpecialAttack = Yuta.prototype.trySpecialAttack.bind(this);
-                    this._origTrySpecialAttack = null;
-                }
             }
         }
     }
@@ -331,16 +421,89 @@ export default class Yuta extends Fighter {
         const hairColor = isFlashing ? 0xFFFFFF : 0x222244;
         const armExtend = this.attackSwing * 40;
 
-        // ── RIKA (ghostly behind Yuta) ──
-        const rikaAlpha = 0.15 + Math.sin((this.animTimer || 0) * 0.003) * 0.08;
-        const rkx = x - 30 * f; const rky = masterY - 50;
-        g.fillStyle(0xFF88CC, rikaAlpha);
-        g.fillEllipse(rkx, rky, 45, 65);
-        g.fillStyle(0xFFFFFF, rikaAlpha * 0.6);
-        g.fillCircle(rkx, rky - 18, 12);
-        g.fillStyle(0xFF44AA, rikaAlpha * 1.5);
-        g.fillCircle(rkx - 4, rky - 20, 2);
-        g.fillCircle(rkx + 4, rky - 20, 2);
+        // ── RIKA (monstrous form behind Yuta) ──
+        const rikaAlpha = this.copyActive
+            ? (0.35 + Math.sin((this.animTimer || 0) * 0.003) * 0.1)
+            : (0.12 + Math.sin((this.animTimer || 0) * 0.003) * 0.06);
+        const rkx = x - 25 * f;
+        const rky = masterY - 55;
+        const rt = (this.animTimer || 0) * 0.003;
+
+        // Large dark body mass
+        g.fillStyle(0x1A0A22, rikaAlpha);
+        g.fillEllipse(rkx, rky + 10, 55, 70);
+        // Armored torso ridges
+        g.fillStyle(0x2A1533, rikaAlpha * 0.8);
+        g.fillEllipse(rkx, rky + 5, 45, 55);
+        g.lineStyle(1, 0x441155, rikaAlpha * 0.5);
+        g.strokeEllipse(rkx, rky + 5, 45, 55);
+
+        // Head — large, slightly pointed
+        g.fillStyle(0x1A0A22, rikaAlpha * 1.2);
+        g.beginPath();
+        g.moveTo(rkx - 18, rky - 5);
+        g.lineTo(rkx - 14, rky - 28);
+        g.lineTo(rkx - 5, rky - 35);
+        g.lineTo(rkx + 5, rky - 35);
+        g.lineTo(rkx + 14, rky - 28);
+        g.lineTo(rkx + 18, rky - 5);
+        g.fillPath();
+        // Pointed ears
+        g.fillStyle(0x1A0A22, rikaAlpha);
+        g.beginPath(); g.moveTo(rkx - 16, rky - 22); g.lineTo(rkx - 25, rky - 38); g.lineTo(rkx - 10, rky - 25); g.fillPath();
+        g.beginPath(); g.moveTo(rkx + 16, rky - 22); g.lineTo(rkx + 25, rky - 38); g.lineTo(rkx + 10, rky - 25); g.fillPath();
+
+        // SINGLE CYCLOPS EYE (large, glowing)
+        g.fillStyle(0x000000, rikaAlpha * 1.5);
+        g.fillEllipse(rkx, rky - 16, 10, 12);
+        const eyeGlow = 0.5 + Math.sin(rt * 3) * 0.3;
+        g.fillStyle(0xFF2288, rikaAlpha * eyeGlow * 2);
+        g.fillCircle(rkx, rky - 16, 4);
+        g.fillStyle(0xFFFFFF, rikaAlpha * eyeGlow);
+        g.fillCircle(rkx - 1, rky - 17, 1.5);
+
+        // Wide mouth with fangs
+        g.fillStyle(0x000000, rikaAlpha * 0.8);
+        g.beginPath();
+        g.moveTo(rkx - 10, rky - 5); g.lineTo(rkx + 10, rky - 5);
+        g.lineTo(rkx + 7, rky - 1); g.lineTo(rkx - 7, rky - 1);
+        g.fillPath();
+        // Fangs
+        g.fillStyle(0xDDCCDD, rikaAlpha);
+        g.fillTriangle(rkx - 7, rky - 5, rkx - 5, rky - 5, rkx - 6, rky - 1);
+        g.fillTriangle(rkx + 5, rky - 5, rkx + 7, rky - 5, rkx + 6, rky - 1);
+        g.fillTriangle(rkx - 2, rky - 5, rkx + 2, rky - 5, rkx, rky - 2);
+
+        // CLAWS reaching forward (toward Yuta's front)
+        const clawAlpha = rikaAlpha * (this.copyActive ? 1.2 : 0.6);
+        g.lineStyle(3, 0x1A0A22, clawAlpha);
+        // Left claw arm
+        g.beginPath(); g.moveTo(rkx - 20, rky + 15);
+        g.lineTo(x - 10, masterY - 20); g.strokePath();
+        g.fillStyle(0x1A0A22, clawAlpha);
+        for (let c = 0; c < 3; c++) {
+            const cx = x - 15 + c * 5; const cy = masterY - 22 - c * 3;
+            g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx - 3, cy - 8); g.lineTo(cx + 1, cy - 2); g.fillPath();
+        }
+        // Right claw arm
+        g.lineStyle(3, 0x1A0A22, clawAlpha);
+        g.beginPath(); g.moveTo(rkx + 20, rky + 15);
+        g.lineTo(x + 10, masterY - 20); g.strokePath();
+        g.fillStyle(0x1A0A22, clawAlpha);
+        for (let c = 0; c < 3; c++) {
+            const cx = x + 5 + c * 5; const cy = masterY - 22 - c * 3;
+            g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + 3, cy - 8); g.lineTo(cx - 1, cy - 2); g.fillPath();
+        }
+
+        // Dark tendrils / hair flowing
+        g.lineStyle(2, 0x110818, rikaAlpha * 0.7);
+        for (let i = 0; i < 4; i++) {
+            const wave = Math.sin(rt + i * 1.5) * 8;
+            g.beginPath();
+            g.moveTo(rkx - 12 + i * 8, rky - 30);
+            g.lineTo(rkx - 15 + i * 10 + wave, rky - 50 - i * 3);
+            g.strokePath();
+        }
 
         // LEGS
         const legY = masterY + 8;
