@@ -97,6 +97,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('portrait_kuroroshi', 'assets/portraits/kuroroshi_portrait.jpg');
         this.load.image('portrait_jogo', 'assets/portraits/jogo_portrait.jpg');
         this.load.image('portrait_dagon', 'assets/portraits/dagon_portrait.jpg');
+        this.load.image('portrait_hanami', 'assets/portraits/jogo_portrait.jpg');
+        this.load.image('portrait_choso', 'assets/portraits/sukuna_portrait.jpg');
 
         // Domain Clash Signs
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
@@ -106,6 +108,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('kuroroshi_sign', 'assets/images/kuroroshi_sign.jpg');
         this.load.image('jogo_sign', 'assets/images/jogo_sign.jpg');
         this.load.image('dagon_sign', 'assets/images/dagon_sign.jpg');
+        this.load.image('hanami_sign', 'assets/images/jogo_sign.jpg');
+        this.load.image('choso_sign', 'assets/images/sukuna_sign.jpg');
         // Character Menu Avatars
         this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
@@ -115,6 +119,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_kuroroshi', 'assets/menus/kuroroshi_menu.jpg');
         this.load.image('menu_jogo', 'assets/menus/jogo_menu.jpg');
         this.load.image('menu_dagon', 'assets/menus/dagon_menu.jpg');
+        this.load.image('menu_hanami', 'assets/menus/jogo_menu.jpg');
+        this.load.image('menu_choso', 'assets/menus/sukuna_menu.jpg');
         // Character Sprites (Pixel Art)
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         
@@ -128,6 +134,7 @@ export default class BootScene extends Phaser.Scene {
         this.load.audio('sukuna_domain_voice', 'assets/audio/sukuna_domain.m4a');
         // Black Flash Assets & Domain Signs
         this.load.image('black_flash', 'assets/images/black_flash.png');
+        this.load.image('wing_king_placeholder', 'assets/images/black_flash.png'); // Placeholder for wings
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
         this.load.image('sukuna_sign', 'assets/images/sukuna_sign.jpg');
         this.load.image('ishigori_sign', 'assets/images/ishigori_sign.jpg');
