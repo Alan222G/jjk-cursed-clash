@@ -729,6 +729,13 @@ export default class GameScene extends Phaser.Scene {
         
         this.p1.update(time, delta);
         this.p2.update(time, delta);
+        
+        // Update NPCs (Mahoraga)
+        if (this.npcs) {
+            for (let npc of this.npcs) {
+                if (npc.update) npc.update(time, delta);
+            }
+        }
 
         this.hud.update(this.p1, this.p2);
 
@@ -739,19 +746,29 @@ export default class GameScene extends Phaser.Scene {
             if (!p.isAlive()) return false;
             
             // Collision check
-            const target = p.owner === this.p1 ? this.p2 : this.p1;
+            const target = p.owner === this.p1 ? this.p2 : (p.owner === this.p2 ? this.p1 : p.owner.target);
+            let hitTarget = null;
+            
             if (this.physics.overlap(p.getBody(), target.sprite)) {
+                hitTarget = target;
+            } else if (target && target.mahoragaSummoned && this.mahoraga && !this.mahoraga.isDead && p.owner !== this.mahoraga) {
+                if (this.physics.overlap(p.getBody(), this.mahoraga.sprite)) {
+                    hitTarget = this.mahoraga;
+                }
+            }
+
+            if (hitTarget) {
                 // Small projectiles bounce off Infinity
                 const bigTypes = ['fire_arrow', 'beam', 'uzumaki', 'worm'];
-                if (target.infinityActive && !bigTypes.includes(p.type)) {
+                if (hitTarget.infinityActive && !bigTypes.includes(p.type)) {
                     // Reflect the projectile back
                     p.direction *= -1;
                     p.sprite.body.setVelocityX(p.speed * p.direction);
-                    p.owner = target; // Now it belongs to the reflector
+                    p.owner = hitTarget; // Now it belongs to the reflector
                     if (this.screenEffects) this.screenEffects.shake(0.003, 80);
                     return true;
                 }
-                p.onHit(target);
+                p.onHit(hitTarget);
                 return p.isAlive();
             }
             

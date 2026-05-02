@@ -358,7 +358,8 @@ export const CHARACTERS = {
             domain: { name: 'Malevolent Shrine — Barrierless', cost: 100, sureHitType: 'dps' },
             maximum: { name: 'Divine Flame — Fuga', cost: 120, damage: 700, type: 'bleed_net' },
         },
-        domainBg: 'sukuna_shrine',
+        domainBg: 'assets/domains/sukuna_shrine.png',
+        isCurse: true,
     },
     YUJI: {
         id: 'yuji',
@@ -420,7 +421,8 @@ export const CHARACTERS = {
             domain: { name: 'Self-Embodiment of Perfection', cost: 100, sureHitType: 'soul_touch' },
             maximum: { name: 'Instant Spirit Body', cost: 120, damage: 0, type: 'transform' },
         },
-        domainBg: 'mahito_domain',
+        domainBg: 'dagon_domain',
+        isCurse: true,
     },
     YUTA: {
         id: 'yuta',
@@ -536,6 +538,7 @@ export const CHARACTERS = {
             maximum: { name: 'Maximum: Meteor', cost: 120, damage: 450, type: 'aoe' },
         },
         domainBg: 'sukuna_shrine',
+        isCurse: true,
     },
     DAGON: {
         id: 'dagon',
@@ -549,7 +552,8 @@ export const CHARACTERS = {
             domain: { name: 'Horizon of the Captivating Skandha', cost: 100, sureHitType: 'dps' },
             maximum: { name: 'Leviathan Crash', cost: 100, damage: 500, type: 'aoe' },
         },
-        domainBg: 'kenjaku_domain',
+        domainBg: 'jogo_domain',
+        isCurse: true,
     },
     HANAMI: {
         id: 'hanami',
@@ -564,6 +568,7 @@ export const CHARACTERS = {
             maximum: { name: 'Disaster Arm', cost: 80, damage: 150, type: 'heavy_block_breaker' },
         },
         domainBg: 'kenjaku_domain', // Placeholder
+        isCurse: true,
     },
     CHOSO: {
         id: 'choso',
@@ -578,6 +583,7 @@ export const CHARACTERS = {
             maximum: { name: 'Slicing Exorcism', cost: 55, damage: 90, type: 'dash_slice' },
         },
         domainBg: null,
+        isCurse: true,
     },
     MEGUMI: {
         id: 'megumi',
@@ -592,6 +598,22 @@ export const CHARACTERS = {
             skill4: { name: 'Rabbit Escape', cost: 25, damage: 0, type: 'utility_evade' },
             domain: { name: 'Chimera Shadow Garden', cost: 100, sureHitType: 'clones' },
             maximum: { name: 'Eight-Handled Sword Mahoraga', cost: 120, damage: 1000, type: 'one_shot_risk' },
+        },
+        domainBg: 'jogo_domain', // Placeholder
+        isCurse: true,
+    },
+    MAHORAGA: {
+        id: 'mahoraga',
+        name: 'Eight-Handled Sword Mahoraga',
+        title: 'Divine General',
+        colors: { primary: 0xFFFFFF, secondary: 0xAAAAAA, energy: 0xFFFFFF, accent: 0x000000, skin: 0xFFFFFF, hair: 0x000000 },
+        stats: { maxHp: 5000, speed: 240, power: 1.5, defense: 1.0, ceRegen: 5.0, weight: 500, jumpForce: -500, domainDuration: 0, domainPhase1: 0 },
+        skills: {
+            skill1: { name: 'Extermination Sword', cost: 30, damage: 90, type: 'physical_special', guardBreak: true },
+            skill2: { name: 'Adaptation Charge', cost: 40, damage: 60, type: 'dash_armor' },
+            skill3: { name: 'Ground Smash', cost: 35, damage: 70, type: 'physical_area' },
+            skill4: { name: 'The Wheel', cost: 20, damage: 0, type: 'utility_heal' },
+            domain: { name: 'Total Adaptation', cost: 100, sureHitType: 'immune' },
         },
         domainBg: 'kenjaku_domain', // Placeholder
     },

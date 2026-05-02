@@ -1,5 +1,6 @@
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
+import MahoragaNPC from './MahoragaNPC.js';
 import { CHARACTERS, CE_COSTS, PHYSICS, GAME_WIDTH, GAME_HEIGHT } from '../../config.js';
 
 export default class Megumi extends Fighter {
@@ -209,35 +210,26 @@ export default class Megumi extends Fighter {
             // Penalty: Health to 1000
             this.hp = Math.min(this.hp, 1000);
             
+            // Spawn Mahoraga NPC
+            const mahoraga = new MahoragaNPC(this.scene, this.sprite.x + 100 * this.facing, PHYSICS.GROUND_Y - 50, this);
+            
+            // Register Mahoraga with GameScene
+            if (!this.scene.npcs) this.scene.npcs = [];
+            this.scene.npcs.push(mahoraga);
+            this.scene.mahoraga = mahoraga; // Reference for GameScene collisions
+
+            // Add physics overlaps
+            this.scene.physics.add.overlap(this.opponent.hitbox, mahoraga.sprite, () => {
+                this.opponent.onHitOpponent(mahoraga);
+            });
+            this.scene.physics.add.overlap(mahoraga.hitbox, this.opponent.sprite, () => {
+                mahoraga.onHitOpponent(this.opponent);
+            });
+
             // Slow penalty
             this.speed = this.charData.stats.speed * 0.4;
             this.scene.time.delayedCall(10000, () => {
                 this.speed = this.charData.stats.speed;
-                this.mahoragaSummoned = false;
-            });
-
-            // The attack (Mahoraga NPC-like slash)
-            const mahoraga = this.scene.add.rectangle(this.sprite.x + 200 * this.facing, this.sprite.y - 100, 300, 500, 0xFFFFFF, 0.2).setDepth(40);
-            const sword = this.scene.add.rectangle(this.sprite.x + 100 * this.facing, this.sprite.y, 400, 40, 0xFFFFFF).setDepth(41).setOrigin(0, 0.5);
-            sword.setRotation(this.facing > 0 ? -Math.PI/4 : Math.PI/4);
-
-            try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.2 }); } catch(e) {}
-            
-            this.scene.tweens.add({
-                targets: sword,
-                rotation: this.facing > 0 ? Math.PI/4 : -Math.PI/4,
-                duration: 200,
-                onComplete: () => {
-                    const target = this.opponent;
-                    const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, target.sprite.x, target.sprite.y);
-                    if (dist < 500) {
-                        target.takeDamage(1000, 1500 * this.facing, -400, 1000, true);
-                    }
-                    this.scene.time.delayedCall(500, () => {
-                        mahoraga.destroy();
-                        sword.destroy();
-                    });
-                }
             });
         });
     }
