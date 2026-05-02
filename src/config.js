@@ -551,37 +551,6 @@ export const CHARACTERS = {
         },
         domainBg: 'kenjaku_domain',
     },
-};
-
-// ── Visual Constants ─────────────────────────────────────
-export const HUD_STYLE = {
-    BAR_WIDTH: 510,
-    BAR_HEIGHT: 28,
-    CE_BAR_HEIGHT: 14,
-    BORDER_WIDTH: 3,
-    BORDER_COLOR: 0xD4A843,
-    BORDER_COLOR_DARK: 0x8B6914,
-    HP_COLOR_HIGH: 0x00CC44,
-    HP_COLOR_MED: 0xCCAA00,
-    HP_COLOR_LOW: 0xCC2200,
-    CE_COLOR: 0x7744FF,
-    CE_GLOW: 0xAA66FF,
-    BG_COLOR: 0x1A1A2E,
-    AVATAR_RADIUS: 40,
-    AVATAR_BORDER: 4,
-    MARGIN: 20,
-    TIMER_Y: 18,
-};
-
-export const COLORS = {
-    MENU_BG: 0x0A0A12,
-    MENU_ACCENT: 0x7722CC,
-    MENU_GOLD: 0xD4A843,
-    MENU_TEXT: 0xFFFFFF,
-    MENU_TEXT_DIM: 0x888899,
-    DAMAGE_NORMAL: 0xFF4444,
-    DAMAGE_CE: 0xBB44FF,
-    DAMAGE_CRITICAL: 0xFFAA00,
     HANAMI: {
         id: 'hanami',
         name: 'Hanami',
@@ -644,4 +613,34 @@ export const COLORS = {
         },
         domainBg: null,
     },
+};
+
+// ── Visual Constants ─────────────────────────────────────
+export const HUD_STYLE = {
+    BAR_WIDTH: 510,
+    BAR_HEIGHT: 28,
+    CE_BAR_HEIGHT: 14,
+    BORDER_WIDTH: 3,
+    BORDER_COLOR: 0xD4A843,
+    BORDER_COLOR_DARK: 0x8B6914,
+    HP_COLOR_HIGH: 0x00CC44,
+    HP_COLOR_MED: 0xCCAA00,
+    HP_COLOR_LOW: 0xCC2200,
+    CE_COLOR: 0x7744FF,
+    CE_GLOW: 0xAA66FF,
+    BG_COLOR: 0x1A1A2E,
+    AVATAR_RADIUS: 40,
+    AVATAR_BORDER: 4,
+    MARGIN: 20,
+    TIMER_Y: 18,
+};
+
+export const COLORS = {
+    MENU_BG: 0x0A0A12,
+    MENU_ACCENT: 0x7722CC,
+    MENU_GOLD: 0xD4A843,
+    MENU_TEXT: 0xFFFFFF,
+    MENU_TEXT_DIM: 0x888899,
+    DAMAGE_NORMAL: 0xFF4444,
+    DAMAGE_CE: 0xBB44FF,
 };
