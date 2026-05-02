@@ -579,6 +579,22 @@ export const CHARACTERS = {
         },
         domainBg: null,
     },
+    MEGUMI: {
+        id: 'megumi',
+        name: 'Megumi Fushiguro',
+        title: 'Ten Shadows Sorcerer',
+        colors: { primary: 0x000033, secondary: 0x006633, energy: 0x00AAFF, accent: 0xFFFFFF, skin: 0xF5DEB3, hair: 0x000000 },
+        stats: { maxHp: 2800, speed: 360, power: 1.0, defense: 0.9, ceRegen: 4.0, weight: 80, jumpForce: -650, domainDuration: 20000, domainPhase1: 10000 },
+        skills: {
+            skill1: { name: 'Divine Dogs: Totality', cost: 20, damage: 40, type: 'dash_bite' },
+            skill2: { name: 'Nue: Electric Dive', cost: 35, damage: 55, type: 'stun_projectile' },
+            skill3: { name: 'Toad & Serpent', cost: 40, damage: 60, type: 'grab_launch' },
+            skill4: { name: 'Rabbit Escape', cost: 25, damage: 0, type: 'utility_evade' },
+            domain: { name: 'Chimera Shadow Garden', cost: 100, sureHitType: 'clones' },
+            maximum: { name: 'Eight-Handled Sword Mahoraga', cost: 120, damage: 1000, type: 'one_shot_risk' },
+        },
+        domainBg: 'kenjaku_domain', // Placeholder
+    },
 };
 
 // ── Visual Constants ─────────────────────────────────────

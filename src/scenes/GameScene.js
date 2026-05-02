@@ -22,6 +22,7 @@ import Jogo from '../entities/fighters/Jogo.js';
 import Dagon from '../entities/fighters/Dagon.js';
 import Hanami from '../entities/fighters/Hanami.js';
 import Choso from '../entities/fighters/Choso.js';
+import Megumi from '../entities/fighters/Megumi.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -136,6 +137,7 @@ export default class GameScene extends Phaser.Scene {
             'DAGON': Dagon,
             'HANAMI': Hanami,
             'CHOSO': Choso,
+            'MEGUMI': Megumi,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();
@@ -191,6 +193,7 @@ export default class GameScene extends Phaser.Scene {
             DAGON:    { voice: 'gojo_domain_voice',    sign: 'dagon_sign',  color: 0x0088FF, bg: 0x001122, lineColor: 0x00CCFF, textColor: '#0088FF', name: 'RYŌIKI TENKAI — TŌIN DONSHI' },
             HANAMI:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x32CD32, bg: 0x002200, lineColor: 0x228B22, textColor: '#32CD32', name: 'RYŌIKI TENKAI — DAICHI NO MEGUMI' },
             CHOSO:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xDC143C, bg: 0x220000, lineColor: 0x8B0000, textColor: '#DC143C', name: 'MAXIMUM CONVERGENCE' },
+            MEGUMI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0x001133, bg: 0x000000, lineColor: 0x333333, textColor: '#FFFFFF', name: 'RYŌIKI TENKAI — CHIMERA SHADOW GARDEN' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;
