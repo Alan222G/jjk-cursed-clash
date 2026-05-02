@@ -535,7 +535,7 @@ export const CHARACTERS = {
             domain: { name: 'Coffin of Iron Mountain', cost: 100, sureHitType: 'dps' },
             maximum: { name: 'Maximum: Meteor', cost: 120, damage: 450, type: 'aoe' },
         },
-        domainBg: 'jogo_domain',
+        domainBg: 'sukuna_shrine',
     },
     DAGON: {
         id: 'dagon',
@@ -549,7 +549,7 @@ export const CHARACTERS = {
             domain: { name: 'Horizon of the Captivating Skandha', cost: 100, sureHitType: 'dps' },
             maximum: { name: 'Leviathan Crash', cost: 100, damage: 500, type: 'aoe' },
         },
-        domainBg: 'dagon_domain',
+        domainBg: 'kenjaku_domain',
     },
 };
 

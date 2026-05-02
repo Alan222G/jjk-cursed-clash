@@ -48,8 +48,10 @@ export default class Jogo extends Fighter {
                     
                     // Simple seeking behavior
                     const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-                    insect.update = (time, dt) => {
-                        if (!target || target.isDead) return;
+                    const originalUpdate = insect.update.bind(insect);
+                    insect.update = (dt) => {
+                        originalUpdate(dt);
+                        if (!target || target.isDead || !insect.isAlive()) return;
                         const dx = target.sprite.x - insect.sprite.x;
                         const dy = target.sprite.y - insect.sprite.y;
                         const angle = Math.atan2(dy, dx);
@@ -279,7 +281,7 @@ export default class Jogo extends Fighter {
         // Domain Logic
         if (this.scene.domainActive && this.scene.domainOwner === this && !this.scene.domainPhase1) {
             // Apply constant burn inside domain
-            if (target && target.burnTimer <= 0) {
+            if (target && (!target.burnTimer || target.burnTimer <= 0)) {
                 this.applyBurn(target);
             }
             // Domain sure-hit: attacks cannot be blocked/dodged
