@@ -322,7 +322,7 @@ export default class Higuruma extends Fighter {
                 if (this.target && !oppChoice && !this.target.isAI) oppChoice = getChoice(this.target);
                 
                 if (timeLeft <= 0 || (higuChoice && oppChoice)) {
-                    pollEvent.remove();
+                    pollEvent.destroy();
                     
                     // Default to Silence if nothing was pressed
                     if (!higuChoice) higuChoice = 'SILENCE';

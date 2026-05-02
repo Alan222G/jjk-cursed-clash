@@ -178,7 +178,7 @@ export default class HUD {
 
     stopTimer() {
         if (this.timerEvent) {
-            this.timerEvent.remove();
+            this.timerEvent.destroy();
             this.timerEvent = null;
         }
     }

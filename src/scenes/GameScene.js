@@ -459,7 +459,7 @@ export default class GameScene extends Phaser.Scene {
         
         // 1. Stop current domain progression
         try { this.sound.stopAll(); } catch(e) {}
-        if (this.domainPhase1Timer) { this.domainPhase1Timer.remove(); }
+        if (this.domainPhase1Timer) { this.domainPhase1Timer.destroy(); }
         if (this.currentDomainVoice) {
             try { this.currentDomainVoice.stop(); } catch(e) {}
         }

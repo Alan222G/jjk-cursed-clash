@@ -736,7 +736,7 @@ export default class Fighter {
                 opponent.sprite.body.setVelocityY(0);
                 // Cancel the grace timer since we connected
                 if (this._launcherGravityTimer) {
-                    this._launcherGravityTimer.remove();
+                    this._launcherGravityTimer.destroy();
                     this._launcherGravityTimer = null;
                 }
             }
@@ -770,10 +770,10 @@ export default class Fighter {
                                 this.scene.screenEffects.hitFreeze(120);
                                 this.scene.screenEffects.flash(0xFFFFFF, 100, 0.3);
                             }
-                            checkGround.remove();
+                            checkGround.destroy();
                         }
                     } else {
-                        checkGround.remove();
+                        checkGround.destroy();
                     }
                 },
                 loop: true,

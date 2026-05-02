@@ -299,7 +299,7 @@ export default class Hakari extends Fighter {
                     t.setText(symbols[Math.floor(Math.random() * symbols.length)]);
                 });
                 if (spinCount >= maxSpins) {
-                    spinInterval.remove();
+                    spinInterval.destroy();
                     this._resolveSlot(reelTexts, attemptTxt);
                 }
             },
@@ -384,7 +384,7 @@ export default class Hakari extends Fighter {
         this.stateMachine.unlock();
         this.stateMachine.setState('idle');
         if (this._domainTimerText) { this._domainTimerText.destroy(); this._domainTimerText = null; }
-        if (this._domainRoundTimer) { this._domainRoundTimer.remove(); this._domainRoundTimer = null; }
+        if (this._domainRoundTimer) { this._domainRoundTimer.destroy(); this._domainRoundTimer = null; }
     }
 
     applySureHitTick(opponent) { }

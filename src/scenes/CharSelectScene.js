@@ -841,7 +841,7 @@ export default class CharSelectScene extends Phaser.Scene {
         this.adminModalOpen = false;
 
         if (this.cursorBlink) {
-            this.cursorBlink.remove();
+            this.cursorBlink.destroy();
             this.cursorBlink = null;
         }
 
