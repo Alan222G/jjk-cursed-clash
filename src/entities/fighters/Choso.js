@@ -67,7 +67,7 @@ export default class Choso extends Fighter {
                 color: 0xDC143C,
                 size: { w: 80, h: 8 },
                 lifetime: 1000,
-                type: 'beam',
+                type: 'normal', // Was 'beam', which caused infinite Kamehameha logic and freezes
                 onHitCallback: (p, victim) => {
                     this.applyBloodPoison(victim);
                     return false;
@@ -77,15 +77,14 @@ export default class Choso extends Fighter {
             // Projectile clash logic
             proj.update = function(dt) {
                 if (!this.alive) return;
-                this.timer += dt;
-                if (this.timer >= this.lifetime || this.sprite.x < -50 || this.sprite.x > 1330) {
-                    this.destroy(); return;
-                }
                 
+                // Call original Projectile update so trail and graphics render properly
+                Projectile.prototype.update.call(this, dt);
+
                 // Check collision with other projectiles (Hanami's Wood Buds, etc.)
                 if (this.scene.projectiles) {
                     for (let other of this.scene.projectiles) {
-                        if (other.owner !== this.owner && other.alive) {
+                        if (other.owner !== this.owner && other.alive && other.sprite && other.sprite.active) {
                             const bounds1 = this.sprite.getBounds();
                             const bounds2 = other.sprite.getBounds();
                             if (Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2)) {
@@ -279,7 +278,7 @@ export default class Choso extends Fighter {
                         color: 0xDC143C,
                         size: { w: 30, h: 6 },
                         lifetime: 1000,
-                        type: 'beam',
+                        type: 'normal', // Was 'beam'
                         onHitCallback: (p, victim) => {
                             this.applyBloodPoison(victim);
                             return false;

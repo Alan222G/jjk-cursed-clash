@@ -98,7 +98,7 @@ export default class Hanami extends Fighter {
 
         // Create a fast ground-hugging projectile that launches upward
         const px = this.sprite.x + 40 * this.facing;
-        const py = PHYSICS.GROUND_Y - 20;
+        const py = this.sprite.y + 70; // At feet level
 
         const proj = new Projectile(this.scene, px, py, {
             owner: this,
@@ -124,7 +124,8 @@ export default class Hanami extends Fighter {
             
             // Spawn roots as it travels
             if (this.timer % 50 < 20) {
-                const root = this.scene.add.rectangle(this.sprite.x, PHYSICS.GROUND_Y, 20, 80, 0x8B4513, 1).setOrigin(0.5, 1);
+                const groundY = this.sprite.y; // The projectile's Y is already at ground level
+                const root = this.scene.add.rectangle(this.sprite.x, groundY, 20, 80, 0x8B4513, 1).setOrigin(0.5, 1);
                 root.scaleY = 0; // Start hidden underground
                 this.scene.tweens.add({
                     targets: root,
@@ -207,8 +208,8 @@ export default class Hanami extends Fighter {
             this.flowerFieldGraphics.clear();
             this.flowerFieldGraphics.lineStyle(4, 0xFF66AA, 0.5);
             this.flowerFieldGraphics.fillStyle(0xFF66AA, 0.15);
-            this.flowerFieldGraphics.fillCircle(this.sprite.x, PHYSICS.GROUND_Y, 250);
-            this.flowerFieldGraphics.strokeCircle(this.sprite.x, PHYSICS.GROUND_Y, 250);
+            this.flowerFieldGraphics.fillCircle(this.sprite.x, this.sprite.y + 70, 250);
+            this.flowerFieldGraphics.strokeCircle(this.sprite.x, this.sprite.y + 70, 250);
 
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
             if (target && !target.isDead) {
