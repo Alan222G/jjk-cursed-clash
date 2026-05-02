@@ -189,8 +189,8 @@ export default class GameScene extends Phaser.Scene {
             TODO:     { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xAA22AA, bg: 0x111111, lineColor: 0xAA22AA, textColor: '#AA22AA', name: 'RYŌIKI TENKAI — BEST FRIEND TAG-TEAM' },
             JOGO:     { voice: 'sukuna_domain_voice',  sign: 'jogo_sign',   color: 0xFF4400, bg: 0x220A00, lineColor: 0xFF2200, textColor: '#FF4400', name: 'RYŌIKI TENKAI — KAGAI TESSEN' },
             DAGON:    { voice: 'gojo_domain_voice',    sign: 'dagon_sign',  color: 0x0088FF, bg: 0x001122, lineColor: 0x00CCFF, textColor: '#0088FF', name: 'RYŌIKI TENKAI — TŌIN DONSHI' },
-            HANAMI:   { voice: 'gojo_domain_voice',    sign: 'kenjaku_sign', color: 0x44FF44, bg: 0x001A00, lineColor: 0x44FF44, textColor: '#44FF44', name: 'RYŌIKI TENKAI — DAICHI NO MEGUMI' },
-            CHOSO:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xAA0000, bg: 0x1A0000, lineColor: 0xAA0000, textColor: '#AA0000', name: 'CONVERGENCIA MÁXIMA' },
+            HANAMI:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x32CD32, bg: 0x002200, lineColor: 0x228B22, textColor: '#32CD32', name: 'RYŌIKI TENKAI — DAICHI NO MEGUMI' },
+            CHOSO:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xDC143C, bg: 0x220000, lineColor: 0x8B0000, textColor: '#DC143C', name: 'MAXIMUM CONVERGENCE' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;

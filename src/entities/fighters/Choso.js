@@ -1,208 +1,331 @@
 import Fighter from '../Fighter.js';
-import { CHARACTERS } from '../../config.js';
 import Projectile from '../Projectile.js';
+import { CHARACTERS, CE_COSTS, PHYSICS } from '../../config.js';
 
 export default class Choso extends Fighter {
     constructor(scene, x, y, playerIndex) {
         super(scene, x, y, playerIndex, CHARACTERS.CHOSO);
         
-        this.bloodScalesActive = false;
-        this.bloodScalesTimer = 0;
-        this.isWingKingActive = false;
-        this.wingKingTimer = 0;
+        this.redScaleActive = false;
+        this.redScaleTimer = 0;
+
+        this.chosoAwakened = false;
+        this.chosoAwakenedTimer = 0;
+        this.wingKingShootTimer = 0;
     }
 
-    // ═══════════════════════════════════════
-    // PIERCING BLOOD (H1) — Sniper Ray
-    // ═══════════════════════════════════════
-    executeSkill1() {
-        if (!this.ceSystem.spend(this.charData.skills.skill1.cost)) return;
-        this.stateMachine.setState('attack');
-        this.sprite.body.setVelocity(0, 0);
+    trySpecialAttack() {
+        const tier = this.ceSystem.getTier();
 
-        // Convergence visual before firing
-        const cx = this.sprite.x + 30 * this.facing;
-        const cy = this.sprite.y - 40;
-        const bloodBall = this.scene.add.circle(cx, cy, 5, 0x880000).setDepth(15);
-        this.scene.tweens.add({ targets: bloodBall, scaleX: 2.5, scaleY: 2.5, duration: 600 });
-
-        this.scene.time.delayedCall(700, () => {
-            bloodBall.destroy();
-            const beam = new Projectile(this.scene, cx, cy, {
-                owner: this,
-                damage: this.charData.skills.skill1.damage,
-                knockbackX: 800 * this.facing, knockbackY: -50,
-                stunDuration: 600, speed: 2500, // FASTEST IN THE GAME
-                direction: this.facing, color: 0xAA0000,
-                size: { w: 100, h: 4 }, lifetime: 1200, type: 'beam',
-                onHit: (target) => this.applyBloodPoison(target)
-            });
-            if (this.scene.projectiles) this.scene.projectiles.push(beam);
-            try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
-            this.stateMachine.setState('idle');
-        });
-    }
-
-    // ═══════════════════════════════════════
-    // SUPERNOVA (H2) — AOE Spheres
-    // ═══════════════════════════════════════
-    executeSkill2() {
-        if (!this.ceSystem.spend(this.charData.skills.skill2.cost)) return;
-        this.stateMachine.setState('attack');
-
-        const spheres = [];
-        for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI * 2;
-            const s = this.scene.add.circle(this.sprite.x, this.sprite.y - 40, 6, 0x880000).setDepth(15);
-            spheres.push({ obj: s, angle });
+        if (tier >= 4 && this.input.isDown('DOWN')) {
+            if (this.ceSystem.spend(CE_COSTS.MAXIMUM)) {
+                this.castSlicingExorcism();
+            }
+        } else if (tier >= 3 && this.input.isDown('UP')) {
+            if (this.ceSystem.spend(CE_COSTS.SKILL_1 * 2)) {
+                this.castFlowingRedScale();
+            }
+        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
+            if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
+                this.castSupernova();
+            }
+        } else if (tier >= 1) {
+            if (this.ceSystem.spend(CE_COSTS.SKILL_1)) {
+                this.castPiercingBlood();
+            }
         }
-
-        this.scene.time.delayedCall(500, () => {
-            spheres.forEach(s => {
-                const vx = Math.cos(s.angle);
-                const vy = Math.sin(s.angle);
-                const proj = new Projectile(this.scene, s.obj.x, s.obj.y, {
-                    owner: this,
-                    damage: 15,
-                    knockbackX: vx * 400, knockbackY: vy * 400,
-                    stunDuration: 200, speed: 800,
-                    direction: 1, // Velocity handles direction
-                    color: 0xAA0000, size: { w: 12, h: 12 },
-                    onHit: (target) => this.applyBloodPoison(target)
-                });
-                proj.body.setVelocity(vx * 800, vy * 800);
-                if (this.scene.projectiles) this.scene.projectiles.push(proj);
-                s.obj.destroy();
-            });
-            this.stateMachine.setState('idle');
-        });
     }
 
-    // ═══════════════════════════════════════
-    // SLICING EXORCISM (H3) — Dash Slash
-    // ═══════════════════════════════════════
-    executeSkill3() {
-        if (!this.ceSystem.spend(40)) return;
-        this.stateMachine.setState('attack');
+    // H1: Piercing Blood
+    castPiercingBlood() {
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(600); // Startup
+        this.sprite.body.setVelocityX(0);
 
-        // Dash forward
-        this.sprite.body.setVelocityX(1200 * this.facing);
-        
-        const blade = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0xAA0000, 0.5).setDepth(15);
-        this.scene.tweens.add({ targets: blade, angle: 360, duration: 400, repeat: -1 });
+        // Convergence VFX
+        const px = this.sprite.x + 30 * this.facing;
+        const py = this.sprite.y - 40;
+        const prep = this.scene.add.circle(px, py, 10, 0xDC143C, 0.8).setDepth(15);
+        this.scene.tweens.add({ targets: prep, scaleX: 0.2, scaleY: 0.2, duration: 400 });
 
         this.scene.time.delayedCall(400, () => {
-            this.sprite.body.setVelocityX(0);
-            blade.destroy();
+            prep.destroy();
+            try { this.scene.sound.play('sfx_beam', { volume: 0.9 }); } catch(e) {}
             
-            // Final slash hit
-            const atkData = {
-                name: 'Slicing Exorcism',
-                damage: 60, range: 80, hitboxW: 100, hitboxH: 100,
-                startup: 0, active: 200, recovery: 200,
-                knockbackX: 400 * this.facing, knockbackY: -200,
-                stunDuration: 400
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.flash(0xDC143C, 100, 0.3);
+            }
+
+            const proj = new Projectile(this.scene, px, py, {
+                owner: this,
+                damage: this.charData.skills.skill1.damage * this.power,
+                knockbackX: 600,
+                knockbackY: -100,
+                stunDuration: 400,
+                speed: 2500, // Very fast
+                direction: this.facing,
+                color: 0xDC143C,
+                size: { w: 80, h: 8 },
+                lifetime: 1000,
+                type: 'beam',
+                onHitCallback: (p, victim) => {
+                    this.applyBloodPoison(victim);
+                    return false;
+                }
+            });
+
+            // Projectile clash logic
+            proj.update = function(dt) {
+                if (!this.alive) return;
+                this.timer += dt;
+                if (this.timer >= this.lifetime || this.sprite.x < -50 || this.sprite.x > 1330) {
+                    this.destroy(); return;
+                }
+                
+                // Check collision with other projectiles (Hanami's Wood Buds, etc.)
+                if (this.scene.projectiles) {
+                    for (let other of this.scene.projectiles) {
+                        if (other.owner !== this.owner && other.alive) {
+                            const bounds1 = this.sprite.getBounds();
+                            const bounds2 = other.sprite.getBounds();
+                            if (Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2)) {
+                                // Destroy the other projectile
+                                other.destroy();
+                                // Reduce our own damage slightly
+                                this.damage = Math.floor(this.damage * 0.7);
+                            }
+                        }
+                    }
+                }
             };
-            this.currentAttack = atkData;
-            this.enableHitbox(atkData);
-            this.stateMachine.setState('idle');
+
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
         });
     }
 
-    // ═══════════════════════════════════════
-    // FLOWING RED SCALE (H4) — Speed Buff
-    // ═══════════════════════════════════════
-    executeSkill4() {
-        if (!this.ceSystem.spend(30)) return;
-        
-        this.bloodScalesActive = true;
-        this.bloodScalesTimer = 10000;
-        this.speed = (this.charData.stats.speed || 320) * 1.5;
-        
-        // Visual effect on face
-        const mark = this.scene.add.rectangle(this.sprite.x, this.sprite.y - 50, 20, 5, 0x880000).setDepth(16);
-        this.scene.tweens.add({ targets: mark, alpha: 0.3, yoyo: true, repeat: -1, duration: 500 });
-        
-        this.scene.time.delayedCall(10000, () => {
-            this.bloodScalesActive = false;
-            this.speed = this.charData.stats.speed || 320;
-            mark.destroy();
-        });
-    }
+    // H2: Supernova
+    castSupernova() {
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(1200);
+        this.sprite.body.setVelocityX(0);
 
-    // ═══════════════════════════════════════
-    // AWAKENING / WING KING
-    // ═══════════════════════════════════════
-    tryActivateDomain() {
-        if (this.isWingKingActive) return;
-        if (!this.ceSystem.spend(80)) return;
+        try { this.scene.sound.play('sfx_charge', { volume: 0.6 }); } catch(e) {}
 
-        this.isWingKingActive = true;
-        this.wingKingTimer = 20000;
-        
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0x330000, 1000, 0.8);
-            this.scene.screenEffects.shake(0.04, 500);
+        const orbs = [];
+        for (let i = 0; i < 6; i++) {
+            const angle = (i * 60) * Math.PI / 180;
+            const ox = this.sprite.x + Math.cos(angle) * 40;
+            const oy = this.sprite.y - 40 + Math.sin(angle) * 40;
+            const orb = this.scene.add.circle(ox, oy, 8, 0xDC143C, 1).setDepth(15);
+            orbs.push({ sprite: orb, angle });
         }
 
-        // Wing Visuals
-        const wings = this.scene.add.image(this.sprite.x, this.sprite.y, 'wing_king_placeholder').setDepth(5).setScale(0.5);
-        
-        this.scene.time.addEvent({
-            delay: 1000,
-            repeat: 19,
-            callback: () => {
-                if (!this.isWingKingActive) return;
-                // Auto-fire poison needles
-                const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-                const proj = new Projectile(this.scene, this.sprite.x, this.sprite.y - 60, {
-                    owner: this, damage: 10, speed: 1000,
-                    direction: Math.sign(target.sprite.x - this.sprite.x),
-                    color: 0x8800FF, size: { w: 10, h: 4 },
-                    onHit: (t) => this.applyBloodPoison(t)
+        this.scene.time.delayedCall(800, () => {
+            try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
+            
+            for (let orbObj of orbs) {
+                orbObj.sprite.destroy();
+                // Fire them in a fan forward
+                const spreadAngle = (orbObj.angle % (Math.PI)) - Math.PI/2; // roughly -90 to 90
+                const dirY = Math.sin(spreadAngle) * 0.5;
+
+                const proj = new Projectile(this.scene, this.sprite.x + 20 * this.facing, this.sprite.y - 40, {
+                    owner: this,
+                    damage: this.charData.skills.skill2.damage * this.power / 2,
+                    knockbackX: 150,
+                    knockbackY: -50,
+                    stunDuration: 200,
+                    speed: 900,
+                    direction: this.facing,
+                    color: 0x8B0000,
+                    size: { w: 15, h: 15 },
+                    lifetime: 1500,
+                    type: 'circle',
+                    onHitCallback: (p, victim) => {
+                        this.applyBloodPoison(victim);
+                        return false;
+                    }
                 });
+                proj.sprite.body.setVelocityY(dirY * 900);
                 if (this.scene.projectiles) this.scene.projectiles.push(proj);
             }
         });
+    }
 
-        this.scene.time.delayedCall(20000, () => {
-            this.isWingKingActive = false;
-            wings.destroy();
+    // H3: Slicing Exorcism
+    castSlicingExorcism() {
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(1000);
+        this.sprite.body.setVelocityX(0);
+
+        // Blade visual
+        const blade = this.scene.add.rectangle(this.sprite.x + 30 * this.facing, this.sprite.y, 60, 10, 0xDC143C).setDepth(15);
+        this.scene.tweens.add({ targets: blade, angle: 360 * 3, duration: 600 });
+
+        this.scene.time.delayedCall(200, () => {
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.7 }); } catch(e) {}
+            this.sprite.body.setVelocityX(600 * this.facing);
+
+            let hitCount = 0;
+            const hitInterval = this.scene.time.addEvent({
+                delay: 100,
+                callback: () => {
+                    blade.setPosition(this.sprite.x + 40 * this.facing, this.sprite.y);
+                    const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+                    if (target && !target.isDead) {
+                        const dist = Math.abs(target.sprite.x - this.sprite.x);
+                        if (dist < 80) {
+                            target.takeDamage(this.charData.skills.maximum.damage * this.power / 4, 100 * this.facing, -20, 150);
+                            this.applyBloodPoison(target);
+                        }
+                    }
+                    hitCount++;
+                    if (hitCount >= 4) {
+                        hitInterval.remove();
+                        blade.destroy();
+                        this.sprite.body.setVelocityX(0);
+                    }
+                },
+                loop: true
+            });
         });
+    }
+
+    // H4: Flowing Red Scale
+    castFlowingRedScale() {
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(500);
+        this.sprite.body.setVelocityX(0);
+
+        this.redScaleActive = true;
+        this.redScaleTimer = 10000;
+
+        // Buff stats
+        this.speed = this.charData.stats.speed * 1.4;
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xDC143C, 200, 0.4);
+        }
+        try { this.scene.sound.play('sfx_heal', { volume: 0.8 }); } catch(e) {}
+    }
+
+    tryActivateDomain() {
+        if (this.chosoAwakened) return;
+        
+        if (!this.ceSystem.spend(100)) return;
+        
+        this.chosoAwakened = true;
+        this.chosoAwakenedTimer = 20000;
+        
+        this.power = this.charData.stats.power * 1.3;
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'MAXIMUM CONVERGENCE!', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#DC143C', stroke: '#000000', strokeThickness: 5
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xDC143C, 300, 0.5);
+            this.scene.screenEffects.shake(0.04, 500);
+        }
+        try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
     }
 
     applyBloodPoison(target) {
         if (!target || target.isDead) return;
-        target.bloodPoisonTimer = 5000;
+        target.bloodPoisonActive = true;
+        target.bloodPoisonTimer = 30000; // 30 seconds DoT
         target.bloodPoisonTick = 0;
-        // Purplish vision effect for victim
-        if (this.scene.screenEffects) this.scene.screenEffects.flash(0x8800FF, 300, 0.2);
     }
 
-    onHitOpponent(target, damage) {
-        super.onHitOpponent(target, damage);
-        if (this.isWingKingActive) {
+    // Override to apply poison on all attacks during awakening
+    onHitOpponent(target) {
+        super.onHitOpponent(target);
+        if (this.chosoAwakened) {
             this.applyBloodPoison(target);
         }
     }
 
     update(time, dt) {
         super.update(time, dt);
-        
+
+        if (this.redScaleActive) {
+            this.redScaleTimer -= dt;
+            if (this.redScaleTimer <= 0) {
+                this.redScaleActive = false;
+                this.speed = this.charData.stats.speed;
+            }
+        }
+
+        if (this.chosoAwakened) {
+            this.chosoAwakenedTimer -= dt;
+            this.wingKingShootTimer -= dt;
+
+            // Wing King Auto-Shoot
+            if (this.wingKingShootTimer <= 0) {
+                this.wingKingShootTimer = 1500; // Shoot every 1.5s
+                
+                const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+                if (target && !target.isDead) {
+                    const dir = target.sprite.x > this.sprite.x ? 1 : -1;
+                    const proj = new Projectile(this.scene, this.sprite.x + 20 * dir, this.sprite.y - 60, {
+                        owner: this,
+                        damage: 15 * this.power,
+                        knockbackX: 50,
+                        knockbackY: -20,
+                        stunDuration: 100,
+                        speed: 1500,
+                        direction: dir,
+                        color: 0xDC143C,
+                        size: { w: 30, h: 6 },
+                        lifetime: 1000,
+                        type: 'beam',
+                        onHitCallback: (p, victim) => {
+                            this.applyBloodPoison(victim);
+                            return false;
+                        }
+                    });
+                    if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                }
+            }
+
+            if (this.chosoAwakenedTimer <= 0) {
+                this.chosoAwakened = false;
+                this.power = this.charData.stats.power;
+            }
+        }
+
+        // Handle target poison logic here instead of modifying all fighters
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        
-        // Poison damage logic
-        if (target && target.bloodPoisonTimer > 0) {
+        if (target && target.bloodPoisonActive) {
             target.bloodPoisonTimer -= dt;
             target.bloodPoisonTick += dt;
-            if (target.bloodPoisonTick >= 500) {
-                target.hp -= 15;
+
+            if (target.bloodPoisonTick >= 1000) { // 10 damage per second
                 target.bloodPoisonTick = 0;
-                // Execution logic (10%)
-                if (target.hp < target.maxHp * 0.1) {
-                    target.hp = 0;
-                    target.isDead = true;
+                
+                // Visual Purple tint on HP Bar handled in HUD.js, but we can do a local tint
+                if (target.sprite.tintTopLeft !== 0xAA00AA) {
+                    target.sprite.setTint(0xAA00AA);
+                    this.scene.time.delayedCall(200, () => target.sprite.clearTint());
                 }
+
+                // 10% Execute Logic
+                const percentHp = target.hp / target.maxHp;
+                if (percentHp <= 0.10 && target.hp > 0) {
+                    // Execute!
+                    target.takeDamage(target.hp, 0, 0, 0, true);
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
+                    }
+                    try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
+                } else {
+                    target.takeDamage(10, 0, 0, 0, true); // True damage
+                }
+            }
+
+            if (target.bloodPoisonTimer <= 0) {
+                target.bloodPoisonActive = false;
             }
         }
     }

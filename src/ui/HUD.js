@@ -207,7 +207,7 @@ export default class HUD {
         // ── Player 1 (Left Side) ──
         const p1x = s.AVATAR_RADIUS * 2 + s.MARGIN + 10;
         const p1y = 22;
-        this.drawHealthBar(g, p1x, p1y, p1.getHpRatio(), s.BAR_WIDTH, false);
+        this.drawHealthBar(g, p1x, p1y, p1.getHpRatio(), s.BAR_WIDTH, false, p1.bloodPoisonActive);
         this.drawCEBar(g, p1x, p1y + s.BAR_HEIGHT + 6, p1.getCeRatio(), s.BAR_WIDTH, false, p1.ceSystem.isFatigued, p1.colors.energy);
         this.drawAvatar(g, s.MARGIN + s.AVATAR_RADIUS, 45, p1.colors, false);
         this.drawRoundPips(g, p1x, p1y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p1Rounds, false);
@@ -215,7 +215,7 @@ export default class HUD {
         // ── Player 2 (Right Side — mirrored) ──
         const p2x = GAME_WIDTH - s.AVATAR_RADIUS * 2 - s.MARGIN - 10 - s.BAR_WIDTH;
         const p2y = 22;
-        this.drawHealthBar(g, p2x, p2y, p2.getHpRatio(), s.BAR_WIDTH, true);
+        this.drawHealthBar(g, p2x, p2y, p2.getHpRatio(), s.BAR_WIDTH, true, p2.bloodPoisonActive);
         this.drawCEBar(g, p2x, p2y + s.BAR_HEIGHT + 6, p2.getCeRatio(), s.BAR_WIDTH, true, p2.ceSystem.isFatigued, p2.colors.energy);
         this.drawAvatar(g, GAME_WIDTH - s.MARGIN - s.AVATAR_RADIUS, 45, p2.colors, true);
         this.drawRoundPips(g, p2x + s.BAR_WIDTH, p2y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p2Rounds, true);
@@ -238,7 +238,7 @@ export default class HUD {
         }
     }
 
-    drawHealthBar(g, x, y, ratio, width, mirrored) {
+    drawHealthBar(g, x, y, ratio, width, mirrored, isPoisoned) {
         const s = HUD_STYLE;
         ratio = Phaser.Math.Clamp(ratio, 0, 1);
         const h = s.BAR_HEIGHT;
@@ -253,6 +253,10 @@ export default class HUD {
         let hpColor = s.HP_COLOR_HIGH;
         if (ratio < 0.5) hpColor = s.HP_COLOR_MED;
         if (ratio < 0.25) hpColor = s.HP_COLOR_LOW;
+        if (isPoisoned) {
+            hpColor = 0xAA00AA; // Purple for poisoned
+            g.globalAlpha = 0.8 + Math.sin(this.scene.time.now * 0.005) * 0.2; // Pulsing alpha
+        }
 
         const fillW = width * ratio;
         if (fillW > 0) {
@@ -270,6 +274,8 @@ export default class HUD {
                 g.fillRect(x, y, fillW, h / 3);
             }
         }
+        
+        g.globalAlpha = 1; // Reset alpha in case it was poisoned
 
         // Retro arcade segments (every 25%)
         g.lineStyle(1, 0x000000, 0.5);

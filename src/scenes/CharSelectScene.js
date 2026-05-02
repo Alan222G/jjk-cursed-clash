@@ -33,8 +33,8 @@ const MENU_KEY = {
     SUKUNA_20: 'menu_sukuna',
     JOGO: 'menu_jogo',
     DAGON: 'menu_dagon',
-    HANAMI: 'menu_jogo',  // Placeholder
-    CHOSO: 'menu_sukuna', // Placeholder
+    HANAMI: 'menu_sukuna', // Placeholder portrait
+    CHOSO: 'menu_gojo',    // Placeholder portrait
 };
 
 // Iconic JJK titles for each character
@@ -56,7 +56,7 @@ const CHAR_TITLES = {
     SUKUNA_20: 'TRUE FORM — 20 FINGERS',
     JOGO: 'THE EARTH DISASTER',
     DAGON: 'THE SEA DISASTER',
-    HANAMI: 'THE FOREST DISASTER',
+    HANAMI: 'THE VIGOR OF NATURE',
     CHOSO: 'DEATH PAINTING WOMB',
 };
 
