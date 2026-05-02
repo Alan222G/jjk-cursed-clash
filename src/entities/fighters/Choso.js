@@ -181,7 +181,7 @@ export default class Choso extends Fighter {
                     }
                     hitCount++;
                     if (hitCount >= 4) {
-                        hitInterval.remove();
+                        hitInterval.destroy();
                         blade.destroy();
                         this.sprite.body.setVelocityX(0);
                     }
@@ -313,14 +313,20 @@ export default class Choso extends Fighter {
                 // 10% Execute Logic
                 const percentHp = target.hp / target.maxHp;
                 if (percentHp <= 0.10 && target.hp > 0) {
-                    // Execute!
-                    target.takeDamage(target.hp, 0, 0, 0, true);
+                    // Execute! Bypass defense
+                    target.hp = 0;
+                    target.takeDamage(1, 0, 0, 0, true);
                     if (this.scene.screenEffects) {
                         this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
                     }
                     try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
                 } else {
-                    target.takeDamage(10, 0, 0, 0, true); // True damage
+                    // True damage DoT
+                    target.hp -= 10;
+                    if (target.hp < 1) target.hp = 1; // DoT cannot kill unless execute triggers
+                    if (this.scene.spawnDamageNumber) {
+                        this.scene.spawnDamageNumber(target.sprite.x, target.sprite.y - 70, 10);
+                    }
                 }
             }
 

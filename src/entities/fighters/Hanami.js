@@ -125,12 +125,12 @@ export default class Hanami extends Fighter {
             // Spawn roots as it travels
             if (this.timer % 50 < 20) {
                 const root = this.scene.add.rectangle(this.sprite.x, PHYSICS.GROUND_Y, 20, 80, 0x8B4513, 1).setOrigin(0.5, 1);
+                root.scaleY = 0; // Start hidden underground
                 this.scene.tweens.add({
                     targets: root,
-                    scaleY: 0,
-                    alpha: 0,
-                    duration: 400,
-                    ease: 'Power2',
+                    scaleY: 1, // Grow upwards
+                    duration: 200,
+                    yoyo: true, // Shrink back down
                     onComplete: () => root.destroy()
                 });
             }
@@ -194,7 +194,7 @@ export default class Hanami extends Fighter {
         this.hanamiAwakened = true;
         this.hanamiAwakenedTimer = 15000;
         
-        this.scene.onDomainActivated(this, 'DAICHI NO MEGUMI');
+        this.scene.onDomainActivated(this, 'HANAMI');
     }
 
     // ── Update Loop ──
