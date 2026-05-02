@@ -183,7 +183,7 @@ export default class GameScene extends Phaser.Scene {
             HIGURUMA: { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x666666, bg: 0x0A0A15, lineColor: 0x888888, textColor: '#AAAAAA', name: 'RYŌIKI TENKAI — CHITSUJO' },
             NANAMI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0xEEDDCC, bg: 0x0A0A0A, lineColor: 0xFF0000, textColor: '#FF0000', name: 'OVERTIME MODE' },
             TODO:     { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xAA22AA, bg: 0x111111, lineColor: 0xAA22AA, textColor: '#AA22AA', name: 'RYŌIKI TENKAI — BEST FRIEND TAG-TEAM' },
-            JOGO:     { voice: 'sukuna_domain_voice',  sign: 'jogo_sign',   color: 0xFF4400, bg: 0x220A00, lineColor: 0xFF2200, textColor: '#FF4400', name: 'RYŌIKI TENKAI — GAIGAN TESSENSAN' },
+            JOGO:     { voice: 'sukuna_domain_voice',  sign: 'jogo_sign',   color: 0xFF4400, bg: 0x220A00, lineColor: 0xFF2200, textColor: '#FF4400', name: 'RYŌIKI TENKAI — KAGAI TESSEN' },
             DAGON:    { voice: 'gojo_domain_voice',    sign: 'dagon_sign',  color: 0x0088FF, bg: 0x001122, lineColor: 0x00CCFF, textColor: '#0088FF', name: 'RYŌIKI TENKAI — TŌIN DONSHI' },
         };
 
@@ -358,6 +358,9 @@ export default class GameScene extends Phaser.Scene {
                 opp.stateMachine.unlock();
                 opp.stateMachine.lock(99999);
                 opp.sprite.body.setVelocity(0, 0);
+            } else {
+                opp.stateMachine.unlock();
+                opp.stateMachine.setState('idle');
             }
             
             // Enable CE drain
