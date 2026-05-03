@@ -413,24 +413,41 @@ export default class Nobara extends Fighter {
         }
     }
 
-    drawHammer(g, hx, hy, angle) {
-        g.save();
-        // Translate to hand position, rotate
-        g.translate(hx, hy);
-        g.rotate(Phaser.Math.DegToRad(angle));
+    drawHammer(g, hx, hy, angleDeg) {
+        const rad = Phaser.Math.DegToRad(angleDeg);
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        const rotatePoint = (px, py) => {
+            return {
+                x: hx + px * cos - py * sin,
+                y: hy + px * sin + py * cos
+            };
+        };
+
+        const drawRotatedRect = (px, py, w, h, color) => {
+            const p1 = rotatePoint(px, py);
+            const p2 = rotatePoint(px + w, py);
+            const p3 = rotatePoint(px + w, py + h);
+            const p4 = rotatePoint(px, py + h);
+            
+            g.fillStyle(color, 1);
+            g.beginPath();
+            g.moveTo(p1.x, p1.y);
+            g.lineTo(p2.x, p2.y);
+            g.lineTo(p3.x, p3.y);
+            g.lineTo(p4.x, p4.y);
+            g.fillPath();
+        };
 
         // Hammer Handle
-        g.fillStyle(0x664422, 1);
-        g.fillRect(-3, -20, 6, 40);
+        drawRotatedRect(-3, -20, 6, 40, 0x664422);
 
         // Hammer Head (Steel)
-        g.fillStyle(0x9999AA, 1);
-        g.fillRect(-12, -25, 24, 12);
-        // Face of the hammer (with a little red symbol maybe)
-        g.fillStyle(0xBBBBCC, 1);
-        g.fillRect(10, -23, 4, 8); // Striking face
+        drawRotatedRect(-12, -25, 24, 12, 0x9999AA);
         
-        g.restore();
+        // Face of the hammer
+        drawRotatedRect(10, -23, 4, 8, 0xBBBBCC);
     }
 
     drawAura(dt) {
