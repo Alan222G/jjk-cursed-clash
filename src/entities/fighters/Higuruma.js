@@ -231,10 +231,12 @@ export default class Higuruma extends Fighter {
         if (this.target && !this.target.isDead) {
             this.target.stateMachine.lock(999999);
             this.target.sprite.body.setVelocity(0, 0);
+            this.target.sprite.body.setAllowGravity(false);
             this.target.isInvulnerable = true; // No attacks can hit
         }
         this.stateMachine.lock(999999);
         this.sprite.body.setVelocity(0, 0);
+        this.sprite.body.setAllowGravity(false);
 
         this._domainPoints = 0;
         this._domainAttempt = 0;
@@ -375,6 +377,9 @@ export default class Higuruma extends Fighter {
             // Confiscation
             if (this.target && !this.target.isDead) {
                 this.target.ceSystem.ce = 0; // Drain ALL CE
+                this.target.ceSystem.isFatigued = true; // No regen for 5s
+                this.target.ceSystem.fatigueTimer = 5000;
+                this.target.ceSystem.regenRate = (this.target.charData?.stats?.ceRegen || 3.5) / 3; // 3x slower permanently
             }
             const txt = this.scene.add.text(cx, cy, '🔒 CONFISCATION 🔒\nOpponent Cursed Energy Drained!', {
                 fontFamily: 'Arial Black', fontSize: '24px', color: '#FF8800', align: 'center', stroke: '#000000', strokeThickness: 5
@@ -387,10 +392,12 @@ export default class Higuruma extends Fighter {
             this.ceSystem.endDomain();
             this.isCasting = false;
             this.stateMachine.unlock();
+            this.sprite.body.setAllowGravity(true);
             this.stateMachine.setState('idle');
             if (this.target && !this.target.isDead) {
                 this.target.isInvulnerable = false;
                 this.target.stateMachine.unlock();
+                this.target.sprite.body.setAllowGravity(true);
                 if (!this.target.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
                     this.target.stateMachine.setState('idle');
                 }

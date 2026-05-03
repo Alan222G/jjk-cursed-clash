@@ -420,6 +420,96 @@ function getCharacterControls(charKey, playerIndex) {
                 `Boogie Woogie se vuelve CERO (0 CE) por 10s.`,
             ]
         });
+    } else if (charKey === 'JOGO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — DESASTRE DE FUEGO',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Quemaduras graves continuas (DPS puro)`,
+            ]
+        });
+    } else if (charKey === 'DAGON') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — DESASTRE DE AGUA',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Enjambre de Shikigamis (Ataques constantes)`,
+            ]
+        });
+    } else if (charKey === 'HANAMI') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — DESASTRE NATURAL',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Campo de flores que roba HP (Lifesteal)`,
+            ]
+        });
+    } else if (charKey === 'CHOSO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — MANIPULACIÓN DE SANGRE',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+    } else if (charKey === 'MEGUMI') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — TÉCNICA DE DIEZ SOMBRAS',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — ${sk.skill3.name}  (${sk.skill3.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Invocación masiva de clones y sombras`,
+            ]
+        });
+    } else if (charKey === 'NOBARA') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — MUÑECO DE PAJA',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Lluvia de clavos continua (1 clavo cada segundo)`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──
