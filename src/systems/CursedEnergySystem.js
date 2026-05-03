@@ -9,7 +9,7 @@ export default class CursedEnergySystem {
         this.fighter = fighter;
         this.maxCe = FIGHTER_DEFAULTS.MAX_CE;
         this.ce = 0;
-        this.regenRate = fighter.charData?.stats?.ceRegen || FIGHTER_DEFAULTS.CE_REGEN_RATE;
+        this.regenRate = (fighter.charData?.stats?.ceRegen || FIGHTER_DEFAULTS.CE_REGEN_RATE) * 1.3;
         this.isFatigued = false;
         this.fatigueTimer = 0;
         this.isDomainActive = false;

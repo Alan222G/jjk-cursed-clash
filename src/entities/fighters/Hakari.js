@@ -220,11 +220,10 @@ export default class Hakari extends Fighter {
         if (this.jackpotActive) return;
         if (this.ceSystem.isFatigued) return;
         if (this.ceSystem.ce < 80) return;
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                const clash = this.scene.attemptDomainClash(this);
-                if (!clash) return;
-            } else return;
+        
+        // INSTANT & UNCANCELABLE: Bypass standard Domain Clash logic
+        if (this.scene.domainOwner && this.scene.domainOwner !== this) {
+            // Still spend CE but forcefully activate without clashing
         } else if (this.domainActive) return;
 
         if (!this.ceSystem.spend(80)) return;
@@ -362,7 +361,7 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 30000; // Exactly 30 seconds
+        this.jackpotTimer = 41000; // Exactly 41 seconds
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
@@ -400,6 +399,14 @@ export default class Hakari extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+
+        if (this.hakaNerfTimer > 0) {
+            this.hakaNerfTimer -= dt;
+            if (this.hakaNerfTimer <= 0) {
+                this.ceSystem.regenRate = (this.charData?.stats?.ceRegen || 3.0) * 1.3;
+                this.power = this.charData?.stats?.power || 1.0;
+            }
+        }
         
         // Prevent default CE drain from ending domain early
         if (this.domainActive) {
@@ -422,9 +429,10 @@ export default class Hakari extends Fighter {
             if (this.jackpotTimer <= 0) {
                 this.jackpotActive = false;
                 this.speed = this._baseSpeed;
-                this.power = (this.charData.stats.power || 1.0) / 2; // Power halved
+                this.power = (this.charData?.stats?.power || 1.0) / 2.5; // Power divided by 2.5
                 this.ceSystem.ce = 0; // Loses all CE when Jackpot ends
-                this.ceSystem.regenRate = (this.charData.stats.ceRegen || 3.5) / 2.5; // Regen divided by 2.5
+                this.ceSystem.regenRate = ((this.charData?.stats?.ceRegen || 3.0) * 1.3) / 2; // Regen divided by 2
+                this.hakaNerfTimer = 30000; // Nerf lasts exactly 30 seconds
             }
         }
 

@@ -211,10 +211,10 @@ export default class Higuruma extends Fighter {
     // ═══════════════════════════════════════
     tryActivateDomain() {
         if (this.isCasting || this.ceSystem.isFatigued || this.ceSystem.ce < 100) return;
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                if (!this.scene.attemptDomainClash(this)) return;
-            } else return;
+        
+        // INSTANT & UNCANCELABLE: Bypass standard Domain Clash logic
+        if (this.scene.domainOwner && this.scene.domainOwner !== this) {
+            // Forcefully activate without clashing
         } else if (this.domainActive) return;
 
         if (!this.ceSystem.spend(100)) return;
@@ -379,7 +379,10 @@ export default class Higuruma extends Fighter {
                 this.target.ceSystem.ce = 0; // Drain ALL CE
                 this.target.ceSystem.isFatigued = true; // No regen for 5s
                 this.target.ceSystem.fatigueTimer = 5000;
-                this.target.ceSystem.regenRate = (this.target.charData?.stats?.ceRegen || 3.5) / 3; // 3x slower permanently
+                this.target.ceSystem.regenRate = ((this.target.charData?.stats?.ceRegen || 3.5) * 1.3) / 3; // 3x slower
+                
+                this.higuTarget = this.target;
+                this.higuNerfTimer = 22000; // Lasts 22 seconds
             }
             const txt = this.scene.add.text(cx, cy, '🔒 CONFISCATION 🔒\nOpponent Cursed Energy Drained!', {
                 fontFamily: 'Arial Black', fontSize: '24px', color: '#FF8800', align: 'center', stroke: '#000000', strokeThickness: 5
@@ -417,6 +420,16 @@ export default class Higuruma extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+
+        if (this.higuTarget && this.higuNerfTimer > 0) {
+            this.higuNerfTimer -= dt;
+            if (this.higuNerfTimer <= 0) {
+                if (this.higuTarget.ceSystem) {
+                    this.higuTarget.ceSystem.regenRate = (this.higuTarget.charData?.stats?.ceRegen || 3.5) * 1.3;
+                }
+                this.higuTarget = null;
+            }
+        }
         
         // --- Domain Trial Input Capturing ---
         if (this.trialActive) {
