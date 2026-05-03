@@ -36,20 +36,31 @@ export default class Mahito extends Fighter {
                     if (victim.applyBleed) victim.applyBleed(3000);
                 };
             }
-        } else if (this.stance === 'monstrous') {
-            if (type === 'LIGHT' || type === 'MEDIUM') return null; // Disabled
-            if (type === 'HEAVY') {
-                if (this.monstrousHeavyCd > 0) return null; // Cooldown
-                base.damage = Math.floor(100 * this.power);
-                base.knockbackX = 1200;
-                base.knockbackY = -500;
-                base.startup += 100;
-                base.stunDuration = 800;
-                this.monstrousHeavyCd = 2000;
-            }
         }
         
         return base;
+    }
+
+    handleSpecialAttackInput(action) {
+        if (this.stance === 'monstrous') {
+            if (action === 'LIGHT') {
+                if (this.monstrousHeavyCd > 0) return true; // Input absorbed, on cooldown
+
+                // Trigger monstrous massive single hit
+                this.stateMachine.setState('attack');
+                this.currentAttack = { 
+                    ...ATTACKS.HEAVY,
+                    damage: Math.floor(100 * this.power),
+                    knockbackX: 1200,
+                    knockbackY: -500,
+                    startup: ATTACKS.HEAVY.startup + 100,
+                    stunDuration: 800
+                };
+                this.monstrousHeavyCd = 2000;
+                return true; // We fully handled this attack input
+            }
+        }
+        return false;
     }
 
     // ═══════════════════════════════════════
