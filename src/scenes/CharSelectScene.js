@@ -938,9 +938,10 @@ export default class CharSelectScene extends Phaser.Scene {
             { label: 'x1\nNORMAL', mult: 1, activeColor: '#44CC66' },
             { label: 'x2\nDOBLE', mult: 2, activeColor: '#FFAA00' },
             { label: 'x3\nTRIPLE', mult: 3, activeColor: '#FF4444' },
+            { label: 'x4\nEXTREMO', mult: 4, activeColor: '#FF00FF' },
         ];
 
-        const btnW = 120, btnH = 55, btnGap = 20;
+        const btnW = 90, btnH = 55, btnGap = 15;
         const totalW = options.length * btnW + (options.length - 1) * btnGap;
         const startX = GAME_WIDTH / 2 - totalW / 2;
         const btnY = my + 135;

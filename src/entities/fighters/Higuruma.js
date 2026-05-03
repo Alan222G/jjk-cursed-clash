@@ -288,11 +288,11 @@ export default class Higuruma extends Fighter {
             fontFamily: 'Arial Black', fontSize: '22px', color: '#FFCC00', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
         
-        const hint1 = this.scene.add.text(cx, cy + 70, `P1: [U] Confess | [I] Silence | [DOWN] Deny`, {
+        const hint1 = this.scene.add.text(cx, cy + 70, `P1: [Bloqueo] Confess | [Ataque] Silence | [Abajo] Deny`, {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
 
-        const hint2 = this.scene.add.text(cx, cy + 90, `P2: [Num1] Confess | [Num2] Silence | [DOWN] Deny`, {
+        const hint2 = this.scene.add.text(cx, cy + 90, `P2: [Bloqueo] Confess | [Ataque] Silence | [Abajo] Deny`, {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#AAAAAA', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
         
@@ -425,15 +425,15 @@ export default class Higuruma extends Fighter {
             if (this.timeLeft <= 7000) {
                 // Capture P1 (Higuruma) Input
                 if (!this.higuChoice) {
-                    if (this.input.isDown('SKILL1')) this.higuChoice = 'CONFESS';
-                    else if (this.input.isDown('SKILL2')) this.higuChoice = 'SILENCE';
+                    if (this.input.isDown('BLOCK')) this.higuChoice = 'CONFESS';
+                    else if (this.input.isDown('ATTACK')) this.higuChoice = 'SILENCE';
                     else if (this.input.isDown('DOWN')) this.higuChoice = 'DENY';
                 }
 
                 // Capture P2 (Opponent) Input
                 if (this.target && !this.target.isAI && !this.oppChoice) {
-                    if (this.target.input.isDown('SKILL1')) this.oppChoice = 'CONFESS';
-                    else if (this.target.input.isDown('SKILL2')) this.oppChoice = 'SILENCE';
+                    if (this.target.input.isDown('BLOCK')) this.oppChoice = 'CONFESS';
+                    else if (this.target.input.isDown('ATTACK')) this.oppChoice = 'SILENCE';
                     else if (this.target.input.isDown('DOWN')) this.oppChoice = 'DENY';
                 }
             }
