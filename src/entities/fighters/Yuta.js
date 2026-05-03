@@ -19,7 +19,9 @@ export default class Yuta extends Fighter {
         this.copyActive = false;
         this.copiedSkills = null;
         this.copyTimer = 0;
-        this.copyCooldownTimer = 0;
+        this.copyCdLight = 0;
+        this.copyCdHeavy = 0;
+        this.copyCdUlt = 0;
     }
 
     trySpecialAttack() {
@@ -28,16 +30,17 @@ export default class Yuta extends Fighter {
 
         // ── COPY MODE: Literal attacks from other characters ──
         if (this.copyActive && this._copiedOpponent) {
-            if (this.copyCooldownTimer > 0) return; // 5-second cooldown active
-
             if (this.input.isDown('DOWN')) {
-                this.copyCooldownTimer = 5000;
+                if (this.copyCdUlt > 0) return;
+                this.copyCdUlt = 5000;
                 this.executeCopiedAbility('ultimate');
             } else if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
-                this.copyCooldownTimer = 5000;
+                if (this.copyCdHeavy > 0) return;
+                this.copyCdHeavy = 3000;
                 this.executeCopiedAbility('heavy');
             } else {
-                this.copyCooldownTimer = 5000;
+                if (this.copyCdLight > 0) return;
+                this.copyCdLight = 2000;
                 this.executeCopiedAbility('light');
             }
             return;
@@ -64,9 +67,9 @@ export default class Yuta extends Fighter {
         this.sprite.body.setVelocityX(0);
 
         const pools = {
-            'light': ['nanami_ratio', 'hanami_buds', 'choso_blood', 'kenjaku_worm', 'yuji_black_flash'],
-            'heavy': ['gojo_red', 'todo_boogie', 'megumi_toad', 'jogo_flames', 'yuta_thin_ice'],
-            'ultimate': ['gojo_purple', 'sukuna_fuga', 'ishigori_granite', 'jogo_meteor', 'yuta_love_beam']
+            'light': ['nanami_ratio', 'hanami_buds', 'choso_blood', 'kenjaku_worm', 'yuji_black_flash', 'mahito_soul', 'toji_katana', 'kurourushi_swarm'],
+            'heavy': ['gojo_red', 'todo_boogie', 'megumi_toad', 'jogo_flames', 'yuta_thin_ice', 'naoya_freeze', 'hakari_doors', 'higuruma_hammer'],
+            'ultimate': ['gojo_purple', 'sukuna_fuga', 'ishigori_granite', 'jogo_meteor', 'yuta_love_beam', 'higuruma_death']
         };
 
         const pool = pools[category];
@@ -83,11 +86,15 @@ export default class Yuta extends Fighter {
         const names = {
             nanami_ratio: 'Ratio Technique', hanami_buds: 'Disaster Plants',
             choso_blood: 'Piercing Blood', kenjaku_worm: 'Cursed Spirit',
-            yuji_black_flash: 'Black Flash', gojo_red: 'Cursed Technique Reversal: Red',
-            todo_boogie: 'Boogie Woogie', megumi_toad: 'Toad & Serpent',
-            jogo_flames: 'Disaster Flames', gojo_purple: 'Hollow Purple',
-            sukuna_fuga: 'Divine Flame (Fuga)', ishigori_granite: 'Granite Blast',
-            jogo_meteor: 'Maximum: Meteor'
+            yuji_black_flash: 'Black Flash', mahito_soul: 'Soul Transfiguration',
+            toji_katana: 'Soul Split Katana', kurourushi_swarm: 'Festering Life',
+            gojo_red: 'Cursed Technique Reversal: Red', todo_boogie: 'Boogie Woogie', 
+            megumi_toad: 'Toad & Serpent', jogo_flames: 'Disaster Flames',
+            naoya_freeze: 'Projection Sorcery', hakari_doors: 'Train Doors',
+            higuruma_hammer: 'Hammer of Justice',
+            gojo_purple: 'Hollow Purple', sukuna_fuga: 'Divine Flame (Fuga)', 
+            ishigori_granite: 'Granite Blast', jogo_meteor: 'Maximum: Meteor',
+            higuruma_death: 'Death Penalty'
         };
 
         const txt = this.scene.add.text(px, py - 85, `COPY: ${names[abilityKey]}`, {
@@ -160,6 +167,45 @@ export default class Yuta extends Fighter {
                 }
             });
         }
+        else if (abilityKey === 'mahito_soul') {
+            try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
+            const proj = new Projectile(this.scene, px + 40 * f, py, {
+                owner: this, damage: Math.floor(45 * this.power),
+                knockbackX: 100 * f, knockbackY: -50, stunDuration: 400,
+                speed: 600, direction: f, color: 0x8800CC, size: { w: 40, h: 40 },
+                lifetime: 1200, type: 'soul_human'
+            });
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        }
+        else if (abilityKey === 'toji_katana') {
+            this.stateMachine.setState('attack');
+            const target = this.opponent;
+            if (target) {
+                const teleportX = target.sprite.x - (50 * f);
+                this.sprite.setPosition(teleportX, target.sprite.y);
+                this.facing = target.sprite.x > this.sprite.x ? 1 : -1;
+                target.takeDamage(Math.floor(target.hp * 0.05 * this.power), 400 * this.facing, -100, 400); // 5% chunk
+                const slashLine = this.scene.add.graphics().setDepth(15);
+                slashLine.lineStyle(6, 0xFF44AA, 0.8);
+                slashLine.beginPath(); slashLine.moveTo(teleportX, target.sprite.y); slashLine.lineTo(teleportX + 100 * this.facing, target.sprite.y - 20); slashLine.strokePath();
+                this.scene.tweens.add({ targets: slashLine, alpha: 0, duration: 300, onComplete: () => slashLine.destroy() });
+                try { this.scene.sound.play('sfx_slash', { volume: 1.0 }); } catch(e) {}
+            }
+        }
+        else if (abilityKey === 'kurourushi_swarm') {
+            try { this.scene.sound.play('sfx_beam', { volume: 0.4 }); } catch(e) {}
+            for (let i = 0; i < 3; i++) {
+                this.scene.time.delayedCall(i * 150, () => {
+                    const proj = new Projectile(this.scene, px + 40 * f, py + (Math.random() * 40 - 20), {
+                        owner: this, damage: Math.floor(15 * this.power),
+                        knockbackX: 50 * f, knockbackY: 0, stunDuration: 100,
+                        speed: 500, direction: f, color: 0x221100, size: { w: 15, h: 10 },
+                        lifetime: 1500, type: 'swarm'
+                    });
+                    if (this.scene.projectiles) this.scene.projectiles.push(proj);
+                });
+            }
+        }
 
         // ── TIER 2 (HEAVY) ──
         else if (abilityKey === 'gojo_red') {
@@ -229,6 +275,59 @@ export default class Yuta extends Fighter {
                 onHitCallback: (p, victim) => { if (victim.applyBurn) victim.applyBurn(3000); return false; }
             });
             if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        }
+        else if (abilityKey === 'naoya_freeze') {
+            this.stateMachine.lock(500);
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.6 }); } catch(e) {}
+            const target = this.opponent;
+            const freezeRect = this.scene.add.rectangle(px + 60 * f, py, 100, 100, 0x88CCFF, 0.5).setDepth(15);
+            this.scene.tweens.add({ targets: freezeRect, alpha: 0, scale: 1.5, duration: 400, onComplete: () => freezeRect.destroy() });
+            if (target && Math.abs(target.sprite.x - px) < 150) {
+                target.takeDamage(30 * this.power, 0, 0, 1500); // 1.5 second stun!
+                target.sprite.body.setVelocity(0, 0);
+            }
+        }
+        else if (abilityKey === 'hakari_doors') {
+            this.stateMachine.lock(800);
+            const target = this.opponent;
+            const tx = target ? target.sprite.x : px + 150 * f;
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e) {}
+            const door1 = this.scene.add.rectangle(tx - 100, py, 30, 120, 0x555555).setDepth(15);
+            const door2 = this.scene.add.rectangle(tx + 100, py, 30, 120, 0x555555).setDepth(15);
+            this.scene.tweens.add({
+                targets: door1, x: tx - 15, duration: 200, ease: 'Cubic.easeIn'
+            });
+            this.scene.tweens.add({
+                targets: door2, x: tx + 15, duration: 200, ease: 'Cubic.easeIn',
+                onComplete: () => {
+                    if (this.scene.screenEffects) this.scene.screenEffects.shake(0.04, 300);
+                    if (target && Math.abs(target.sprite.x - tx) < 50) {
+                        target.takeDamage(60 * this.power, 0, -300, 600);
+                    }
+                    this.scene.time.delayedCall(300, () => {
+                        door1.destroy(); door2.destroy();
+                    });
+                }
+            });
+        }
+        else if (abilityKey === 'higuruma_hammer') {
+            this.stateMachine.lock(900);
+            this.sprite.body.setVelocityY(-400);
+            try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
+            this.scene.time.delayedCall(300, () => {
+                this.sprite.body.setVelocityY(800);
+                const target = this.opponent;
+                this.scene.time.delayedCall(200, () => {
+                    if (this.scene.screenEffects) this.scene.screenEffects.shake(0.03, 400);
+                    const g = this.scene.add.graphics().setDepth(16);
+                    g.fillStyle(0x666666, 0.4); g.fillEllipse(this.sprite.x, this.sprite.y + 15, 120, 30);
+                    g.lineStyle(3, 0xFFCC00, 0.6); g.strokeEllipse(this.sprite.x, this.sprite.y + 15, 120, 30);
+                    this.scene.tweens.add({ targets: g, alpha: 0, scaleX: 1.5, scaleY: 1.5, duration: 400, onComplete: () => g.destroy() });
+                    if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 150) {
+                        target.takeDamage(60 * this.power, 300 * this.facing, -500, 600);
+                    }
+                });
+            });
         }
 
         // ── TIER 4 (ULTIMATES) ──
@@ -327,8 +426,34 @@ export default class Yuta extends Fighter {
             });
         }
 
+        else if (abilityKey === 'higuruma_death') {
+            this.stateMachine.lock(1200);
+            try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e) {}
+            const target = this.opponent;
+            const tx = target ? target.sprite.x : px + 150 * f;
+            const ty = py;
+            const g = this.scene.add.graphics().setDepth(16);
+            g.fillStyle(0x8B7355, 1); g.fillRect(tx - 10, ty - 300, 20, 80);
+            g.fillStyle(0x444444, 1); g.fillRect(tx - 40, ty - 220, 80, 50);
+
+            this.scene.tweens.add({
+                targets: g, y: 220, duration: 300, ease: 'Power2',
+                onComplete: () => {
+                    g.clear();
+                    g.fillStyle(0x444444, 1); g.fillRect(tx - 40, ty, 80, 50);
+                    g.fillStyle(0x8B7355, 1); g.fillRect(tx - 10, ty - 80, 20, 80);
+                    if (this.scene.screenEffects) this.scene.screenEffects.shake(0.06, 500);
+                    if (target && !target.isDead && Math.abs(target.sprite.x - tx) < 80) {
+                        target.takeDamage(80 * this.power, 200 * f, -100, 700);
+                        target.ceSystem.ce = Math.max(0, target.ceSystem.ce - 50); // Confiscates CE
+                    }
+                    this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, delay: 200, onComplete: () => g.destroy() });
+                }
+            });
+        }
+
         this.scene.time.delayedCall(700, () => {
-            if (abilityKey !== 'gojo_purple' && abilityKey !== 'sukuna_fuga' && abilityKey !== 'ishigori_granite' && abilityKey !== 'jogo_meteor') {
+            if (abilityKey !== 'gojo_purple' && abilityKey !== 'sukuna_fuga' && abilityKey !== 'ishigori_granite' && abilityKey !== 'jogo_meteor' && abilityKey !== 'higuruma_death') {
                 this.isCasting = false;
                 this.stateMachine.unlock();
                 this.stateMachine.setState('idle');
@@ -599,9 +724,9 @@ export default class Yuta extends Fighter {
             this.thinIceCooldown -= dt;
         }
 
-        if (this.copyCooldownTimer > 0) {
-            this.copyCooldownTimer -= dt;
-        }
+        if (this.copyCdLight > 0) this.copyCdLight -= dt;
+        if (this.copyCdHeavy > 0) this.copyCdHeavy -= dt;
+        if (this.copyCdUlt > 0) this.copyCdUlt -= dt;
 
         if (this.copyActive) {
             this.copyTimer -= dt;
@@ -617,14 +742,42 @@ export default class Yuta extends Fighter {
     // DRAW — Yuta with katana + Rika behind
     // ═══════════════════════════════════════
     drawBody(dt) {
-        const g = this.graphics; g.clear();
+        super.drawBody(dt); // Calls base to draw everything
+        const g = this.graphics; 
         const x = this.sprite.x; const y = this.sprite.y;
         const f = this.facing;
+        const masterY = y + (this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0);
+
+        // UI Cooldown "Mini Clock" Indicators
+        if (this.copyActive && !this.isDead) {
+            const renderClock = (xOffset, cd, maxCd, color) => {
+                if (cd <= 0) return;
+                const progress = cd / maxCd; // 0 to 1
+                const cx = x + xOffset;
+                const cy = masterY - 85;
+                const radius = 6;
+                g.fillStyle(0x000000, 0.7);
+                g.fillCircle(cx, cy, radius);
+                
+                g.fillStyle(color, 0.9);
+                g.beginPath();
+                g.moveTo(cx, cy);
+                g.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * progress), false);
+                g.closePath();
+                g.fillPath();
+
+                g.lineStyle(1, 0xFFFFFF, 0.8);
+                g.strokeCircle(cx, cy, radius);
+            };
+
+            renderClock(-15, this.copyCdLight, 2000, 0x00FF00); // Light (Green)
+            renderClock(0, this.copyCdHeavy, 3000, 0xFFCC00); // Heavy (Yellow)
+            renderClock(15, this.copyCdUlt, 5000, 0xFF0000); // Ult (Red)
+        }
+
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
         if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
-        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
-        const masterY = y + bobY;
         const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
         const uniformColor = isFlashing ? 0xFFFFFF : 0x111133;
         const hairColor = isFlashing ? 0xFFFFFF : 0x222244;

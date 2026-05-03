@@ -82,7 +82,7 @@ export const ATTACKS = {
 export const CE_COSTS = {
     SKILL_1: 30,
     SKILL_2: 60,
-    DOMAIN: 100,
+    DOMAIN: 50,
     MAXIMUM: 150,
 };
 
