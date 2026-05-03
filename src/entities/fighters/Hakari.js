@@ -36,6 +36,7 @@ export default class Hakari extends Fighter {
 
     trySpecialAttack() {
         if (this.isCasting) return;
+        if (this.jackpotActive) return; // Only physical attacks allowed during Jackpot!
         const tier = this.ceSystem.getTier();
 
         if (tier >= 3 && this.input.isDown('DOWN')) {
@@ -361,7 +362,7 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 20000;
+        this.jackpotTimer = 22000; // Exactly 22 seconds
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
@@ -423,6 +424,7 @@ export default class Hakari extends Fighter {
                 this.speed = this._baseSpeed;
                 this.power = this.charData.stats.power || 1.0;
                 this.ceSystem.ce = 0; // Loses all CE when Jackpot ends
+                this.ceSystem.regenRate = (this.charData.stats.ceRegen || 3.5) / 2; // Regen halved
             }
         }
 

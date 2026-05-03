@@ -226,19 +226,34 @@ export default class Higuruma extends Fighter {
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'deadly_sentencing');
 
         this.target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        
+        // Strict Immobilization
         if (this.target && !this.target.isDead) {
-            this.target.stateMachine.lock(99999);
+            this.target.stateMachine.lock(999999);
             this.target.sprite.body.setVelocity(0, 0);
+            this.target.isInvulnerable = true; // No attacks can hit
         }
-        this.stateMachine.lock(99999);
+        this.stateMachine.lock(999999);
         this.sprite.body.setVelocity(0, 0);
 
         this._domainPoints = 0;
         this._domainAttempt = 0;
         this._domainMaxAttempts = 6;
         
+        // Visual Courtroom
+        this.courtroomGraphics = this.scene.add.graphics().setDepth(5);
+        const cy = this.scene.cameras.main.centerY;
+        const w = this.scene.cameras.main.width;
+        this.courtroomGraphics.fillStyle(0x3E2723, 1);
+        this.courtroomGraphics.fillRect(0, cy - 100, w, 300); // Wooden floor/wall
+        this.courtroomGraphics.fillStyle(0x5D4037, 1);
+        this.courtroomGraphics.fillRect(this.sprite.x - 50, this.sprite.y - 20, 100, 80); // Higuruma Podium
+        if (this.target) {
+            this.courtroomGraphics.fillRect(this.target.sprite.x - 50, this.target.sprite.y - 20, 100, 80); // Def Podium
+        }
+
         // Judgeman appears
-        this.jmText = this.scene.add.text(this.sprite.x, this.sprite.y - 130, '👤 JUDGEMAN TRIBUNAL', {
+        this.jmText = this.scene.add.text(this.sprite.x, this.sprite.y - 130, '⚖️ JUDGEMAN TRIBUNAL ⚖️', {
             fontFamily: 'Arial Black', fontSize: '18px', color: '#FFFFFF', stroke: '#444444', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
 
@@ -254,9 +269,10 @@ export default class Higuruma extends Fighter {
         }
         this._domainAttempt++;
         
-        let higuChoice = null;
-        let oppChoice = null;
-        let timeLeft = 8000;
+        this.higuChoice = null;
+        this.oppChoice = null;
+        this.timeLeft = 8000;
+        this.trialActive = true;
         
         if (this.trialUI) this.trialUI.forEach(el => el.destroy());
         this.trialUI = [];
@@ -268,7 +284,7 @@ export default class Higuruma extends Fighter {
             fontFamily: 'Arial Black', fontSize: '24px', color: '#FFFFFF', stroke: '#000000', strokeThickness: 4
         }).setOrigin(0.5).setDepth(30);
         
-        const timerTxt = this.scene.add.text(cx, cy + 35, '8.0s', {
+        this.timerTxt = this.scene.add.text(cx, cy + 35, '8.0s', {
             fontFamily: 'Arial Black', fontSize: '22px', color: '#FFCC00', stroke: '#000000', strokeThickness: 3
         }).setOrigin(0.5).setDepth(30);
         
@@ -297,56 +313,26 @@ export default class Higuruma extends Fighter {
         gBar.lineStyle(3, 0xFFFFFF, 1);
         gBar.strokeRect(barX, barY, barW, barH);
         
-        this.trialUI.push(title, timerTxt, hint1, hint2, gBar);
-
-        const getChoice = (player) => {
-            if (player.input.isDown('SKILL1')) return 'CONFESS'; // P1: U, P2: Numpad1
-            if (player.input.isDown('SKILL2')) return 'SILENCE'; // P1: I, P2: Numpad2
-            if (player.input.isDown('DOWN')) return 'DENY';      // P1: S, P2: DownArrow
-            return null;
-        };
-
-        const pollEvent = this.scene.time.addEvent({
-            delay: 100,
-            loop: true,
-            callback: () => {
-                timeLeft -= 100;
-                timerTxt.setText((timeLeft/1000).toFixed(1) + 's');
-                
-                // AI ALWAYS picks Silence (as requested by user)
-                if (this.target && this.target.isAI && oppChoice === null) {
-                    oppChoice = 'SILENCE';
-                }
-
-                if (!higuChoice) higuChoice = getChoice(this);
-                if (this.target && !oppChoice && !this.target.isAI) oppChoice = getChoice(this.target);
-                
-                if (timeLeft <= 0 || (higuChoice && oppChoice)) {
-                    pollEvent.destroy();
-                    
-                    // Default to Silence if nothing was pressed
-                    if (!higuChoice) higuChoice = 'SILENCE';
-                    if (!oppChoice) oppChoice = 'SILENCE';
-                    
-                    this._resolveRound(higuChoice, oppChoice);
-                }
-            }
-        });
+        this.trialUI.push(title, this.timerTxt, hint1, hint2, gBar);
     }
 
     _resolveRound(h1, p2) {
         let pts = 0;
-        let msg = '';
-        if (h1 === p2) {
-            if (h1 === 'CONFESS') {
-                pts = 3;
-                msg = 'FULL CONFESSION! +3 POINTS';
-            } else {
-                pts = 1;
-                msg = `PREDICTION MATCH (${h1})! +1 PT`;
-            }
+        let msg = `Judge: ${h1} | Def: ${p2}\n`;
+        
+        // Strict Points Matrix
+        if (h1 === 'CONFESS' && p2 === 'CONFESS') {
+            pts = 3;
+            msg += 'MATCH: FULL CONFESSION! (+3 PTS)';
+        } else if (h1 === 'SILENCE' && p2 === 'SILENCE') {
+            pts = 1;
+            msg += 'MATCH: MUTUAL SILENCE (+1 PT)';
+        } else if (h1 === 'DENY' && p2 === 'DENY') {
+            pts = 1;
+            msg += 'MATCH: MUTUAL DENIAL (+1 PT)';
         } else {
-            msg = `OBJECTION! (Judge:${h1} vs Def:${p2})`;
+            pts = 0;
+            msg += 'MISMATCH: OBJECTION! (+0 PTS)';
         }
         
         this._domainPoints += pts;
@@ -355,11 +341,11 @@ export default class Higuruma extends Fighter {
         const cy = this.scene.cameras.main.centerY;
         const resTxt = this.scene.add.text(cx, cy + 30, msg, {
             fontFamily: 'Arial Black', fontSize: '20px', color: pts > 0 ? '#00FF00' : '#FF0000',
-            stroke: '#000000', strokeThickness: 4
+            stroke: '#000000', strokeThickness: 4, align: 'center'
         }).setOrigin(0.5).setDepth(30);
         this.trialUI.push(resTxt);
         
-        this.scene.time.delayedCall(1500, () => {
+        this.scene.time.delayedCall(2000, () => {
             this._startTrialRound();
         });
     }
@@ -402,6 +388,7 @@ export default class Higuruma extends Fighter {
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
             if (this.target && !this.target.isDead) {
+                this.target.isInvulnerable = false;
                 this.target.stateMachine.unlock();
                 if (!this.target.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
                     this.target.stateMachine.setState('idle');
@@ -423,6 +410,39 @@ export default class Higuruma extends Fighter {
     update(time, dt) {
         super.update(time, dt);
         
+        // --- Domain Trial Input Capturing ---
+        if (this.trialActive) {
+            this.timeLeft -= dt;
+            if (this.timerTxt) this.timerTxt.setText((this.timeLeft/1000).toFixed(1) + 's');
+
+            // AI Logic
+            if (this.target && this.target.isAI && this.oppChoice === null) {
+                this.oppChoice = 'SILENCE';
+            }
+
+            // Capture P1 (Higuruma) Input
+            if (!this.higuChoice) {
+                if (this.input.isDown('SKILL1')) this.higuChoice = 'CONFESS';
+                else if (this.input.isDown('SKILL2')) this.higuChoice = 'SILENCE';
+                else if (this.input.isDown('DOWN')) this.higuChoice = 'DENY';
+            }
+
+            // Capture P2 (Opponent) Input
+            if (this.target && !this.target.isAI && !this.oppChoice) {
+                if (this.target.input.isDown('SKILL1')) this.oppChoice = 'CONFESS';
+                else if (this.target.input.isDown('SKILL2')) this.oppChoice = 'SILENCE';
+                else if (this.target.input.isDown('DOWN')) this.oppChoice = 'DENY';
+            }
+
+            // Resolve if time is up or both chose
+            if (this.timeLeft <= 0 || (this.higuChoice && this.oppChoice)) {
+                this.trialActive = false;
+                if (!this.higuChoice) this.higuChoice = 'SILENCE';
+                if (!this.oppChoice) this.oppChoice = 'SILENCE';
+                this._resolveRound(this.higuChoice, this.oppChoice);
+            }
+        }
+
         // Prevent default CE drain from ending domain early
         if (this.domainActive) {
             this.ceSystem.ce = this.ceSystem.maxCe;
