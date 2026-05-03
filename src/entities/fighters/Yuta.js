@@ -736,6 +736,12 @@ export default class Yuta extends Fighter {
                 this.power = this._origPower || this.charData.stats.power || 1.0;
             }
         }
+
+        if (this.domainActive && this.ceSystem.isDomainActive) {
+            // Yuta's domain drains much slower. Refund 70% of the natural drain.
+            const refund = (DOMAIN.CE_DRAIN_RATE * 0.7) * (dt / 1000);
+            this.ceSystem.ce = Math.min(this.ceSystem.maxCe, this.ceSystem.ce + refund);
+        }
     }
 
     // ═══════════════════════════════════════

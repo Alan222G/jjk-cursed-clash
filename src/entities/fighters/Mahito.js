@@ -13,15 +13,43 @@ export default class Mahito extends Fighter {
         super(scene, x, y, playerIndex, CHARACTERS.MAHITO);
         this.isCasting = false;
         // Transfiguration state
-        this.morphedForm = null; // null, 'blade', 'wing', 'armor'
+        this.stance = 'normal'; // 'normal', 'blades', 'monstrous'
+        this.stanceCooldown = 0;
+        this.monstrousHeavyCd = 0;
+        this.morphedForm = null; 
         this.morphTimer = 0;
-        this.transfiguredHumans = []; // Active minion visuals
+        this.transfiguredHumans = [];
         this.bodyRepelCooldown = 0;
-        this.soulTouchActive = false; // Domain guaranteed hit state
-        this.instantSpiritForm = false; // 120% true form
+        this.soulTouchActive = false;
+        this.instantSpiritForm = false;
         this.instantSpiritTimer = 0;
-        // Soul defense: immune to normal physical unless attacker can see souls
         this.soulDefenseActive = true;
+    }
+
+    getBasicAttackData(type) {
+        const base = { ...ATTACKS[type] };
+        
+        if (this.stance === 'blades' || this.morphedForm === 'blade') {
+            base.range += 10;
+            if (type === 'HEAVY') {
+                base.onHit = (attacker, victim, dmg) => {
+                    if (victim.applyBleed) victim.applyBleed(3000);
+                };
+            }
+        } else if (this.stance === 'monstrous') {
+            if (type === 'LIGHT' || type === 'MEDIUM') return null; // Disabled
+            if (type === 'HEAVY') {
+                if (this.monstrousHeavyCd > 0) return null; // Cooldown
+                base.damage = Math.floor(100 * this.power);
+                base.knockbackX = 1200;
+                base.knockbackY = -500;
+                base.startup += 100;
+                base.stunDuration = 800;
+                this.monstrousHeavyCd = 2000;
+            }
+        }
+        
+        return base;
     }
 
     // ═══════════════════════════════════════
@@ -31,6 +59,19 @@ export default class Mahito extends Fighter {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
 
+        if (this.stance === 'blades') {
+            if (tier >= 4 && this.input.isDown('DOWN')) this.castBladeSpin();
+            else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) this.castSoulWhip();
+            else if (tier >= 1) this.castBladeRush();
+            return;
+        } else if (this.stance === 'monstrous') {
+            if (tier >= 4 && this.input.isDown('DOWN')) this.castMonstrousRoar();
+            else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) this.castBeastCharge();
+            else if (tier >= 1) this.castGroundSmash();
+            return;
+        }
+
+        // Normal Stance
         if (tier >= 4 && this.input.isDown('DOWN')) {
             this.castInstantSpiritBody();
         } else if (tier >= 2 && this.input.isDown('UP')) {
@@ -242,6 +283,160 @@ export default class Mahito extends Fighter {
     }
 
     // ═══════════════════════════════════════
+    // BLADES STANCE SKILLS
+    // ═══════════════════════════════════════
+    castBladeRush() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        this.isCasting = true; this.stateMachine.lock(800);
+        this.sprite.body.setVelocityX(600 * this.facing);
+        try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e){}
+
+        let hits = 0;
+        const rushInterval = this.scene.time.addEvent({
+            delay: 150, repeat: 3,
+            callback: () => {
+                hits++;
+                if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 120) {
+                    this.opponent.takeDamage(25 * this.power, 50 * this.facing, -50, 200);
+                }
+                const slash = this.scene.add.graphics().setDepth(15);
+                slash.lineStyle(4, 0x00CCAA, 0.8);
+                slash.beginPath(); slash.moveTo(this.sprite.x, this.sprite.y); slash.lineTo(this.sprite.x + 80 * this.facing, this.sprite.y - 40 + (hits*10)); slash.strokePath();
+                this.scene.tweens.add({ targets: slash, alpha: 0, duration: 200, onComplete: () => slash.destroy() });
+
+                if (hits >= 4) {
+                    this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+                }
+            }
+        });
+    }
+
+    castSoulWhip() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
+        this.isCasting = true; this.stateMachine.lock(600);
+        try { this.scene.sound.play('sfx_slash', { volume: 1.0 }); } catch(e){}
+
+        const whip = this.scene.add.graphics().setDepth(14);
+        whip.lineStyle(8, 0x00FFAA, 0.8);
+        whip.beginPath(); whip.moveTo(this.sprite.x, this.sprite.y);
+        whip.lineTo(this.sprite.x + 400 * this.facing, this.sprite.y - 20); whip.strokePath();
+
+        this.scene.tweens.add({ targets: whip, alpha: 0, duration: 400, onComplete: () => whip.destroy() });
+
+        if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 420) {
+            this.opponent.takeDamage(50 * this.power, 400 * this.facing, -100, 500);
+        }
+
+        this.scene.time.delayedCall(400, () => {
+            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
+    }
+
+    castBladeSpin() {
+        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        this.isCasting = true; this.stateMachine.lock(1500);
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x00FFAA, 200, 0.5);
+        }
+        
+        let spinTicks = 0;
+        const spinInterval = this.scene.time.addEvent({
+            delay: 100, repeat: 14,
+            callback: () => {
+                spinTicks++;
+                this.sprite.body.setVelocityX(400 * this.facing);
+                
+                const ring = this.scene.add.ellipse(this.sprite.x, this.sprite.y - 15, 120, 40);
+                ring.isStroked = true; ring.strokeColor = 0x00CCAA; ring.lineWidth = 4;
+                this.scene.tweens.add({ targets: ring, scale: 1.5, alpha: 0, duration: 200, onComplete: () => ring.destroy() });
+
+                if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 80) {
+                    this.opponent.takeDamage(15 * this.power, 100 * this.facing, -50, 300);
+                }
+
+                if (spinTicks >= 15) {
+                    this.sprite.body.setVelocityX(0);
+                    this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+                }
+            }
+        });
+    }
+
+    // ═══════════════════════════════════════
+    // MONSTROUS STANCE SKILLS
+    // ═══════════════════════════════════════
+    castGroundSmash() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        this.isCasting = true; this.stateMachine.lock(800);
+        this.sprite.body.setVelocityY(-400);
+
+        this.scene.time.delayedCall(300, () => {
+            this.sprite.body.setVelocityY(800);
+            this.scene.time.delayedCall(150, () => {
+                try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e){}
+                if (this.scene.screenEffects) this.scene.screenEffects.shake(0.04, 300);
+                
+                const shock = this.scene.add.circle(this.sprite.x, this.sprite.y + 20, 150, 0x556655, 0.6).setDepth(15);
+                this.scene.tweens.add({ targets: shock, alpha: 0, scale: 1.5, duration: 400, onComplete: () => shock.destroy() });
+
+                if (this.opponent && !this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 160) {
+                    this.opponent.takeDamage(45 * this.power, 200 * this.facing, -500, 600);
+                }
+            });
+        });
+        this.scene.time.delayedCall(700, () => { this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle'); });
+    }
+
+    castBeastCharge() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
+        this.isCasting = true; this.stateMachine.lock(1200);
+        
+        try { this.scene.sound.play('sfx_charge', { volume: 1.0 }); } catch(e){}
+
+        this.scene.time.delayedCall(300, () => {
+            this.sprite.body.setVelocityX(800 * this.facing);
+            let hitAlready = false;
+
+            const dashInt = this.scene.time.addEvent({
+                delay: 50, repeat: 10,
+                callback: () => {
+                    if (!hitAlready && this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 100) {
+                        hitAlready = true;
+                        this.opponent.takeDamage(70 * this.power, 800 * this.facing, -200, 800);
+                        try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.2 }); } catch(e){}
+                        if (this.scene.screenEffects) this.scene.screenEffects.shake(0.05, 400);
+                    }
+                }
+            });
+        });
+        
+        this.scene.time.delayedCall(1100, () => { this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle'); });
+    }
+
+    castMonstrousRoar() {
+        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        this.isCasting = true; this.stateMachine.lock(1500);
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.slowMotion(0.2, 800);
+            this.scene.screenEffects.domainFlash(0x00FFAA);
+        }
+
+        this.scene.time.delayedCall(500, () => {
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.5 }); } catch(e){}
+            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.08, 800);
+            
+            const roar = this.scene.add.circle(this.sprite.x, this.sprite.y, 350, 0x00FFAA, 0.8).setDepth(25);
+            this.scene.tweens.add({ targets: roar, scale: 2, alpha: 0, duration: 800, onComplete: () => roar.destroy() });
+
+            if (this.opponent && !this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 360) {
+                this.opponent.takeDamage(100 * this.power, 800 * this.facing, -600, 1000);
+            }
+        });
+
+        this.scene.time.delayedCall(1400, () => { this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle'); });
+    }
+
+    // ═══════════════════════════════════════
     // DOMAIN — Self-Embodiment of Perfection
     // Guaranteed Idle Transfiguration hit (soul touch)
     // ═══════════════════════════════════════
@@ -318,6 +513,38 @@ export default class Mahito extends Fighter {
         if (this.morphTimer > 0) this.morphTimer -= dt;
         if (this.bodyRepelCooldown > 0) this.bodyRepelCooldown -= dt;
         if (this.instantSpiritTimer > 0) this.instantSpiritTimer -= dt;
+
+        if (this.stanceCooldown > 0) this.stanceCooldown -= dt;
+        if (this.monstrousHeavyCd > 0) this.monstrousHeavyCd -= dt;
+
+        // Stance Toggle: DOWN + BLOCK
+        if (this.input.isDown('DOWN') && this.input.isDown('BLOCK') && this.stanceCooldown <= 0) {
+            this.cycleStance();
+        }
+    }
+
+    cycleStance() {
+        this.stanceCooldown = 1500; // 1.5s cooldown between swaps
+        const stances = ['normal', 'blades', 'monstrous'];
+        const idx = stances.indexOf(this.stance);
+        this.stance = stances[(idx + 1) % stances.length];
+
+        const stanceNames = {
+            'normal': 'MODO: NORMAL',
+            'blades': 'MODO: CUCHILLAS',
+            'monstrous': 'MODO: MONSTRUOSO'
+        };
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, stanceNames[this.stance], {
+            fontSize: '16px', fontFamily: 'Arial Black', color: '#00FFAA', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(20);
+        this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1200, onComplete: () => txt.destroy() });
+
+        try { this.scene.sound.play('sfx_slash', { volume: 0.6 }); } catch(e){}
+        const g = this.scene.add.graphics().setDepth(15);
+        g.fillStyle(this.stance === 'monstrous' ? 0x00FF00 : (this.stance === 'blades' ? 0x00CCAA : 0xFFFFFF), 0.5);
+        g.fillCircle(this.sprite.x, this.sprite.y, 50);
+        this.scene.tweens.add({ targets: g, alpha: 0, scale: 1.5, duration: 400, onComplete: () => g.destroy() });
     }
 
     // ═══════════════════════════════════════
@@ -422,23 +649,33 @@ export default class Mahito extends Fighter {
         g.lineStyle(7, skinColor, 0.85);
         g.beginPath(); g.moveTo(x - 14, armY + 3); g.lineTo(x - 22 * f, armY + 20); g.strokePath();
 
-        // Front arm — morphed blade form
-        if (this.morphedForm === 'blade') {
-            // Blade arm — elongated with sharp edge
+        if (this.stance === 'blades' || this.morphedForm === 'blade') {
+            // Blade arms
             g.lineStyle(6, skinColor, 1);
             g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (20 + armExtend) * f, armY - 5); g.strokePath();
-            // Blade extension
             g.fillStyle(0x556655, 1);
             g.beginPath();
             g.moveTo(x + (20 + armExtend) * f, armY - 10);
-            g.lineTo(x + (45 + armExtend) * f, armY - 5);
+            g.lineTo(x + (65 + armExtend) * f, armY - 5);
             g.lineTo(x + (20 + armExtend) * f, armY);
             g.fillPath();
-            // Blade edge glow
             g.lineStyle(2, 0x00CCAA, 0.6);
             g.beginPath(); g.moveTo(x + (20 + armExtend) * f, armY - 10);
-            g.lineTo(x + (45 + armExtend) * f, armY - 5); g.strokePath();
+            g.lineTo(x + (65 + armExtend) * f, armY - 5); g.strokePath();
+        } else if (this.stance === 'monstrous') {
+            // Monstrous giant mass arms
+            g.lineStyle(12, 0x334433, 1);
+            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (18 + armExtend) * f, armY + 5); g.strokePath();
+            g.fillStyle(0x446644, 1);
+            g.fillEllipse(x + (25 + armExtend) * f, armY + 10, 25, 30);
+            g.fillStyle(0x00CCAA, 0.4);
+            g.fillEllipse(x + (25 + armExtend) * f, armY + 10, 20, 25);
+            // Sharp spikes
+            g.fillStyle(0x223322, 1);
+            g.fillTriangle(x + (30 + armExtend) * f, armY, x + (45 + armExtend) * f, armY - 10, x + (20 + armExtend) * f, armY - 5);
+            g.fillTriangle(x + (30 + armExtend) * f, armY + 20, x + (45 + armExtend) * f, armY + 30, x + (20 + armExtend) * f, armY + 25);
         } else {
+            // Normal arms
             g.lineStyle(8, skinColor, 1);
             if (this.stateMachine.is('block')) {
                 g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 8 * f, armY - 12); g.strokePath();
