@@ -19,6 +19,7 @@ export default class Yuta extends Fighter {
         this.copyActive = false;
         this.copiedSkills = null;
         this.copyTimer = 0;
+        this.copyCooldownTimer = 0;
     }
 
     trySpecialAttack() {
@@ -27,18 +28,17 @@ export default class Yuta extends Fighter {
 
         // ── COPY MODE: Literal attacks from other characters ──
         if (this.copyActive && this._copiedOpponent) {
-            if (tier >= 4 && this.input.isDown('DOWN')) {
-                if (this.ceSystem.spend(CE_COSTS.MAXIMUM)) {
-                    this.executeCopiedAbility('ultimate');
-                }
-            } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-                if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
-                    this.executeCopiedAbility('heavy');
-                }
-            } else if (tier >= 1) {
-                if (this.ceSystem.spend(CE_COSTS.SKILL_1)) {
-                    this.executeCopiedAbility('light');
-                }
+            if (this.copyCooldownTimer > 0) return; // 5-second cooldown active
+
+            if (this.input.isDown('DOWN')) {
+                this.copyCooldownTimer = 5000;
+                this.executeCopiedAbility('ultimate');
+            } else if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
+                this.copyCooldownTimer = 5000;
+                this.executeCopiedAbility('heavy');
+            } else {
+                this.copyCooldownTimer = 5000;
+                this.executeCopiedAbility('light');
             }
             return;
         }
@@ -595,7 +595,14 @@ export default class Yuta extends Fighter {
     update(time, dt) {
         super.update(time, dt);
         if (this.cursedSpeechCooldown > 0) this.cursedSpeechCooldown -= dt;
-        if (this.thinIceCooldown > 0) this.thinIceCooldown -= dt;
+        if (this.thinIceCooldown > 0) {
+            this.thinIceCooldown -= dt;
+        }
+
+        if (this.copyCooldownTimer > 0) {
+            this.copyCooldownTimer -= dt;
+        }
+
         if (this.copyActive) {
             this.copyTimer -= dt;
             if (this.copyTimer <= 0 || !this.ceSystem.isDomainActive) {
