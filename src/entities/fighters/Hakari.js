@@ -362,7 +362,7 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 22000; // Exactly 22 seconds
+        this.jackpotTimer = 30000; // Exactly 30 seconds
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
@@ -422,9 +422,9 @@ export default class Hakari extends Fighter {
             if (this.jackpotTimer <= 0) {
                 this.jackpotActive = false;
                 this.speed = this._baseSpeed;
-                this.power = this.charData.stats.power || 1.0;
+                this.power = (this.charData.stats.power || 1.0) / 2; // Power halved
                 this.ceSystem.ce = 0; // Loses all CE when Jackpot ends
-                this.ceSystem.regenRate = (this.charData.stats.ceRegen || 3.5) / 2; // Regen halved
+                this.ceSystem.regenRate = (this.charData.stats.ceRegen || 3.5) / 2.5; // Regen divided by 2.5
             }
         }
 

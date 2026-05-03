@@ -354,6 +354,7 @@ export default class Higuruma extends Fighter {
         if (this.trialUI) this.trialUI.forEach(el => el.destroy());
         this.trialUI = [];
         if (this.jmText) { this.jmText.destroy(); this.jmText = null; }
+        if (this.courtroomGraphics) { this.courtroomGraphics.destroy(); this.courtroomGraphics = null; }
         
         const cx = this.scene.cameras.main.centerX;
         const cy = this.scene.cameras.main.centerY;
@@ -420,18 +421,21 @@ export default class Higuruma extends Fighter {
                 this.oppChoice = 'SILENCE';
             }
 
-            // Capture P1 (Higuruma) Input
-            if (!this.higuChoice) {
-                if (this.input.isDown('SKILL1')) this.higuChoice = 'CONFESS';
-                else if (this.input.isDown('SKILL2')) this.higuChoice = 'SILENCE';
-                else if (this.input.isDown('DOWN')) this.higuChoice = 'DENY';
-            }
+            // Capture Inputs only after 1 second to avoid leaky inputs from casting the domain
+            if (this.timeLeft <= 7000) {
+                // Capture P1 (Higuruma) Input
+                if (!this.higuChoice) {
+                    if (this.input.isDown('SKILL1')) this.higuChoice = 'CONFESS';
+                    else if (this.input.isDown('SKILL2')) this.higuChoice = 'SILENCE';
+                    else if (this.input.isDown('DOWN')) this.higuChoice = 'DENY';
+                }
 
-            // Capture P2 (Opponent) Input
-            if (this.target && !this.target.isAI && !this.oppChoice) {
-                if (this.target.input.isDown('SKILL1')) this.oppChoice = 'CONFESS';
-                else if (this.target.input.isDown('SKILL2')) this.oppChoice = 'SILENCE';
-                else if (this.target.input.isDown('DOWN')) this.oppChoice = 'DENY';
+                // Capture P2 (Opponent) Input
+                if (this.target && !this.target.isAI && !this.oppChoice) {
+                    if (this.target.input.isDown('SKILL1')) this.oppChoice = 'CONFESS';
+                    else if (this.target.input.isDown('SKILL2')) this.oppChoice = 'SILENCE';
+                    else if (this.target.input.isDown('DOWN')) this.oppChoice = 'DENY';
+                }
             }
 
             // Resolve if time is up or both chose
