@@ -10,7 +10,7 @@ import { GAME_WIDTH, GAME_HEIGHT, CHARACTERS, COLORS } from '../config.js';
 const GRID = [
     ['GOJO', 'SUKUNA', 'TOJI', 'KENJAKU', 'YUTA'],
     ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO', 'TODO'],
-    ['NAOYA', 'HAKARI', 'HIGURUMA', 'NANAMI', 'SUKUNA_20'],
+    ['NAOYA', 'HAKARI', 'HIGURUMA', 'NANAMI', 'NOBARA'],
     ['JOGO', 'DAGON', 'HANAMI', 'CHOSO', 'MEGUMI'],
 ];
 
@@ -30,6 +30,7 @@ const MENU_KEY = {
     HIGURUMA: 'menu_kenjaku',   
     NANAMI: 'menu_toji',
     TODO: 'menu_sukuna',
+    NOBARA: 'menu_kenjaku', // Placeholder portrait
     SUKUNA_20: 'menu_sukuna',
     JOGO: 'menu_jogo',
     DAGON: 'menu_dagon',
@@ -54,6 +55,7 @@ const CHAR_TITLES = {
     HIGURUMA: 'THE JUDGE',
     NANAMI: 'THE 7:3 SORCERER',
     TODO: 'THE BROTHER',
+    NOBARA: 'STRAW DOLL TECHNIQUE',
     SUKUNA_20: 'TRUE FORM — 20 FINGERS',
     JOGO: 'THE EARTH DISASTER',
     DAGON: 'THE SEA DISASTER',
@@ -80,6 +82,16 @@ export default class CharSelectScene extends Phaser.Scene {
         // ── Sukuna 20 availability — from admin panel ──
         this.sukuna20Available = window.gameSettings?.sukuna20Unlocked || false;
         this.sukuna20TakenBy = null; // null, 'p1', or 'p2'
+
+        // ── Construct Active Grid ──
+        this.activeGrid = [];
+        for (let r = 0; r < GRID.length; r++) {
+            this.activeGrid.push([...GRID[r]]);
+        }
+        if (this.sukuna20Available) {
+            // Add a secret 5th row for Sukuna 20!
+            this.activeGrid.push(['SUKUNA_20']);
+        }
 
         // ── Admin Menu State ──
         this.adminModalOpen = false;
@@ -138,8 +150,8 @@ export default class CharSelectScene extends Phaser.Scene {
         this.slots = []; // { key, char, x, y, row, col }
         this.slotImages = [];
 
-        for (let row = 0; row < GRID.length; row++) {
-            const rowChars = GRID[row];
+        for (let row = 0; row < this.activeGrid.length; row++) {
+            const rowChars = this.activeGrid[row];
             const rowWidth = rowChars.length * this.slotSize;
             const rowStartX = GAME_WIDTH / 2 - rowWidth / 2;
             const rowY = this.gridStartY + row * (this.slotSize + this.rowGap);
@@ -260,14 +272,14 @@ export default class CharSelectScene extends Phaser.Scene {
 
     // ── Helper: Get character key from grid position ──
     getKeyAt(row, col) {
-        if (row < 0 || row >= GRID.length) return null;
-        if (col < 0 || col >= GRID[row].length) return null;
-        return GRID[row][col];
+        if (row < 0 || row >= this.activeGrid.length) return null;
+        if (col < 0 || col >= this.activeGrid[row].length) return null;
+        return this.activeGrid[row][col];
     }
 
     // ── Helper: Clamp column when changing rows (rows have different lengths) ──
     clampCol(row, col) {
-        const maxCol = GRID[row].length - 1;
+        const maxCol = this.activeGrid[row].length - 1;
         return Math.min(col, maxCol);
     }
 
@@ -456,7 +468,7 @@ export default class CharSelectScene extends Phaser.Scene {
                 this.p1Col = Math.max(0, this.p1Col - 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyD)) {
-                this.p1Col = Math.min(GRID[this.p1Row].length - 1, this.p1Col + 1);
+                this.p1Col = Math.min(this.activeGrid[this.p1Row].length - 1, this.p1Col + 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyW)) {
                 if (this.p1Row > 0) {
@@ -465,7 +477,7 @@ export default class CharSelectScene extends Phaser.Scene {
                 }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p1KeyS)) {
-                if (this.p1Row < GRID.length - 1) {
+                if (this.p1Row < this.activeGrid.length - 1) {
                     this.p1Row++;
                     this.p1Col = this.clampCol(this.p1Row, this.p1Col);
                 }
@@ -487,7 +499,7 @@ export default class CharSelectScene extends Phaser.Scene {
                 this.p2Col = Math.max(0, this.p2Col - 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2KeyRight)) {
-                this.p2Col = Math.min(GRID[this.p2Row].length - 1, this.p2Col + 1);
+                this.p2Col = Math.min(this.activeGrid[this.p2Row].length - 1, this.p2Col + 1);
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2KeyUp)) {
                 if (this.p2Row > 0) {
@@ -496,7 +508,7 @@ export default class CharSelectScene extends Phaser.Scene {
                 }
             }
             if (Phaser.Input.Keyboard.JustDown(this.p2KeyDown)) {
-                if (this.p2Row < GRID.length - 1) {
+                if (this.p2Row < this.activeGrid.length - 1) {
                     this.p2Row++;
                     this.p2Col = this.clampCol(this.p2Row, this.p2Col);
                 }
@@ -1068,10 +1080,9 @@ export default class CharSelectScene extends Phaser.Scene {
         s20_zone.on('pointerout', () => { drawS20Btn(isS20Unlocked, false); s20_btnLabel.setColor(isS20Unlocked ? '#FF4444' : '#888899'); });
         s20_zone.on('pointerdown', () => {
             window.gameSettings.sukuna20Unlocked = !isS20Unlocked;
-            this.sukuna20Available = window.gameSettings.sukuna20Unlocked;
-            this.hideAdminPanel();
-            this.showAdminPanel();
-            this.updateSelectionDisplay();
+            
+            // Need to completely restart the scene to rebuild the activeGrid properly
+            this.scene.restart();
         });
 
         // Close button

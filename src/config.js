@@ -617,6 +617,37 @@ export const CHARACTERS = {
         },
         domainBg: 'kenjaku_domain', // Placeholder
     },
+    NOBARA: {
+        id: 'nobara',
+        name: 'Nobara Kugisaki',
+        title: 'STRAW DOLL TECHNIQUE',
+        colors: {
+            primary: 0x223355,
+            secondary: 0xCC6633,
+            energy: 0x44AAFF,
+            accent: 0xFF4444,
+            skin: 0xFFE4C4,
+            hair: 0xCC6633,
+        },
+        stats: {
+            maxHp: 2800,
+            speed: 340,
+            power: 1.0,
+            defense: 0.85,
+            ceRegen: 3.2,
+            weight: 85,
+            jumpForce: -610,
+            domainDuration: 12000,
+            domainPhase1: 0,
+        },
+        skills: {
+            skill1: { name: 'Nail Throw', cost: 20, damage: 25, type: 'projectile' },
+            skill2: { name: 'Hairpin', cost: 50, damage: 30, type: 'detonate' },
+            domain: { name: 'Purgatory of Nails', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Resonance', cost: 80, damage: 150, type: 'sure_hit' },
+        },
+        domainBg: null,
+    }
 };
 
 // ── Visual Constants ─────────────────────────────────────
