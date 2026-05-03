@@ -77,8 +77,8 @@ export default class CharSelectScene extends Phaser.Scene {
         this.p2Confirmed = false;
         this.hoveredChar = null;
 
-        // ── Sukuna 20 availability — random luck event (25% chance) ──
-        this.sukuna20Available = Math.random() < 0.25;
+        // ── Sukuna 20 availability — from admin panel ──
+        this.sukuna20Available = window.gameSettings?.sukuna20Unlocked || false;
         this.sukuna20TakenBy = null; // null, 'p1', or 'p2'
 
         // ── Admin Menu State ──
@@ -877,7 +877,7 @@ export default class CharSelectScene extends Phaser.Scene {
         this.adminElements.push(overlay);
 
         // Modal
-        const mW = 460, mH = 330;
+        const mW = 460, mH = 430;
         const mx = GAME_WIDTH / 2 - mW / 2;
         const my = GAME_HEIGHT / 2 - mH / 2;
 
@@ -1002,19 +1002,77 @@ export default class CharSelectScene extends Phaser.Scene {
             });
         });
 
-        // Status text
-        const statusColorMap = { 1: '#44CC66', 2: '#FFAA00', 3: '#FF4444' };
-        const statusLabelMap = { 1: 'Normal', 2: 'Doble', 3: 'Triple' };
-        const statusText = this.add.text(
-            GAME_WIDTH / 2, my + 235,
-            `Estado actual: CE Regen ${statusLabelMap[currentMult]} (x${currentMult})`,
-            {
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '13px',
-                color: statusColorMap[currentMult],
+        // ── SUKUNA 20 DEDOS UNLOCK ──
+        const sep2 = this.add.graphics().setDepth(102);
+        sep2.lineStyle(1, 0xD4A843, 0.4);
+        sep2.lineBetween(mx + 30, my + 195, mx + mW - 30, my + 195);
+        this.adminElements.push(sep2);
+
+        const s20Title = this.add.text(GAME_WIDTH / 2, my + 220, 'DESBLOQUEAR SUKUNA 20 DEDOS', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '14px',
+            color: '#FF4444',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(s20Title);
+
+        const s20Sub = this.add.text(GAME_WIDTH / 2, my + 240, '(Reemplaza aleatoriedad. Disponible para ambos)', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '11px',
+            color: '#666688',
+        }).setOrigin(0.5).setDepth(102);
+        this.adminElements.push(s20Sub);
+
+        const isS20Unlocked = window.gameSettings?.sukuna20Unlocked || false;
+        
+        const btnW_s20 = 150, btnH_s20 = 45;
+        const s20_bx = GAME_WIDTH / 2;
+        const s20_by = my + 280;
+
+        const s20_btnG = this.add.graphics().setDepth(102);
+        const drawS20Btn = (active, hover) => {
+            s20_btnG.clear();
+            if (active) {
+                s20_btnG.fillStyle(0x440000, 1);
+                s20_btnG.fillRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
+                s20_btnG.lineStyle(3, 0xFF4444, 1);
+                s20_btnG.strokeRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
+            } else if (hover) {
+                s20_btnG.fillStyle(0x1A1A2E, 0.95);
+                s20_btnG.fillRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
+                s20_btnG.lineStyle(2, 0x666688, 0.9);
+                s20_btnG.strokeRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
+            } else {
+                s20_btnG.fillStyle(0x0A0A18, 0.9);
+                s20_btnG.fillRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
+                s20_btnG.lineStyle(1, 0x444466, 0.5);
+                s20_btnG.strokeRoundedRect(s20_bx - btnW_s20 / 2, s20_by - btnH_s20 / 2, btnW_s20, btnH_s20, 8);
             }
-        ).setOrigin(0.5).setDepth(102);
-        this.adminElements.push(statusText);
+        };
+        drawS20Btn(isS20Unlocked, false);
+        this.adminElements.push(s20_btnG);
+
+        const s20_btnLabel = this.add.text(s20_bx, s20_by, isS20Unlocked ? 'DESBLOQUEADO ✓' : 'BLOQUEADO ✕', {
+            fontFamily: 'Arial Black, sans-serif',
+            fontSize: '13px',
+            color: isS20Unlocked ? '#FF4444' : '#888899',
+            stroke: '#000000',
+            strokeThickness: isS20Unlocked ? 2 : 0,
+            align: 'center',
+        }).setOrigin(0.5).setDepth(103);
+        this.adminElements.push(s20_btnLabel);
+
+        const s20_zone = this.add.zone(s20_bx, s20_by, btnW_s20, btnH_s20).setInteractive({ useHandCursor: true }).setDepth(104);
+        this.adminElements.push(s20_zone);
+
+        s20_zone.on('pointerover', () => { drawS20Btn(isS20Unlocked, true); s20_btnLabel.setColor('#FFFFFF'); });
+        s20_zone.on('pointerout', () => { drawS20Btn(isS20Unlocked, false); s20_btnLabel.setColor(isS20Unlocked ? '#FF4444' : '#888899'); });
+        s20_zone.on('pointerdown', () => {
+            window.gameSettings.sukuna20Unlocked = !isS20Unlocked;
+            this.sukuna20Available = window.gameSettings.sukuna20Unlocked;
+            this.hideAdminPanel();
+            this.showAdminPanel();
+            this.updateSelectionDisplay();
+        });
 
         // Close button
         const closeBtnW = 140, closeBtnH = 38;
