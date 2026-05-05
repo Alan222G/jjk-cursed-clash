@@ -413,7 +413,37 @@ export default class Fighter {
     }
 
     getBasicAttackData(type) {
-        return ATTACKS[type];
+        return ATTACKS[type] || null;
+    }
+
+    /** Default sure-hit tick — does 50 DPS. Override in subclass for custom behavior. */
+    applySureHitTick(opponent) {
+        if (!this.domainActive) return;
+        if (!opponent || opponent.isDead) return;
+        const sureHitType = this.charData?.skills?.domain?.sureHitType || 'dps';
+        // Default DPS behavior
+        if (sureHitType === 'dps') {
+            const dmg = 50;
+            opponent.hp = Math.max(0, opponent.hp - dmg);
+            if (this.scene.spawnDamageNumber) {
+                this.scene.spawnDamageNumber(opponent.sprite.x, opponent.sprite.y - 70, dmg);
+            }
+        } else if (sureHitType === 'lifesteal') {
+            const dmg = 30;
+            opponent.hp = Math.max(0, opponent.hp - dmg);
+            this.hp = Math.min(this.maxHp || this.charData?.stats?.maxHp || 3000, this.hp + dmg);
+        } else if (sureHitType === 'clones') {
+            const dmg = 20;
+            opponent.hp = Math.max(0, opponent.hp - dmg);
+        } else if (sureHitType === 'buff' || sureHitType === 'counter' || sureHitType === 'copy' || sureHitType === 'immune') {
+            // No damage — these are self-buff domains
+        } else if (sureHitType === 'special_instakill' || sureHitType === 'tribunal' || sureHitType === 'jackpot_rng') {
+            // Handled by character-specific override, do nothing by default
+        } else {
+            // Fallback DPS
+            const dmg = 40;
+            opponent.hp = Math.max(0, opponent.hp - dmg);
+        }
     }
 
     handleAttackInput() {
@@ -443,7 +473,9 @@ export default class Fighter {
                 
                 let atkData;
                 if (this.comboStep < 4) {
-                    atkData = { ...this.getBasicAttackData('LIGHT') };
+                    const baseAtk = this.getBasicAttackData('LIGHT');
+                    if (!baseAtk) return; // Stance disables this attack type
+                    atkData = { ...baseAtk };
                     atkData.damage = 15;
                     atkData.stunDuration = 300;
                     
@@ -458,7 +490,9 @@ export default class Fighter {
                         atkData.knockbackY = 0;
                     }
                 } else {
-                    atkData = { ...this.getBasicAttackData('HEAVY') };
+                    const baseAtkHeavy = this.getBasicAttackData('HEAVY');
+                    if (!baseAtkHeavy) return; // Stance disables this attack type
+                    atkData = { ...baseAtkHeavy };
                     atkData.damage = 60; // Daño aumentado
                     
                     // ── LAUNCHER: 4th hit + DOWN → launch enemy upward ──

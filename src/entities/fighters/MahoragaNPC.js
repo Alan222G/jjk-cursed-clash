@@ -201,7 +201,7 @@ export default class MahoragaNPC extends Fighter {
         this.actionCooldown -= dt;
         if (this.actionCooldown > 0) return;
 
-        if (!this.target || this.target.isDead) return;
+        if (!this.target || this.target.isDead || !this.target.sprite || !this.target.sprite.active) return;
 
         const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.target.sprite.x, this.target.sprite.y);
         this.facing = this.target.sprite.x > this.sprite.x ? 1 : -1;

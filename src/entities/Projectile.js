@@ -64,6 +64,10 @@ export default class Projectile {
 
     update(dt) {
         if (!this.alive) return;
+        if (!this.sprite || !this.sprite.active) {
+            this.destroy();
+            return;
+        }
 
         this.timer += dt;
 
@@ -354,26 +358,30 @@ export default class Projectile {
     }
 
     destroy() {
+        if (!this.alive) return; // Prevent multiple destroy calls crashing the engine
         this.alive = false;
-        this.sprite.destroy();
-        this.glow.destroy();
-        this.trail.destroy();
-        if (this.customGraphics) this.customGraphics.destroy();
         
-        // Destrucción / Estallido del Gusano Sprite
-        if (this.wormSprite) {
-            this.wormSprite.setTexture('sprite_worm_5');
-            this.scene.tweens.add({
-                targets: this.wormSprite,
-                alpha: 0,
-                scaleX: 1.5,
-                scaleY: 1.5,
-                duration: 400,
-                onComplete: () => {
-                    this.wormSprite.destroy();
-                }
-            });
-        }
+        try {
+            if (this.sprite) this.sprite.destroy();
+            if (this.glow) this.glow.destroy();
+            if (this.trail) this.trail.destroy();
+            if (this.customGraphics) this.customGraphics.destroy();
+            
+            // Destrucción / Estallido del Gusano Sprite
+            if (this.wormSprite) {
+                this.wormSprite.setTexture('sprite_worm_5');
+                this.scene.tweens.add({
+                    targets: this.wormSprite,
+                    alpha: 0,
+                    scaleX: 1.5,
+                    scaleY: 1.5,
+                    duration: 400,
+                    onComplete: () => {
+                        if (this.wormSprite) this.wormSprite.destroy();
+                    }
+                });
+            }
+        } catch(e) {}
     }
 
     isAlive() {

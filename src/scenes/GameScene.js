@@ -803,11 +803,18 @@ export default class GameScene extends Phaser.Scene {
             this.sureHitTimer += delta;
             
             // Tick every 1000ms (1 second) — 50 damage per second
-            while (this.sureHitTimer >= 1000 && this.domainActive) {
+            // SAFETY: Limit max ticks per frame to prevent freeze if tab is backgrounded
+            let ticksThisFrame = 0;
+            while (this.sureHitTimer >= 1000 && this.domainActive && ticksThisFrame < 3) {
                 this.sureHitTimer -= 1000;
+                ticksThisFrame++;
                 const target = (this.domainOwner === this.p1) ? this.p2 : this.p1;
-                this.domainOwner.applySureHitTick(target);
+                if (this.domainOwner.applySureHitTick) {
+                    this.domainOwner.applySureHitTick(target);
+                }
             }
+            // If delta was massive, just cap the timer so we don't spiral forever
+            if (this.sureHitTimer > 1000) this.sureHitTimer = 1000;
         }
     }
 
