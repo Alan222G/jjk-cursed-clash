@@ -104,29 +104,54 @@ export default class Mahito extends Fighter {
     }
 
     // ═══════════════════════════════════════
-    // IDLE TRANSFIGURATION — Shape-shift arm into blade
-    // Extends reach + bonus damage for 5 seconds
+    // IDLE TRANSFIGURATION — Transfigured Flesh Wall
+    // Summons a fleshy barrier that blocks path and hurts enemies
     // ═══════════════════════════════════════
     castIdleTransfiguration() {
         if (!this.ceSystem.spend(this.charData.skills.skill1.cost)) return;
 
-        this.morphedForm = 'blade';
-        this.morphTimer = 5000;
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(500);
+        this.sprite.body.setVelocityX(0);
 
-        try { this.scene.sound.play('sfx_slash', { volume: 0.5 }); } catch(e) {}
+        try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e) {}
 
-        // Visual morph flash
-        const flash = this.scene.add.circle(this.sprite.x, this.sprite.y - 30, 30, 0x00CCAA, 0.5).setDepth(15);
-        this.scene.tweens.add({ targets: flash, alpha: 0, scaleX: 2, scaleY: 2, duration: 300, onComplete: () => flash.destroy() });
+        const wallX = this.sprite.x + 80 * this.facing;
+        const wallY = PHYSICS.GROUND_Y - 70;
 
-        // Temporarily boost attack range and damage
-        this.power *= 1.4;
-        this.scene.time.delayedCall(5000, () => {
-            this.morphedForm = null;
-            this.power = this.charData.stats.power || 1.0;
+        // Visual flash
+        const flash = this.scene.add.circle(wallX, wallY, 40, 0x00CCAA, 0.7).setDepth(15);
+        this.scene.tweens.add({ targets: flash, alpha: 0, scale: 2, duration: 400, onComplete: () => flash.destroy() });
+
+        // Spawn a stationary heavy projectile that acts like a wall
+        const proj = new Projectile(this.scene, wallX, wallY, {
+            owner: this,
+            damage: 40 * this.power,
+            knockbackX: 300, knockbackY: -100,
+            stunDuration: 300, speed: 0, // Stationary
+            direction: this.facing, color: 0x664444, // Fleshy color
+            size: { w: 40, h: 140 }, lifetime: 5000, type: 'heavy',
+            onHitCallback: (p, victim) => {
+                // If it hits, it stays alive (acts as a persistent wall)
+                if (victim.takeDamage) {
+                    victim.takeDamage(p.damage, p.knockbackX * p.direction, p.knockbackY, p.stunDuration);
+                }
+                return true; // Don't destroy wall on hit
+            }
+        });
+        
+        // Add pulsating effect to the wall
+        proj.customGraphics.clear();
+        this.scene.tweens.add({
+            targets: proj.sprite,
+            scaleX: 1.1,
+            scaleY: 1.05,
+            yoyo: true,
+            repeat: -1,
+            duration: 500
         });
 
-        this.stateMachine.setState('idle');
+        if (this.scene.projectiles) this.scene.projectiles.push(proj);
     }
 
     // ═══════════════════════════════════════

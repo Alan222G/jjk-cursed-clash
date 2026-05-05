@@ -278,13 +278,18 @@ export default class Dagon extends Fighter {
                 const sy = target.sprite.y - 50 + (Math.random()-0.5)*100;
                 const dir = spawnLeft ? 1 : -1;
 
+                // Randomize shikigami to represent different fish/creatures
+                const wRand = 15 + Math.random() * 30;
+                const hRand = 10 + Math.random() * 20;
+                const spdRand = 500 + Math.random() * 400;
+
                 const proj = new Projectile(this.scene, sx, sy, {
                     owner: this,
-                    damage: Math.floor(10 * this.power),
+                    damage: Math.floor(6 * this.power), // Reduced damage
                     knockbackX: 40 * dir, knockbackY: -10,
-                    stunDuration: 100, speed: 700,
+                    stunDuration: 100, speed: spdRand,
                     direction: dir, color: 0x00CCFF,
-                    size: { w: 15, h: 10 }, lifetime: 1500, type: 'slash'
+                    size: { w: wRand, h: hRand }, lifetime: 1500, type: 'slash'
                 });
                 if (this.scene.projectiles) this.scene.projectiles.push(proj);
             }

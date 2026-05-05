@@ -218,13 +218,18 @@ export default class Megumi extends Fighter {
             this.scene.npcs.push(mahoraga);
             this.scene.mahoraga = mahoraga; // Reference for GameScene collisions
 
+            // Resolve opponent reference safely
+            const opponent = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            
             // Add physics overlaps
-            this.scene.physics.add.overlap(this.opponent.hitbox, mahoraga.sprite, () => {
-                this.opponent.onHitOpponent(mahoraga);
-            });
-            this.scene.physics.add.overlap(mahoraga.hitbox, this.opponent.sprite, () => {
-                mahoraga.onHitOpponent(this.opponent);
-            });
+            if (opponent && opponent.sprite) {
+                this.scene.physics.add.overlap(opponent.hitbox, mahoraga.sprite, () => {
+                    opponent.onHitOpponent(mahoraga);
+                });
+                this.scene.physics.add.overlap(mahoraga.hitbox, opponent.sprite, () => {
+                    mahoraga.onHitOpponent(opponent);
+                });
+            }
 
             // Slow penalty
             this.speed = this.charData.stats.speed * 0.4;

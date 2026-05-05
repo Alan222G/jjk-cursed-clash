@@ -190,17 +190,23 @@ export default class Choso extends Fighter {
         });
     }
 
-    // H4: Flowing Red Scale
+    // H4: Flowing Red Scale (Blood Armor)
     castFlowingRedScale() {
         this.stateMachine.setState('idle');
         this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
 
         this.redScaleActive = true;
-        this.redScaleTimer = 10000;
+        this.redScaleTimer = 15000;
 
-        // Buff stats
-        this.speed = this.charData.stats.speed * 1.4;
+        // Buff stats slightly
+        this.speed = this.charData.stats.speed * 1.2;
+        this.defense = this.charData.stats.defense * 1.2;
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 60, 'BLOOD ARMOR', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#DC143C', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.flash(0xDC143C, 200, 0.4);
@@ -209,25 +215,53 @@ export default class Choso extends Fighter {
     }
 
     tryActivateDomain() {
-        if (this.chosoAwakened) return;
+        if (this.isCasting) return;
         
         if (!this.ceSystem.spend(100)) return;
         
-        this.chosoAwakened = true;
-        this.chosoAwakenedTimer = 20000;
-        
-        this.power = this.charData.stats.power * 1.3;
+        this.isCasting = true;
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(2000);
+        this.sprite.body.setVelocityX(0);
 
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'MAXIMUM CONVERGENCE!', {
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'BLOOD TSUNAMI!', {
             fontFamily: 'Arial Black', fontSize: '24px', color: '#DC143C', stroke: '#000000', strokeThickness: 5
         }).setOrigin(0.5).setDepth(40);
-        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+        this.scene.tweens.add({ targets: txt, y: txt.y - 60, scale: 1.2, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.flash(0xDC143C, 300, 0.5);
-            this.scene.screenEffects.shake(0.04, 500);
+            this.scene.screenEffects.shake(0.06, 1200);
         }
         try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
+
+        // Blood gathering effect
+        const gatherAura = this.scene.add.circle(this.sprite.x, this.sprite.y, 100, 0xDC143C, 0.3).setDepth(5);
+        this.scene.tweens.add({ targets: gatherAura, scale: 0.1, alpha: 1, duration: 800 });
+
+        this.scene.time.delayedCall(800, () => {
+            gatherAura.destroy();
+            try { this.scene.sound.play('sfx_slash', { volume: 1.0 }); } catch(e) {}
+            
+            // Massive wave projectile
+            const proj = new Projectile(this.scene, this.sprite.x + 80 * this.facing, PHYSICS.GROUND_Y - 120, {
+                owner: this,
+                damage: 150 * this.power,
+                knockbackX: 800, knockbackY: -400,
+                stunDuration: 1000, speed: 600,
+                direction: this.facing, color: 0x8B0000,
+                size: { w: 100, h: 200 }, lifetime: 3000, type: 'slash',
+                onHitCallback: (p, victim) => {
+                    this.applyBloodPoison(victim);
+                    return false;
+                }
+            });
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        });
+
+        this.scene.time.delayedCall(1500, () => {
+            this.isCasting = false;
+        });
     }
 
     applyBloodPoison(target) {
@@ -237,22 +271,41 @@ export default class Choso extends Fighter {
         target.bloodPoisonTick = 0;
     }
 
-    // Override to apply poison on all attacks during awakening
+    // Override to apply poison on all attacks during blood armor
     onHitOpponent(target) {
         super.onHitOpponent(target);
-        if (this.chosoAwakened) {
+        if (this.redScaleActive) {
             this.applyBloodPoison(target);
         }
     }
 
+    takeDamage(damage, knockbackX, knockbackY, stunDuration, bypassBlock = false) {
+        // If blood armor is active and attacked, poison the attacker
+        if (this.redScaleActive && damage > 0) {
+            const attacker = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            if (attacker && !attacker.isDead) {
+                this.applyBloodPoison(attacker);
+            }
+        }
+        super.takeDamage(damage, knockbackX, knockbackY, stunDuration, bypassBlock);
+    }
+
     update(time, dt) {
         super.update(time, dt);
-
+        // Blood Armor logic
         if (this.redScaleActive) {
             this.redScaleTimer -= dt;
             if (this.redScaleTimer <= 0) {
                 this.redScaleActive = false;
                 this.speed = this.charData.stats.speed;
+                this.defense = this.charData.stats.defense;
+            } else {
+                // Visual effect: red tint pulse
+                if (Math.floor(time / 200) % 2 === 0) {
+                    this.sprite.setTint(0xFF8888);
+                } else {
+                    this.sprite.clearTint();
+                }
             }
         }
 

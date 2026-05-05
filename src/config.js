@@ -530,7 +530,7 @@ export const CHARACTERS = {
         name: 'Jogo',
         title: 'The Earth Disaster',
         colors: { primary: 0x441111, secondary: 0xFF4400, energy: 0xFF6600, accent: 0xFF2200, skin: 0x665555, hair: 0x000000 },
-        stats: { maxHp: 3000, speed: 420, power: 1.6, defense: 0.70, ceRegen: 4.5, weight: 70, jumpForce: -700, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 420, power: 1.6, defense: 0.70, ceRegen: 4.5, weight: 70, jumpForce: -700, domainDuration: 37500, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Ember Insects', cost: 20, damage: 45, type: 'projectile' },
             skill2: { name: 'Volcanic Eruption', cost: 35, damage: 80, type: 'aoe' },
@@ -545,7 +545,7 @@ export const CHARACTERS = {
         name: 'Dagon',
         title: 'The Sea Disaster',
         colors: { primary: 0x112244, secondary: 0x0088FF, energy: 0x00CCFF, accent: 0x0066AA, skin: 0x992222, hair: 0x000000 },
-        stats: { maxHp: 4500, speed: 250, power: 0.9, defense: 1.40, ceRegen: 3.5, weight: 150, jumpForce: -550, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 4500, speed: 250, power: 0.9, defense: 1.40, ceRegen: 3.5, weight: 150, jumpForce: -550, domainDuration: 37500, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Water Prison', cost: 20, damage: 20, type: 'projectile' },
             skill2: { name: 'Shikigami Swarm', cost: 25, damage: 40, type: 'seeking' },
@@ -560,7 +560,7 @@ export const CHARACTERS = {
         name: 'Hanami',
         title: 'The Vigor of Nature',
         colors: { primary: 0x228B22, secondary: 0x8B4513, energy: 0x32CD32, accent: 0xFFD700, skin: 0xD2B48C, hair: 0x006400 },
-        stats: { maxHp: 4200, speed: 280, power: 1.1, defense: 1.5, ceRegen: 3.2, weight: 150, jumpForce: -550, domainDuration: 25000, domainPhase1: 10000 },
+        stats: { maxHp: 4200, speed: 280, power: 1.1, defense: 1.5, ceRegen: 3.2, weight: 150, jumpForce: -550, domainDuration: 62500, domainPhase1: 10000 },
         skills: {
             skill1: { name: 'Wood Buds', cost: 30, damage: 30, type: 'projectile_drain' },
             skill2: { name: 'Emerging Roots', cost: 45, damage: 60, type: 'aoe_knockup' },
