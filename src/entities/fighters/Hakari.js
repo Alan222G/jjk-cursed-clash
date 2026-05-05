@@ -221,9 +221,11 @@ export default class Hakari extends Fighter {
         if (this.ceSystem.isFatigued) return;
         if (this.ceSystem.ce < 80) return;
         
-        // INSTANT & UNCANCELABLE: Bypass standard Domain Clash logic
-        if (this.scene.domainOwner && this.scene.domainOwner !== this) {
-            // Still spend CE but forcefully activate without clashing
+        if (this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                const clash = this.scene.attemptDomainClash(this);
+                if (!clash) return;
+            } else return;
         } else if (this.domainActive) return;
 
         if (!this.ceSystem.spend(80)) return;
@@ -361,7 +363,7 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 41000; // Exactly 41 seconds
+        this.jackpotTimer = 42000; // Exactly 42 seconds
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;

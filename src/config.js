@@ -218,7 +218,7 @@ export const CHARACTERS = {
             hair: 0x222222,
         },
         stats: {
-            maxHp: 3200,
+            maxHp: 3400,
             speed: 400,
             power: 1.4,
             defense: 0.85,
@@ -280,7 +280,7 @@ export const CHARACTERS = {
             hair: 0x333333,
         },
         stats: {
-            maxHp: 3800,
+            maxHp: 3400,
             speed: 290,
             power: 1.5,
             defense: 0.85,
@@ -311,7 +311,7 @@ export const CHARACTERS = {
             hair: 0x0A0A0A,
         },
         stats: {
-            maxHp: 3000,
+            maxHp: 3200,
             speed: 370,
             power: 0.9,
             defense: 1.3,
@@ -374,7 +374,7 @@ export const CHARACTERS = {
             hair: 0xDD7788,
         },
         stats: {
-            maxHp: 2800,
+            maxHp: 3000,
             speed: 370,
             power: 1.2,
             defense: 0.95,
@@ -405,7 +405,7 @@ export const CHARACTERS = {
             hair: 0x5577AA,
         },
         stats: {
-            maxHp: 3400,
+            maxHp: 3600,
             speed: 330,
             power: 1.1,
             defense: 1.25,
@@ -437,7 +437,7 @@ export const CHARACTERS = {
             hair: 0x222244,
         },
         stats: {
-            maxHp: 3200,
+            maxHp: 3400,
             speed: 360,
             power: 1.15,
             defense: 1.0,
@@ -460,7 +460,7 @@ export const CHARACTERS = {
         name: 'Naoya Zenin',
         title: 'Projection Sorcery',
         colors: { primary: 0x222255, secondary: 0x00CCAA, energy: 0x00FFCC, accent: 0x00AA88, skin: 0xF0D0B0, hair: 0xCCBB77 },
-        stats: { maxHp: 2600, speed: 380, power: 1.05, defense: 0.85, ceRegen: 3.5, weight: 80, jumpForce: -680, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 380, power: 1.05, defense: 0.85, ceRegen: 3.5, weight: 80, jumpForce: -680, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Projection Dash', cost: 15, damage: 30, type: 'teleport' },
             skill2: { name: 'Speed Combo', cost: 30, damage: 72, type: 'multi_hit' },
@@ -474,7 +474,7 @@ export const CHARACTERS = {
         name: 'Kinji Hakari',
         title: 'Idle Death Gamble',
         colors: { primary: 0x222222, secondary: 0xFFCC00, energy: 0xFFDD00, accent: 0xFF4400, skin: 0xF0D0B0, hair: 0xBB8833 },
-        stats: { maxHp: 2800, speed: 340, power: 1.0, defense: 0.95, ceRegen: 3.0, weight: 90, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 340, power: 1.0, defense: 0.95, ceRegen: 3.0, weight: 90, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Shutter Doors', cost: 15, damage: 30, type: 'trap' },
             skill2: { name: 'Pachinko Balls', cost: 20, damage: 60, type: 'projectile' },
@@ -488,7 +488,7 @@ export const CHARACTERS = {
         name: 'Hiromi Higuruma',
         title: 'Deadly Sentencing',
         colors: { primary: 0x1A1A2E, secondary: 0x8B0000, energy: 0x666666, accent: 0x8B7355, skin: 0xF0D0B0, hair: 0x111122 },
-        stats: { maxHp: 2500, speed: 310, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 85, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 310, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 85, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Gavel Sentence', cost: 15, damage: 40, type: 'melee' },
             skill2: { name: 'Hammer of Justice', cost: 25, damage: 60, type: 'aoe' },
@@ -502,7 +502,7 @@ export const CHARACTERS = {
         name: 'Kento Nanami',
         title: '7:3 Sorcerer',
         colors: { primary: 0xEEDDCC, secondary: 0x444444, energy: 0x2288CC, accent: 0xFF0000, skin: 0xF0D0B0, hair: 0xDDCC88 },
-        stats: { maxHp: 2400, speed: 330, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 80, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 330, power: 1.1, defense: 0.90, ceRegen: 3.5, weight: 80, jumpForce: -650, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Tajo de Relojería', cost: 15, damage: 45, type: 'melee' },
             skill2: { name: 'Colapso', cost: 25, damage: 65, type: 'aoe' },
@@ -516,7 +516,7 @@ export const CHARACTERS = {
         name: 'Aoi Todo',
         title: 'The Brother',
         colors: { primary: 0x222222, secondary: 0x333333, energy: 0xAA22AA, accent: 0xAA22AA, skin: 0x996644, hair: 0x111111 },
-        stats: { maxHp: 2800, speed: 340, power: 1.15, defense: 0.95, ceRegen: 3.0, weight: 95, jumpForce: -670, domainDuration: 10000, domainPhase1: 5000 },
+        stats: { maxHp: 3000, speed: 340, power: 1.15, defense: 0.95, ceRegen: 3.0, weight: 95, jumpForce: -670, domainDuration: 10000, domainPhase1: 5000 },
         skills: {
             skill1: { name: 'Boogie Woogie', cost: 10, damage: 0, type: 'utility' },
             skill2: { name: 'Patada Gran Alcance', cost: 20, damage: 55, type: 'melee' },
@@ -530,7 +530,7 @@ export const CHARACTERS = {
         name: 'Jogo',
         title: 'The Earth Disaster',
         colors: { primary: 0x441111, secondary: 0xFF4400, energy: 0xFF6600, accent: 0xFF2200, skin: 0x665555, hair: 0x000000 },
-        stats: { maxHp: 2000, speed: 420, power: 1.6, defense: 0.70, ceRegen: 4.5, weight: 70, jumpForce: -700, domainDuration: 15000, domainPhase1: 8000 },
+        stats: { maxHp: 3000, speed: 420, power: 1.6, defense: 0.70, ceRegen: 4.5, weight: 70, jumpForce: -700, domainDuration: 15000, domainPhase1: 8000 },
         skills: {
             skill1: { name: 'Ember Insects', cost: 20, damage: 45, type: 'projectile' },
             skill2: { name: 'Volcanic Eruption', cost: 35, damage: 80, type: 'aoe' },
@@ -575,7 +575,7 @@ export const CHARACTERS = {
         name: 'Choso',
         title: 'Death Painting Womb',
         colors: { primary: 0x4B0082, secondary: 0x8B0000, energy: 0xDC143C, accent: 0x8A2BE2, skin: 0xF5F5DC, hair: 0x191970 },
-        stats: { maxHp: 3100, speed: 350, power: 1.25, defense: 0.9, ceRegen: 4.5, weight: 95, jumpForce: -680, domainDuration: 0, domainPhase1: 0 },
+        stats: { maxHp: 3300, speed: 350, power: 1.25, defense: 0.9, ceRegen: 4.5, weight: 95, jumpForce: -680, domainDuration: 0, domainPhase1: 0 },
         skills: {
             skill1: { name: 'Piercing Blood', cost: 40, damage: 85, type: 'beam_fast' },
             skill2: { name: 'Supernova', cost: 60, damage: 70, type: 'projectile_radial' },
@@ -590,7 +590,7 @@ export const CHARACTERS = {
         name: 'Megumi Fushiguro',
         title: 'Ten Shadows Sorcerer',
         colors: { primary: 0x000033, secondary: 0x006633, energy: 0x00AAFF, accent: 0xFFFFFF, skin: 0xF5DEB3, hair: 0x000000 },
-        stats: { maxHp: 2800, speed: 360, power: 1.0, defense: 0.9, ceRegen: 4.0, weight: 80, jumpForce: -650, domainDuration: 20000, domainPhase1: 10000 },
+        stats: { maxHp: 3000, speed: 360, power: 1.0, defense: 0.9, ceRegen: 4.0, weight: 80, jumpForce: -650, domainDuration: 20000, domainPhase1: 10000 },
         skills: {
             skill1: { name: 'Divine Dogs: Totality', cost: 20, damage: 40, type: 'dash_bite' },
             skill2: { name: 'Nue: Electric Dive', cost: 35, damage: 55, type: 'stun_projectile' },
@@ -630,7 +630,7 @@ export const CHARACTERS = {
             hair: 0xCC6633,
         },
         stats: {
-            maxHp: 2800,
+            maxHp: 3000,
             speed: 340,
             power: 1.0,
             defense: 0.85,

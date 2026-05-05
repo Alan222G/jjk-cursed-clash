@@ -620,9 +620,11 @@ export default class Fighter {
         if (!this.stateMachine.is('block')) {
             this.stunTimer = stunDuration;
             
-            // Domain Cancel check
+            // Domain Cancel check (Hakari and Higuruma are uncancelable by damage)
             if (this.scene.domainPhase1 && this.scene.domainOwner === this && this.scene.cancelDomain) {
-                this.scene.cancelDomain(this);
+                if (this.charData?.id !== 'hakari' && this.charData?.id !== 'higuruma') {
+                    this.scene.cancelDomain(this);
+                }
             }
             
             if (damage >= 40) {

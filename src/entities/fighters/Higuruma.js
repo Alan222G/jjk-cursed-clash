@@ -212,9 +212,10 @@ export default class Higuruma extends Fighter {
     tryActivateDomain() {
         if (this.isCasting || this.ceSystem.isFatigued || this.ceSystem.ce < 100) return;
         
-        // INSTANT & UNCANCELABLE: Bypass standard Domain Clash logic
-        if (this.scene.domainOwner && this.scene.domainOwner !== this) {
-            // Forcefully activate without clashing
+        if (this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                if (!this.scene.attemptDomainClash(this)) return;
+            } else return;
         } else if (this.domainActive) return;
 
         if (!this.ceSystem.spend(100)) return;
@@ -382,7 +383,7 @@ export default class Higuruma extends Fighter {
                 this.target.ceSystem.regenRate = ((this.target.charData?.stats?.ceRegen || 3.5) * 1.3) / 3; // 3x slower
                 
                 this.higuTarget = this.target;
-                this.higuNerfTimer = 22000; // Lasts 22 seconds
+                this.higuNerfTimer = 30000; // Lasts 30 seconds
             }
             const txt = this.scene.add.text(cx, cy, '🔒 CONFISCATION 🔒\nOpponent Cursed Energy Drained!', {
                 fontFamily: 'Arial Black', fontSize: '24px', color: '#FF8800', align: 'center', stroke: '#000000', strokeThickness: 5
