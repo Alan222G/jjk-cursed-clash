@@ -188,14 +188,23 @@ export default class Hanami extends Fighter {
     }
 
     tryActivateDomain() {
-        if (this.scene.domainActive) return;
-        
-        if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
+        if (this.isCasting) return;
+        if (!this.ceSystem.canAfford(this.charData.skills.domain.cost)) return;
+        if (this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                const clash = this.scene.attemptDomainClash(this);
+                if (!clash) return;
+            } else return;
+        } else if (this.domainActive) return;
+
+        this.ceSystem.spend(this.charData.skills.domain.cost);
+        this.domainActive = true;
+        this.ceSystem.startDomain();
         
         this.hanamiAwakened = true;
         this.hanamiAwakenedTimer = 15000;
         
-        this.scene.onDomainActivated(this, 'HANAMI');
+        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'HANAMI');
     }
 
     // ── Update Loop ──

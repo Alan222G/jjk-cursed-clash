@@ -6,7 +6,7 @@
 
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
-import { CHARACTERS, CE_COSTS, DOMAIN } from '../../config.js';
+import { CHARACTERS, CE_COSTS, DOMAIN, ATTACKS } from '../../config.js';
 
 export default class Mahito extends Fighter {
     constructor(scene, x, y, playerIndex) {

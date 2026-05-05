@@ -304,17 +304,22 @@ export default class Choso extends Fighter {
                 target.bloodPoisonTick = 0;
                 
                 // Visual Purple tint on HP Bar handled in HUD.js, but we can do a local tint
-                if (target.sprite.tintTopLeft !== 0xAA00AA) {
-                    target.sprite.setTint(0xAA00AA);
-                    this.scene.time.delayedCall(200, () => target.sprite.clearTint());
-                }
+                try {
+                    if (target.sprite && target.sprite.active) {
+                        target.sprite.setTint(0xAA00AA);
+                        this.scene.time.delayedCall(200, () => {
+                            if (target.sprite && target.sprite.active) target.sprite.clearTint();
+                        });
+                    }
+                } catch(e) {}
 
                 // 10% Execute Logic
-                const percentHp = target.hp / target.maxHp;
+                const maxHp = target.charData?.stats?.maxHp || 3000;
+                const percentHp = target.hp / maxHp;
                 if (percentHp <= 0.10 && target.hp > 0) {
                     // Execute! Bypass defense
                     target.hp = 0;
-                    target.takeDamage(1, 0, 0, 0, true);
+                    target.takeDamage(1, 0, 0, 0);
                     if (this.scene.screenEffects) {
                         this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
                     }

@@ -252,9 +252,22 @@ export default class Jogo extends Fighter {
     }
 
     tryActivateDomain() {
-        if (this.scene.domainActive) return;
-        if (!this.ceSystem.spend(this.charData.skills.domain.cost)) return;
-        this.scene.onDomainActivated(this, 'COFFIN OF IRON MOUNTAIN');
+        if (this.isCasting) return;
+        if (!this.ceSystem.canAfford(this.charData.skills.domain.cost)) return;
+        if (this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                const clash = this.scene.attemptDomainClash(this);
+                if (!clash) return;
+            } else return;
+        } else if (this.domainActive) return;
+
+        this.ceSystem.spend(this.charData.skills.domain.cost);
+        this.domainActive = true;
+        this.ceSystem.startDomain();
+        if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
+
+        try { this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx ?? 50) / 100 }); } catch(e) {}
+        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'COFFIN OF IRON MOUNTAIN');
     }
 
     update(time, dt) {

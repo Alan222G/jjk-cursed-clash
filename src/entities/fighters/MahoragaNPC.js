@@ -83,7 +83,7 @@ export default class MahoragaNPC extends Fighter {
             }
 
             // Visual indicator of adaptation blocking
-            this.scene.screenEffects.flash(0xFFFFFF, 100, 0.2);
+            if (this.scene.screenEffects) this.scene.screenEffects.flash(0xFFFFFF, 100, 0.2);
         } else {
             // Not yet adapted. Record hit.
             this.adaptationTracker[category]++;
@@ -147,15 +147,19 @@ export default class MahoragaNPC extends Fighter {
     die() {
         this.isDead = true;
         this.hp = 0;
-        this.sprite.setTint(0x555555);
-        this.stateMachine.setState('knockdown');
-        if (this.wheel) this.wheel.destroy();
+        try { this.sprite.setTint(0x555555); } catch(e) {}
+        try { this.stateMachine.setState('knockdown'); } catch(e) {}
+        if (this.wheel) { this.wheel.destroy(); this.wheel = null; }
         
         // Mahoraga dies, owner survives but loses Mahoraga
         this.owner.mahoragaSummoned = false;
         this.scene.time.delayedCall(2000, () => {
-            if (this.sprite) this.sprite.destroy();
-            this.destroy();
+            try {
+                if (this.sprite && this.sprite.active) this.sprite.destroy();
+                if (this.graphics) this.graphics.destroy();
+                if (this.auraGraphics) this.auraGraphics.destroy();
+                if (this.hitbox && this.hitbox.active) this.hitbox.destroy();
+            } catch(e) {}
         });
     }
 
@@ -289,7 +293,7 @@ export default class MahoragaNPC extends Fighter {
             this.scene.time.delayedCall(200, () => {
                 // Shockwave
                 try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
-                this.scene.screenEffects.shake(0.02, 300);
+                if (this.scene.screenEffects) this.scene.screenEffects.shake(0.02, 300);
                 
                 const wave = this.scene.add.circle(this.sprite.x, this.sprite.y + 70, 10, 0x555555, 0.6);
                 this.scene.tweens.add({
@@ -315,7 +319,7 @@ export default class MahoragaNPC extends Fighter {
         this.stateMachine.lock(2000);
         this.actionCooldown = 5000;
         
-        this.scene.screenEffects.flash(0xFFFFFF, 500, 0.8);
+        if (this.scene.screenEffects) this.scene.screenEffects.flash(0xFFFFFF, 500, 0.8);
         
         const slash = this.scene.add.rectangle(GAME_WIDTH/2, this.sprite.y, GAME_WIDTH, 10, 0x000000).setDepth(50);
         

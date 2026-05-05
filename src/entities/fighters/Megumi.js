@@ -235,10 +235,20 @@ export default class Megumi extends Fighter {
     }
 
     tryActivateDomain() {
-        if (this.scene.domainActive) return;
-        if (!this.ceSystem.spend(100)) return;
+        if (this.isCasting) return;
+        if (!this.ceSystem.canAfford(100)) return;
+        if (this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                const clash = this.scene.attemptDomainClash(this);
+                if (!clash) return;
+            } else return;
+        } else if (this.domainActive) return;
 
-        this.scene.onDomainActivated(this, 'MEGUMI');
+        this.ceSystem.spend(100);
+        this.domainActive = true;
+        this.ceSystem.startDomain();
+
+        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'MEGUMI');
     }
 
     // ── Update Loop ──
@@ -277,7 +287,7 @@ export default class Megumi extends Fighter {
             this.sinkTimer -= dt;
             this.sprite.setAlpha(0);
             this.isInvulnerable = true;
-            this.body.enable = false;
+            if (this.sprite.body) this.sprite.body.enable = false;
 
             if (this.sinkTimer <= 0) {
                 this.stopSinking();
@@ -307,7 +317,7 @@ export default class Megumi extends Fighter {
         this.isSinking = false;
         this.sprite.setAlpha(1);
         this.isInvulnerable = false;
-        this.body.enable = true;
+        if (this.sprite.body) this.sprite.body.enable = true;
 
         // Teleport to target (simple chase) or mouse? Let's do a dash forward
         this.sprite.x += 200 * this.facing;
