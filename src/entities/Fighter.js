@@ -598,6 +598,12 @@ export default class Fighter {
         damage = Math.floor(damage / this.defense);
         if (damage < 1) damage = 1;
 
+        // Apply Yuji knockback reduction if awakened
+        if (this.fighterId === 'yuji' && this.yujiAwakened) {
+            kbX *= 0.6; // 40% reduction
+            kbY *= 0.6;
+        }
+
         this.hp -= damage;
         // Passive CE only: no gain on damage
 
@@ -678,6 +684,9 @@ export default class Fighter {
                 else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
                 else if (atk.type === 'LIGHT' && rand <= 2 * bfMult) isBlackFlash = true;
                 else if (atk.type === 'COMBO' && rand <= 2 * bfMult) isBlackFlash = true;
+            } else if (this.fighterId === 'yuji') {
+                // Yuji naturally has a 20% flat chance on ANY hit
+                if (rand <= 20 * bfMult) isBlackFlash = true;
             } else {
                 if (atk.type === 'HEAVY' && rand <= 10 * bfMult) isBlackFlash = true;
                 else if (atk.type === 'MEDIUM' && rand <= 6 * bfMult) isBlackFlash = true;
@@ -690,7 +699,8 @@ export default class Fighter {
         }
 
         if (isBlackFlash) {
-            dmg = Math.floor(dmg * 2.5);
+            const dmgMult = this.fighterId === 'yuji' ? 2.8 : 2.5;
+            dmg = Math.floor(dmg * dmgMult);
             this.ceSystem.gain(30); // CE boost on Black Flash
         }
 

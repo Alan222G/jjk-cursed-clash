@@ -253,8 +253,9 @@ export default class Yuji extends Fighter {
         
         // Boosts
         this.power = (this.charData.stats.power || 1.0) * 1.5;
-        this.speed = (this.charData.stats.speed || 300) * 1.3;
-        this.blackFlashMultiplier = 2.0;
+        this.speed = (this.charData.stats.speed || 300) * 1.1; // 10% more speed
+        this.defense = (this.charData.stats.defense || 0.95) * 1.1; // 10% more defense
+        this.blackFlashMultiplier = 1.5; // He naturally has 20%. 20% * 1.5 = 30% chance
 
         // Visual feedback
         if (this.scene.screenEffects) {
@@ -282,6 +283,7 @@ export default class Yuji extends Fighter {
                 this.yujiAwakened = false;
                 this.power = this.charData.stats.power || 1.0;
                 this.speed = this.charData.stats.speed || 300;
+                this.defense = this.charData.stats.defense || 0.95;
                 this.blackFlashMultiplier = 1.0;
             }
         }

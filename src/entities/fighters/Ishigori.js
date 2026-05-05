@@ -237,8 +237,8 @@ export default class Ishigori extends Fighter {
 
     takeDamage(damage, knockbackX, knockbackY, stunDuration) {
         if (this.graniteFortressTimer > 0) {
-            // Super Armor: take 50% damage, no knockback, no stun
-            super.takeDamage(Math.floor(damage * 0.5), 0, 0, 0);
+            // Super Armor: takes 70% damage (absorbs 30%), no knockback, no stun
+            super.takeDamage(Math.floor(damage * 0.7), 0, 0, 0);
             
             // Visual feedback for tanking
             if (this.scene.screenEffects) {

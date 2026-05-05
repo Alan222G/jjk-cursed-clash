@@ -243,30 +243,22 @@ export default class Nobara extends Fighter {
 
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
-        // Incomplete domain: Rain 1 nail from above directly targeting the opponent's general area every second
-        const spawnX = opponent.sprite.x + (Math.random() - 0.5) * 150;
-        const spawnY = -50;
         
-        // Aim at opponent
-        const angle = Phaser.Math.Angle.Between(spawnX, spawnY, opponent.sprite.x, opponent.sprite.y);
+        if (!opponent.nailsEmbedded) opponent.nailsEmbedded = 0;
         
-        const proj = new Projectile(this.scene, spawnX, spawnY, {
-            owner: this, damage: Math.floor(20 * this.power),
-            knockbackX: Math.cos(angle) * 30, knockbackY: Math.sin(angle) * 30,
-            stunDuration: 100, speed: 800,
-            direction: Math.cos(angle) > 0 ? 1 : -1, color: 0x88CCFF, size: { w: 10, h: 25 }, lifetime: 2000, type: 'nail_rain',
-            onHitCallback: (p, victim) => {
-                victim.nailsEmbedded = (victim.nailsEmbedded || 0) + 1;
-                if (victim.nailsEmbedded > 6) victim.nailsEmbedded = 6;
-                this.updateNailUI(victim);
-                return false; // Return false to destroy projectile
-            }
-        });
-        
-        // We can add the sprite directly to the projectile to rotate it
-        if (proj.sprite) proj.sprite.setRotation(angle);
-        
-        if (this.scene.projectiles) this.scene.projectiles.push(proj);
+        if (opponent.nailsEmbedded < 6) {
+            opponent.nailsEmbedded++;
+            this.updateNailUI(opponent);
+            
+            // Visual effect
+            const hx = opponent.sprite.x + (Math.random() - 0.5) * 40;
+            const hy = opponent.sprite.y - 20 + (Math.random() - 0.5) * 40;
+            const nail = this.scene.add.circle(hx, hy, 4, 0x44AAFF, 0.8).setDepth(20);
+            this.scene.tweens.add({
+                targets: nail, alpha: 0, scale: 3, duration: 300, onComplete: () => nail.destroy()
+            });
+            try { this.scene.sound.play('sfx_slash', { volume: 0.3 }); } catch(e) {}
+        }
     }
 
     // ═══════════════════════════════════════
