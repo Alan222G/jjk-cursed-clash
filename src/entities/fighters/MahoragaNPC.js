@@ -29,10 +29,10 @@ export default class MahoragaNPC {
         this.ultimateReady = false;
         this.state = 'idle'; // 'idle', 'walk', 'attack', 'hitstun', 'dead'
 
-        // ── Physics Body ──
-        this.sprite = scene.add.rectangle(x, y, 50, 90, 0x000000, 0);
+        // ── Physics Body (same size as Sukuna 20 fingers) ──
+        this.sprite = scene.add.rectangle(x, y, 75, 150, 0x000000, 0);
         scene.physics.add.existing(this.sprite);
-        this.sprite.body.setSize(50, 90);
+        this.sprite.body.setSize(75, 150);
         this.sprite.body.setGravityY(PHYSICS.GRAVITY);
         this.sprite.body.setDragX(PHYSICS.DRAG_X);
         this.sprite.body.setCollideWorldBounds(true);
@@ -41,7 +41,7 @@ export default class MahoragaNPC {
         this.sprite.setDepth(10);
 
         // ── Hitbox (attack zone) ──
-        this.hitbox = scene.add.rectangle(x, y, 60, 50, 0xff0000, 0);
+        this.hitbox = scene.add.rectangle(x, y, 70, 60, 0xff0000, 0);
         scene.physics.add.existing(this.hitbox, false);
         this.hitbox.body.setAllowGravity(false);
         this.hitbox.body.enable = false;
@@ -164,7 +164,7 @@ export default class MahoragaNPC {
         });
     }
 
-    // ── Drawing ──
+    // ── Drawing (Sukuna 20-sized imposing divine shikigami) ──
     drawCharacter() {
         if (!this.graphics || this.isDead) return;
         this.graphics.clear();
@@ -173,31 +173,86 @@ export default class MahoragaNPC {
         const sy = this.sprite.y;
         const f = this.facing;
 
-        // Body - large imposing white figure
+        // === LEGS ===
+        // Left leg
+        this.graphics.fillStyle(0xBBBBBB, 1);
+        this.graphics.fillRoundedRect(sx - 18, sy + 25, 14, 50, 4);
+        // Right leg
+        this.graphics.fillRoundedRect(sx + 4, sy + 25, 14, 50, 4);
+        // Feet
+        this.graphics.fillStyle(0x999999, 1);
+        this.graphics.fillRoundedRect(sx - 20, sy + 70, 18, 8, 3);
+        this.graphics.fillRoundedRect(sx + 2, sy + 70, 18, 8, 3);
+
+        // === TORSO (muscular) ===
         this.graphics.fillStyle(0xDDDDDD, 1);
-        this.graphics.fillRoundedRect(sx - 20, sy - 40, 40, 70, 6);
-
-        // Head
-        this.graphics.fillStyle(0xFFFFFF, 1);
-        this.graphics.fillCircle(sx, sy - 55, 18);
-
-        // Eye (single cyclopean)
-        this.graphics.fillStyle(0xFF0000, 1);
-        this.graphics.fillCircle(sx + 3 * f, sy - 58, 4);
-
-        // Arms
-        this.graphics.lineStyle(5, 0xCCCCCC, 1);
+        this.graphics.fillRoundedRect(sx - 25, sy - 50, 50, 80, 8);
+        // Chest definition
+        this.graphics.lineStyle(2, 0xAAAAAA, 0.4);
         this.graphics.beginPath();
-        this.graphics.moveTo(sx + 20 * f, sy - 25);
-        this.graphics.lineTo(sx + 40 * f, sy - 10);
+        this.graphics.moveTo(sx, sy - 45);
+        this.graphics.lineTo(sx, sy + 10);
         this.graphics.strokePath();
 
-        // Sword (if attacking)
+        // === SHOULDERS ===
+        this.graphics.fillStyle(0xCCCCCC, 1);
+        this.graphics.fillCircle(sx - 28, sy - 45, 12);
+        this.graphics.fillCircle(sx + 28, sy - 45, 12);
+
+        // === 4 ARMS (divine shikigami has multiple arms) ===
+        this.graphics.lineStyle(6, 0xCCCCCC, 1);
+        // Front arm (main - holding sword)
+        this.graphics.beginPath();
+        this.graphics.moveTo(sx + 28 * f, sy - 45);
+        this.graphics.lineTo(sx + 55 * f, sy - 25);
+        this.graphics.strokePath();
+        // Back arm
+        this.graphics.lineStyle(5, 0xBBBBBB, 0.8);
+        this.graphics.beginPath();
+        this.graphics.moveTo(sx + 28 * f, sy - 40);
+        this.graphics.lineTo(sx + 50 * f, sy - 5);
+        this.graphics.strokePath();
+        // Other side arms (behind)
+        this.graphics.lineStyle(5, 0xBBBBBB, 0.6);
+        this.graphics.beginPath();
+        this.graphics.moveTo(sx - 28 * f, sy - 45);
+        this.graphics.lineTo(sx - 45 * f, sy - 20);
+        this.graphics.strokePath();
+        this.graphics.beginPath();
+        this.graphics.moveTo(sx - 28 * f, sy - 40);
+        this.graphics.lineTo(sx - 40 * f, sy - 5);
+        this.graphics.strokePath();
+
+        // === HEAD ===
+        this.graphics.fillStyle(0xFFFFFF, 1);
+        this.graphics.fillCircle(sx, sy - 68, 20);
+        // Eye (single divine cyclopean eye)
+        this.graphics.fillStyle(0xFF0000, 1);
+        this.graphics.fillCircle(sx + 4 * f, sy - 70, 5);
+        // Eye glow
+        this.graphics.fillStyle(0xFF4444, 0.4);
+        this.graphics.fillCircle(sx + 4 * f, sy - 70, 8);
+
+        // === SWORD (Sword of Extermination) ===
         if (this.state === 'attack') {
-            this.graphics.lineStyle(3, 0xFFD700, 1);
+            // Extended divine blade when attacking
+            this.graphics.lineStyle(4, 0xFFD700, 1);
             this.graphics.beginPath();
-            this.graphics.moveTo(sx + 40 * f, sy - 10);
-            this.graphics.lineTo(sx + 70 * f, sy - 40);
+            this.graphics.moveTo(sx + 55 * f, sy - 25);
+            this.graphics.lineTo(sx + 95 * f, sy - 60);
+            this.graphics.strokePath();
+            // Blade glow
+            this.graphics.lineStyle(8, 0xFFD700, 0.3);
+            this.graphics.beginPath();
+            this.graphics.moveTo(sx + 55 * f, sy - 25);
+            this.graphics.lineTo(sx + 95 * f, sy - 60);
+            this.graphics.strokePath();
+        } else {
+            // Resting blade
+            this.graphics.lineStyle(3, 0xFFD700, 0.8);
+            this.graphics.beginPath();
+            this.graphics.moveTo(sx + 55 * f, sy - 25);
+            this.graphics.lineTo(sx + 65 * f, sy + 10);
             this.graphics.strokePath();
         }
     }

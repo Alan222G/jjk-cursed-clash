@@ -26,6 +26,11 @@ export default class Mahito extends Fighter {
         this.soulDefenseActive = true;
     }
 
+    /** Safely resolve opponent from scene */
+    getOpponent() {
+        return (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+    }
+
     getBasicAttackData(type) {
         const base = { ...ATTACKS[type] };
         
@@ -330,8 +335,9 @@ export default class Mahito extends Fighter {
             delay: 150, repeat: 3,
             callback: () => {
                 hits++;
-                if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 120) {
-                    this.opponent.takeDamage(25 * this.power, 50 * this.facing, -50, 200);
+                const _opp = this.getOpponent();
+                if (_opp && !_opp.isDead && Math.abs(_opp.sprite.x - this.sprite.x) < 120) {
+                    _opp.takeDamage(25 * this.power, 50 * this.facing, -50, 200);
                 }
                 const slash = this.scene.add.graphics().setDepth(15);
                 slash.lineStyle(4, 0x00CCAA, 0.8);
@@ -357,8 +363,9 @@ export default class Mahito extends Fighter {
 
         this.scene.tweens.add({ targets: whip, alpha: 0, duration: 400, onComplete: () => whip.destroy() });
 
-        if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 420) {
-            this.opponent.takeDamage(50 * this.power, 400 * this.facing, -100, 500);
+        const _opp2 = this.getOpponent();
+        if (_opp2 && !_opp2.isDead && Math.abs(_opp2.sprite.x - this.sprite.x) < 420) {
+            _opp2.takeDamage(50 * this.power, 400 * this.facing, -100, 500);
         }
 
         this.scene.time.delayedCall(400, () => {
@@ -384,8 +391,9 @@ export default class Mahito extends Fighter {
                 ring.isStroked = true; ring.strokeColor = 0x00CCAA; ring.lineWidth = 4;
                 this.scene.tweens.add({ targets: ring, scale: 1.5, alpha: 0, duration: 200, onComplete: () => ring.destroy() });
 
-                if (this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 80) {
-                    this.opponent.takeDamage(15 * this.power, 100 * this.facing, -50, 300);
+                const _oppSpin = this.getOpponent();
+                if (_oppSpin && !_oppSpin.isDead && Math.abs(_oppSpin.sprite.x - this.sprite.x) < 80) {
+                    _oppSpin.takeDamage(15 * this.power, 100 * this.facing, -50, 300);
                 }
 
                 if (spinTicks >= 15) {
@@ -413,8 +421,9 @@ export default class Mahito extends Fighter {
                 const shock = this.scene.add.circle(this.sprite.x, this.sprite.y + 20, 150, 0x556655, 0.6).setDepth(15);
                 this.scene.tweens.add({ targets: shock, alpha: 0, scale: 1.5, duration: 400, onComplete: () => shock.destroy() });
 
-                if (this.opponent && !this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 160) {
-                    this.opponent.takeDamage(45 * this.power, 200 * this.facing, -500, 600);
+                const _oppSmash = this.getOpponent();
+                if (_oppSmash && !_oppSmash.isDead && Math.abs(_oppSmash.sprite.x - this.sprite.x) < 160) {
+                    _oppSmash.takeDamage(45 * this.power, 200 * this.facing, -500, 600);
                 }
             });
         });
@@ -434,9 +443,10 @@ export default class Mahito extends Fighter {
             const dashInt = this.scene.time.addEvent({
                 delay: 50, repeat: 10,
                 callback: () => {
-                    if (!hitAlready && this.opponent && Math.abs(this.opponent.sprite.x - this.sprite.x) < 100) {
+                    const _oppCharge = this.getOpponent();
+                    if (!hitAlready && _oppCharge && !_oppCharge.isDead && Math.abs(_oppCharge.sprite.x - this.sprite.x) < 100) {
                         hitAlready = true;
-                        this.opponent.takeDamage(70 * this.power, 800 * this.facing, -200, 800);
+                        _oppCharge.takeDamage(70 * this.power, 800 * this.facing, -200, 800);
                         try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.2 }); } catch(e){}
                         if (this.scene.screenEffects) this.scene.screenEffects.shake(0.05, 400);
                     }
@@ -462,8 +472,9 @@ export default class Mahito extends Fighter {
             const roar = this.scene.add.circle(this.sprite.x, this.sprite.y, 350, 0x00FFAA, 0.8).setDepth(25);
             this.scene.tweens.add({ targets: roar, scale: 2, alpha: 0, duration: 800, onComplete: () => roar.destroy() });
 
-            if (this.opponent && !this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 360) {
-                this.opponent.takeDamage(100 * this.power, 800 * this.facing, -600, 1000);
+            const _oppRoar = this.getOpponent();
+            if (_oppRoar && !_oppRoar.isDead && Math.abs(_oppRoar.sprite.x - this.sprite.x) < 360) {
+                _oppRoar.takeDamage(100 * this.power, 800 * this.facing, -600, 1000);
             }
         });
 

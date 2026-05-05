@@ -429,11 +429,21 @@ export default class Fighter {
                 this.scene.spawnDamageNumber(opponent.sprite.x, opponent.sprite.y - 70, dmg);
             }
         } else if (sureHitType === 'lifesteal') {
-            // Hanami domain: prevent enemy attacks + heal self
-            // Stun the opponent briefly each tick to prevent attacking
-            if (opponent.stateMachine && !opponent.stateMachine.locked) {
+            // Hanami domain: FULL paralysis + heal self + drain CE
+            // Force-unlock and re-lock to override any existing state
+            if (opponent.stateMachine) {
+                opponent.stateMachine.unlock();
                 opponent.stateMachine.setState('hitstun');
-                opponent.stunTimer = 1200; // Locked until next tick
+                opponent.stateMachine.lock(1200); // Locked until next tick
+            }
+            opponent.stunTimer = 1200;
+            // Zero all movement to prevent sliding/walking
+            if (opponent.sprite && opponent.sprite.body) {
+                opponent.sprite.body.setVelocity(0, 0);
+            }
+            // Drain opponent CE
+            if (opponent.ceSystem && opponent.ceSystem.currentCE > 0) {
+                opponent.ceSystem.currentCE = Math.max(0, opponent.ceSystem.currentCE - 15);
             }
             // Heal Hanami
             const heal = 60;

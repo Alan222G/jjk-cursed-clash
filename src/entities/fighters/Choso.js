@@ -81,18 +81,22 @@ export default class Choso extends Fighter {
                 // Call original Projectile update so trail and graphics render properly
                 Projectile.prototype.update.call(this, dt);
 
+                // If the prototype update destroyed us (lifetime expired), bail out
+                if (!this.alive || !this.sprite || !this.sprite.active) return;
+
                 // Check collision with other projectiles (Hanami's Wood Buds, etc.)
-                if (this.scene.projectiles) {
+                if (this.scene && this.scene.projectiles) {
                     for (let other of this.scene.projectiles) {
+                        if (other === this) continue;
                         if (other.owner !== this.owner && other.alive && other.sprite && other.sprite.active) {
-                            const bounds1 = this.sprite.getBounds();
-                            const bounds2 = other.sprite.getBounds();
-                            if (Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2)) {
-                                // Destroy the other projectile
-                                other.destroy();
-                                // Reduce our own damage slightly
-                                this.damage = Math.floor(this.damage * 0.7);
-                            }
+                            try {
+                                const bounds1 = this.sprite.getBounds();
+                                const bounds2 = other.sprite.getBounds();
+                                if (Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2)) {
+                                    other.destroy();
+                                    this.damage = Math.floor(this.damage * 0.7);
+                                }
+                            } catch(e) {}
                         }
                     }
                 }
@@ -280,6 +284,7 @@ export default class Choso extends Fighter {
     }
 
     takeDamage(damage, knockbackX, knockbackY, stunDuration, bypassBlock = false) {
+        if (this.isDead) return; // Guard against dead state
         // If blood armor is active and attacked, poison the attacker
         if (this.redScaleActive && damage > 0) {
             const attacker = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
@@ -332,9 +337,8 @@ export default class Choso extends Fighter {
                 const maxHp = target.charData?.stats?.maxHp || 3000;
                 const percentHp = target.hp / maxHp;
                 if (percentHp <= 0.10 && target.hp > 0) {
-                    // Execute! Bypass defense
+                    // Execute! Bypass defense — set hp to 0 and let GameScene handle death
                     target.hp = 0;
-                    target.takeDamage(1, 0, 0, 0);
                     if (this.scene.screenEffects) {
                         this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
                     }
