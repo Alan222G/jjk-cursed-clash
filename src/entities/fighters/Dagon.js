@@ -283,9 +283,15 @@ export default class Dagon extends Fighter {
                 const hRand = 10 + Math.random() * 20;
                 const spdRand = 500 + Math.random() * 400;
 
+                // Scale damage by size: large = x1.6, small = x0.8, medium = x1.0
+                let sizeMult = 1.0;
+                if (wRand > 30) sizeMult = 1.6;       // Big shikigami
+                else if (wRand < 25) sizeMult = 0.8;   // Small shikigami
+                const dmg = Math.floor(6 * this.power * sizeMult);
+
                 const proj = new Projectile(this.scene, sx, sy, {
                     owner: this,
-                    damage: Math.floor(6 * this.power), // Reduced damage
+                    damage: dmg,
                     knockbackX: 40 * dir, knockbackY: -10,
                     stunDuration: 100, speed: spdRand,
                     direction: dir, color: 0x00CCFF,

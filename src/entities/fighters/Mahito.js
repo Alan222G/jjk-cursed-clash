@@ -123,25 +123,34 @@ export default class Mahito extends Fighter {
         const flash = this.scene.add.circle(wallX, wallY, 40, 0x00CCAA, 0.7).setDepth(15);
         this.scene.tweens.add({ targets: flash, alpha: 0, scale: 2, duration: 400, onComplete: () => flash.destroy() });
 
-        // Spawn a stationary heavy projectile that acts like a wall
+        // Spawn a stationary projectile as a flesh wall with a hit cooldown
+        const wallHitCooldown = { timer: 0 };
         const proj = new Projectile(this.scene, wallX, wallY, {
             owner: this,
             damage: 40 * this.power,
             knockbackX: 300, knockbackY: -100,
             stunDuration: 300, speed: 0, // Stationary
             direction: this.facing, color: 0x664444, // Fleshy color
-            size: { w: 40, h: 140 }, lifetime: 5000, type: 'heavy',
+            size: { w: 40, h: 140 }, lifetime: 5000, type: 'normal',
             onHitCallback: (p, victim) => {
-                // If it hits, it stays alive (acts as a persistent wall)
-                if (victim.takeDamage) {
+                // Cooldown prevents per-frame damage (was causing freeze)
+                if (wallHitCooldown.timer > 0) return true; // Stay alive, skip damage
+                wallHitCooldown.timer = 1000; // 1 second between hits
+                if (victim && victim.takeDamage) {
                     victim.takeDamage(p.damage, p.knockbackX * p.direction, p.knockbackY, p.stunDuration);
                 }
-                return true; // Don't destroy wall on hit
+                return true; // Keep wall alive after hit
             }
         });
-        
-        // Add pulsating effect to the wall
-        proj.customGraphics.clear();
+
+        // Tick down the cooldown inside the projectile's update
+        const originalUpdate = proj.update.bind(proj);
+        proj.update = function(dt) {
+            if (wallHitCooldown.timer > 0) wallHitCooldown.timer -= dt;
+            originalUpdate(dt);
+        };
+
+        // Add pulsating effect to the wall  
         this.scene.tweens.add({
             targets: proj.sprite,
             scaleX: 1.1,

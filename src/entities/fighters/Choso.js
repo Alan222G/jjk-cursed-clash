@@ -309,44 +309,6 @@ export default class Choso extends Fighter {
             }
         }
 
-        if (this.chosoAwakened) {
-            this.chosoAwakenedTimer -= dt;
-            this.wingKingShootTimer -= dt;
-
-            // Wing King Auto-Shoot
-            if (this.wingKingShootTimer <= 0) {
-                this.wingKingShootTimer = 1500; // Shoot every 1.5s
-                
-                const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-                if (target && !target.isDead) {
-                    const dir = target.sprite.x > this.sprite.x ? 1 : -1;
-                    const proj = new Projectile(this.scene, this.sprite.x + 20 * dir, this.sprite.y - 60, {
-                        owner: this,
-                        damage: 15 * this.power,
-                        knockbackX: 50,
-                        knockbackY: -20,
-                        stunDuration: 100,
-                        speed: 1500,
-                        direction: dir,
-                        color: 0xDC143C,
-                        size: { w: 30, h: 6 },
-                        lifetime: 1000,
-                        type: 'normal', // Was 'beam'
-                        onHitCallback: (p, victim) => {
-                            this.applyBloodPoison(victim);
-                            return false;
-                        }
-                    });
-                    if (this.scene.projectiles) this.scene.projectiles.push(proj);
-                }
-            }
-
-            if (this.chosoAwakenedTimer <= 0) {
-                this.chosoAwakened = false;
-                this.power = this.charData.stats.power;
-            }
-        }
-
         // Handle target poison logic here instead of modifying all fighters
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && target.bloodPoisonActive) {

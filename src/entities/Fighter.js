@@ -423,15 +423,21 @@ export default class Fighter {
         const sureHitType = this.charData?.skills?.domain?.sureHitType || 'dps';
         // Default DPS behavior
         if (sureHitType === 'dps') {
-            const dmg = 50;
+            const dmg = 20; // Reduced from 50 (since Jogo domain lasts 37s now)
             opponent.hp = Math.max(0, opponent.hp - dmg);
             if (this.scene.spawnDamageNumber) {
                 this.scene.spawnDamageNumber(opponent.sprite.x, opponent.sprite.y - 70, dmg);
             }
         } else if (sureHitType === 'lifesteal') {
-            const dmg = 30;
-            opponent.hp = Math.max(0, opponent.hp - dmg);
-            this.hp = Math.min(this.maxHp || this.charData?.stats?.maxHp || 3000, this.hp + dmg);
+            // Hanami domain: prevent enemy attacks + heal self
+            // Stun the opponent briefly each tick to prevent attacking
+            if (opponent.stateMachine && !opponent.stateMachine.locked) {
+                opponent.stateMachine.setState('hitstun');
+                opponent.stunTimer = 1200; // Locked until next tick
+            }
+            // Heal Hanami
+            const heal = 60;
+            this.hp = Math.min(this.maxHp || this.charData?.stats?.maxHp || 4200, this.hp + heal);
         } else if (sureHitType === 'clones') {
             const dmg = 20;
             opponent.hp = Math.max(0, opponent.hp - dmg);

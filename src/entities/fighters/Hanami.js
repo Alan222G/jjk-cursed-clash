@@ -198,13 +198,33 @@ export default class Hanami extends Fighter {
         } else if (this.domainActive) return;
 
         this.ceSystem.spend(this.charData.skills.domain.cost);
-        this.domainActive = true;
-        this.ceSystem.startDomain();
         
-        this.hanamiAwakened = true;
-        this.hanamiAwakenedTimer = 15000;
-        
-        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'HANAMI');
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(1500);
+        this.sprite.body.setVelocityX(0);
+
+        try { this.scene.sound.play('sfx_beam', { volume: 0.8 }); } catch(e) {}
+
+        // Fire a beam first
+        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 40, {
+            owner: this,
+            damage: 80 * this.power,
+            knockbackX: 400, knockbackY: -100,
+            stunDuration: 500, speed: 1200,
+            direction: this.facing, color: 0x32CD32,
+            size: { w: 100, h: 20 }, lifetime: 1000, type: 'beam'
+        });
+        if (this.scene.projectiles) this.scene.projectiles.push(proj);
+
+        this.scene.time.delayedCall(1000, () => {
+            this.domainActive = true;
+            this.ceSystem.startDomain();
+            
+            this.hanamiAwakened = true;
+            this.hanamiAwakenedTimer = 15000;
+            
+            if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'HANAMI');
+        });
     }
 
     // ── Update Loop ──
@@ -228,7 +248,11 @@ export default class Hanami extends Fighter {
                     target.flowerDebuff = true;
                 } else {
                     target.flowerDebuff = false;
+                    // Heal Hanami if enemy is NOT inside
+                    this.hp = Math.min(this.charData.stats.maxHp || 4200, this.hp + (40 * dt / 1000));
                 }
+            } else {
+                this.hp = Math.min(this.charData.stats.maxHp || 4200, this.hp + (40 * dt / 1000));
             }
 
             if (this.flowerFieldTimer <= 0) {
