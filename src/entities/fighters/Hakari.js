@@ -36,7 +36,16 @@ export default class Hakari extends Fighter {
 
     trySpecialAttack() {
         if (this.isCasting) return;
-        if (this.jackpotActive) return; // Only physical attacks allowed during Jackpot!
+        
+        if (this.jackpotActive) {
+            if (this.input.isDown('DOWN')) {
+                this.castJackpotHeal();
+            } else {
+                this.castJackpotLeap();
+            }
+            return;
+        }
+
         const tier = this.ceSystem.getTier();
 
         if (tier >= 3 && this.input.isDown('DOWN')) {
@@ -172,6 +181,36 @@ export default class Hakari extends Fighter {
 
         this.addFever(20);
         this._endCast(1100);
+    }
+
+    // ═══════════════════════════════════════
+    // JACKPOT SKILLS (Mobility & Healing)
+    // ═══════════════════════════════════════
+    castJackpotHeal() {
+        if (!this.ceSystem.spend(5)) return;
+        this.isCasting = true;
+        this.stateMachine.lock(300);
+        this.hp = Math.min(this.hp + 200, this.charData?.stats?.maxHp || 3000);
+        
+        const g = this.scene.add.circle(this.sprite.x, this.sprite.y - 20, 40, 0x00FFAA, 0.5).setDepth(20);
+        this.scene.tweens.add({ targets: g, scale: 2, alpha: 0, duration: 400, onComplete: () => g.destroy() });
+        try { this.scene.sound.play('sfx_charge', { volume: 0.5 }); } catch(e) {}
+        this._endCast(300);
+    }
+
+    castJackpotLeap() {
+        if (!this.ceSystem.spend(5)) return;
+        this.isCasting = true;
+        this.stateMachine.lock(500);
+        
+        this.sprite.body.setVelocityY(-400);
+        this.sprite.body.setVelocityX(1600 * this.facing);
+        
+        const g = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0x00FFAA, 0.7).setDepth(20);
+        this.scene.tweens.add({ targets: g, alpha: 0, scale: 3, duration: 300, onComplete: () => g.destroy() });
+        try { this.scene.sound.play('sfx_slash', { volume: 0.4 }); } catch(e) {}
+        
+        this._endCast(500);
     }
 
     // ═══════════════════════════════════════
@@ -363,12 +402,19 @@ export default class Hakari extends Fighter {
 
     _activateJackpotState() {
         this.jackpotActive = true;
-        this.jackpotTimer = 42000; // Exactly 42 seconds
+        
+        if (this.hp < 500) {
+            this.jackpotTimer = 52000;
+            this.power = (this.charData?.stats?.power || 1.0) * 1.7;
+        } else {
+            this.jackpotTimer = 42000;
+            this.power = (this.charData?.stats?.power || 1.0) * 1.4;
+        }
+        
         this._endDomain();
 
         this.ceSystem.ce = this.ceSystem.maxCe;
         this.speed = this._baseSpeed * 1.3;
-        this.power *= 1.4;
 
         const cx = this.scene.cameras.main.centerX;
         const cy = this.scene.cameras.main.centerY;
@@ -401,6 +447,16 @@ export default class Hakari extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+
+        if (this.jackpotActive) {
+            // Neon green energy effect
+            if (Math.floor(time) % 100 < 40) {
+                const cx = this.sprite.x + (Math.random() - 0.5) * 50;
+                const cy = this.sprite.y + (Math.random() - 0.5) * 100;
+                const spark = this.scene.add.circle(cx, cy, 4, 0x00FFAA, 0.8).setDepth(15);
+                this.scene.tweens.add({ targets: spark, y: cy - 60, alpha: 0, duration: 500, onComplete: () => spark.destroy() });
+            }
+        }
 
         if (this.hakaNerfTimer > 0) {
             this.hakaNerfTimer -= dt;

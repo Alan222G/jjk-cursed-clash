@@ -457,39 +457,34 @@ export default class Mahito extends Fighter {
 
         try { this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx ?? 50) / 100 }); } catch(e) {}
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'self_embodiment');
+
+        this.mahitoTimeLeft = 15000;
+        this.mahitoComboCount = 0;
+        this.mahitoHits = 0;
+        this.mahitoTarget = (this.scene.p1 === this) ? this.scene.p2 : this.scene.p1;
     }
 
     applySureHitTick(opponent) {
         if (!this.domainActive) return;
-        // Soul touch — transforms parts of opponent, dealing soul damage
-        // Ignores defense, directly reduces HP
-        const soulDmg = 60;
-        opponent.hp = Math.max(0, opponent.hp - soulDmg);
-
-        // Soul distortion visual
+        
         const ox = opponent.sprite.x; const oy = opponent.sprite.y - 20;
-        const g = this.scene.add.graphics().setDepth(15);
-        // Warped soul rings
-        g.lineStyle(3, 0x00CCAA, 0.8);
-        const wobble = Math.sin(this.scene.time.now * 0.01) * 10;
-        g.strokeEllipse(ox, oy, 40 + wobble, 50 - wobble);
-        g.fillStyle(0x00FFAA, 0.3);
-        g.fillEllipse(ox + wobble, oy, 30, 35);
-        // Soul fragment particles
-        for (let i = 0; i < 3; i++) {
-            const px = ox + (Math.random() - 0.5) * 60;
-            const py = oy + (Math.random() - 0.5) * 60;
-            g.fillStyle(0x00DDAA, 0.6);
-            g.fillTriangle(px, py - 5, px - 4, py + 3, px + 4, py + 3);
-        }
-        this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+        const hx = ox + (Math.random() - 0.5) * 60;
+        const hy = oy + (Math.random() - 0.5) * 60;
+        
+        const hand = this.scene.add.text(hx, hy, '✋', { fontSize: '20px' }).setDepth(15);
+        this.scene.tweens.add({ targets: hand, scale: 1.5, alpha: 0, duration: 600, onComplete: () => hand.destroy() });
+    }
 
-        // Spawn "SOUL" text
-        if (Math.random() < 0.3) {
-            const txt = this.scene.add.text(ox + (Math.random()-0.5)*40, oy - 40, 'SOUL', {
-                fontSize: '11px', color: '#00FFAA', stroke: '#000000', strokeThickness: 2
-            }).setDepth(15);
-            this.scene.tweens.add({ targets: txt, y: txt.y - 25, alpha: 0, duration: 600, onComplete: () => txt.destroy() });
+    onHitOpponent(opponent) {
+        super.onHitOpponent(opponent);
+        if (this.domainActive && opponent === this.mahitoTarget) {
+            if (this.instantSpiritForm) {
+                this.mahitoHits = (this.mahitoHits || 0) + 1;
+            } else {
+                if (this.currentAttack && this.currentAttack.type === 'COMBO' && this.currentAttack.comboHit === 4) {
+                    this.mahitoComboCount = (this.mahitoComboCount || 0) + 1;
+                }
+            }
         }
     }
 
@@ -520,6 +515,60 @@ export default class Mahito extends Fighter {
         // Stance Toggle: DOWN + BLOCK
         if (this.input.isDown('DOWN') && this.input.isDown('BLOCK') && this.stanceCooldown <= 0) {
             this.cycleStance();
+        }
+
+        if (this.domainActive && this.mahitoTarget && !this.mahitoTarget.isDead) {
+            const dist = Math.abs(this.sprite.x - this.mahitoTarget.sprite.x);
+            if (dist < 150) {
+                this.mahitoTimeLeft -= dt;
+            }
+            
+            const isConditionMet = (this.instantSpiritForm && this.mahitoHits >= 10) || (!this.instantSpiritForm && this.mahitoComboCount >= 2);
+            
+            if (this.mahitoTimeLeft <= 0 && isConditionMet) {
+                this._executeDomainInstakill();
+            }
+            
+            this._updateMahitoDomainUI();
+        } else if (this.mahitoDomainUI) {
+            this.mahitoDomainUI.setVisible(false);
+        }
+    }
+
+    _executeDomainInstakill() {
+        if (this.mahitoDomainUI) this.mahitoDomainUI.setVisible(false);
+        this.mahitoTarget.takeDamage(99999, 0, -200, 1000); // Instakill
+        
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xFFFFFF, 500, 1.0);
+            this.scene.screenEffects.shake(0.1, 1000);
+        }
+        const boom = this.scene.add.circle(this.mahitoTarget.sprite.x, this.mahitoTarget.sprite.y, 100, 0x880000, 0.9).setDepth(25);
+        this.scene.tweens.add({ targets: boom, scale: 5, alpha: 0, duration: 800, onComplete: () => boom.destroy() });
+        try { this.scene.sound.play('heavy_smash', { volume: 1.5 }); } catch(e){}
+        
+        this.domainActive = false;
+        this.ceSystem.endDomain();
+        if (this.scene.onDomainEnded) this.scene.onDomainEnded();
+    }
+
+    _updateMahitoDomainUI() {
+        if (!this.mahitoDomainUI) {
+            this.mahitoDomainUI = this.scene.add.text(0, 0, '', {
+                fontSize: '12px', fontFamily: 'Arial Black', color: '#00FFAA', stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5).setDepth(30);
+        }
+        this.mahitoDomainUI.setVisible(true);
+        this.mahitoDomainUI.setPosition(this.mahitoTarget.sprite.x, this.mahitoTarget.sprite.y - 120);
+        
+        const timeSec = Math.max(0, Math.ceil(this.mahitoTimeLeft / 1000));
+        const conditionText = this.instantSpiritForm ? `GOLPES: ${this.mahitoHits}/10` : `COMBOS: ${this.mahitoComboCount}/2`;
+        this.mahitoDomainUI.setText(`PROXIMIDAD: ${timeSec}s\n${conditionText}`);
+        
+        if (timeSec === 0 && (this.instantSpiritForm ? this.mahitoHits >= 10 : this.mahitoComboCount >= 2)) {
+            this.mahitoDomainUI.setColor('#FF0000');
+        } else {
+            this.mahitoDomainUI.setColor('#00FFAA');
         }
     }
 

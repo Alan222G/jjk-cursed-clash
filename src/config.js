@@ -418,7 +418,7 @@ export const CHARACTERS = {
         skills: {
             skill1: { name: 'Idle Transfiguration', cost: 15, damage: 0, type: 'buff_morph' },
             skill2: { name: 'Polymorphic Soul Isomer', cost: 40, damage: 65, type: 'summon' },
-            domain: { name: 'Self-Embodiment of Perfection', cost: 100, sureHitType: 'soul_touch' },
+            domain: { name: 'Self-Embodiment of Perfection', cost: 100, sureHitType: 'special_instakill' },
             maximum: { name: 'Instant Spirit Body', cost: 120, damage: 0, type: 'transform' },
         },
         domainBg: 'dagon_domain',

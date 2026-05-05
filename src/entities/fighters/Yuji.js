@@ -279,6 +279,15 @@ export default class Yuji extends Fighter {
         
         if (this.yujiAwakened) {
             this.yujiAwakenedTimer -= dt;
+
+            // Visual aura
+            if (Math.floor(time) % 100 < 40) {
+                const cx = this.sprite.x + (Math.random() - 0.5) * 40;
+                const cy = this.sprite.y + (Math.random() - 0.5) * 80;
+                const spark = this.scene.add.circle(cx, cy, 3, 0xFF6600, 0.8).setDepth(15);
+                this.scene.tweens.add({ targets: spark, y: cy - 40, alpha: 0, duration: 400, onComplete: () => spark.destroy() });
+            }
+
             if (this.yujiAwakenedTimer <= 0) {
                 this.yujiAwakened = false;
                 this.power = this.charData.stats.power || 1.0;
