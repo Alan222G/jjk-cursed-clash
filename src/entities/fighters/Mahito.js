@@ -7,7 +7,7 @@
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
 import TransfiguredHumanNPC from './TransfiguredHumanNPC.js';
-import { CHARACTERS, CE_COSTS, DOMAIN, ATTACKS } from '../../config.js';
+import { CHARACTERS, CE_COSTS, DOMAIN, ATTACKS, PHYSICS } from '../../config.js';
 
 export default class Mahito extends Fighter {
     constructor(scene, x, y, playerIndex) {
@@ -118,60 +118,32 @@ export default class Mahito extends Fighter {
 
         this.isCasting = true;
         this.stateMachine.setState('idle');
-        this.stateMachine.lock(500);
+        this.stateMachine.lock(600);
         this.sprite.body.setVelocityX(0);
 
         try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e) {}
 
-        const wallX = this.sprite.x + 80 * this.facing;
-        const wallY = PHYSICS.GROUND_Y - 70;
-
-        // Visual flash
-        const flash = this.scene.add.circle(wallX, wallY, 40, 0x00CCAA, 0.7).setDepth(15);
+        // Visual flash at spawn point
+        const spawnX = this.sprite.x + 60 * this.facing;
+        const spawnY = this.sprite.y;
+        const flash = this.scene.add.circle(spawnX, spawnY, 30, 0x00CCAA, 0.7).setDepth(15);
         this.scene.tweens.add({ targets: flash, alpha: 0, scale: 2, duration: 400, onComplete: () => flash.destroy() });
 
-        // Spawn a stationary projectile as a flesh wall with a hit cooldown
-        const wallHitCooldown = { timer: 0 };
-        const proj = new Projectile(this.scene, wallX, wallY, {
+        // Safe forward-moving soul projectile (NO stationary wall, NO onHitCallback)
+        const proj = new Projectile(this.scene, spawnX, spawnY, {
             owner: this,
-            damage: 40 * this.power,
+            damage: Math.floor(40 * this.power),
             knockbackX: 300, knockbackY: -100,
-            stunDuration: 300, speed: 0, // Stationary
-            direction: this.facing, color: 0x664444, // Fleshy color
-            size: { w: 40, h: 140 }, lifetime: 5000, type: 'normal',
-            onHitCallback: (p, victim) => {
-                // Cooldown prevents per-frame damage (was causing freeze)
-                if (wallHitCooldown.timer > 0) return true; // Stay alive, skip damage
-                wallHitCooldown.timer = 1000; // 1 second between hits
-                if (victim && victim.takeDamage) {
-                    victim.takeDamage(p.damage, p.knockbackX * p.direction, p.knockbackY, p.stunDuration);
-                }
-                return true; // Keep wall alive after hit
-            }
+            stunDuration: 400, speed: 250,
+            direction: this.facing, color: 0x00CCAA,
+            size: { w: 35, h: 50 }, lifetime: 2500, type: 'rect',
         });
-
-        // Tick down the cooldown inside the projectile's update
-        const originalUpdate = proj.update.bind(proj);
-        proj.update = function(dt) {
-            if (wallHitCooldown.timer > 0) wallHitCooldown.timer -= dt;
-            originalUpdate(dt);
-        };
-
-        // Add pulsating effect to the wall  
-        this.scene.tweens.add({
-            targets: proj.sprite,
-            scaleX: 1.1,
-            scaleY: 1.05,
-            yoyo: true,
-            repeat: -1,
-            duration: 500
-        });
-
         if (this.scene.projectiles) this.scene.projectiles.push(proj);
 
-        this.scene.time.delayedCall(500, () => {
+        this.scene.time.delayedCall(600, () => {
             this.isCasting = false;
             if (this.stateMachine.locked) this.stateMachine.unlock();
+            this.stateMachine.setState('idle');
         });
     }
 

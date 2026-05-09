@@ -589,6 +589,41 @@ function getCharacterControls(charKey, playerIndex) {
                 `Efecto: Distorsión Espacial Constante. Uro se vuelve intocable a golpes físicos y los refleja.`,
             ]
         });
+    } else if (charKey === 'URAUME') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — MANIPULACIÓN DE HIELO',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Armadura de Hielo  (60 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Ralentiza al oponente y potencia las estadísticas de Uraume.`,
+            ]
+        });
+    } else if (charKey === 'HANA') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — ÁNGEL',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Alas del Ángel  (40 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `En vuelo: ${atkKeys.special}+${moveKeys.down} — Juicio Divino`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Drena la Energía Maldita del rival continuamente. Hana gana poder.`,
+            ]
+        });
     }
 
     // ── UNIVERSAL MECHANICS ──

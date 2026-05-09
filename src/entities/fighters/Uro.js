@@ -1,11 +1,11 @@
 // ========================================================
 // Takako Uro — Sky Manipulation
-// Thin Ice Breaker, Flight, Space Distortion
+// Thin Ice Breaker, Flight, Aerial Slam, Space Distortion
 // ========================================================
 
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
-import { CHARACTERS, CE_COSTS, PHYSICS } from '../../config.js';
+import { CHARACTERS, CE_COSTS, PHYSICS, ATTACKS } from '../../config.js';
 
 export default class Uro extends Fighter {
     constructor(scene, x, y, playerIndex) {
@@ -24,9 +24,15 @@ export default class Uro extends Fighter {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
 
+        // While flying, U+Down = aerial slam attack
+        if (this.isFlying && this.input.isDown('DOWN')) {
+            this.castAerialSlam();
+            return;
+        }
+
         if (tier >= 4 && this.input.isDown('DOWN')) {
             this.castIceMissile();
-        } else if (tier >= 2 && this.input.isDown('UP')) {
+        } else if (tier >= 1 && this.input.isDown('UP')) {
             this.castFlight();
         } else if (tier >= 1) {
             this.castThinIceBreaker();
@@ -39,12 +45,11 @@ export default class Uro extends Fighter {
         this.isCasting = true; this.stateMachine.lock(600);
         this.sprite.body.setVelocityX(0);
 
-        // Visual: Uro strikes the air
         const strikeX = this.sprite.x + 50 * this.facing;
         const strikeY = this.sprite.y;
 
         this.scene.time.delayedCall(100, () => {
-            try { this.scene.sound.play('heavy_smash', { volume: 0.8 }); } catch(e) {}
+            try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
             
             // "Shattering sky" visual
             const crack = this.scene.add.graphics().setDepth(20);
@@ -80,10 +85,10 @@ export default class Uro extends Fighter {
         });
     }
 
-    // H2: Flight / Ascend
+    // H2: Flight / Ascend (U + Up) — Faster, can attack downward while flying
     castFlight() {
-        if (!this.domainActive && !this.ceSystem.spend(50)) return;
-        this.isCasting = true; this.stateMachine.lock(400);
+        if (!this.domainActive && !this.ceSystem.spend(25)) return;
+        this.isCasting = true; this.stateMachine.lock(300);
 
         try { this.scene.sound.play('sfx_dash', { volume: 0.8 }); } catch(e) {}
 
@@ -91,16 +96,48 @@ export default class Uro extends Fighter {
         const ring = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0xFFB6C1, 0.5).setDepth(15);
         this.scene.tweens.add({ targets: ring, scale: 3, alpha: 0, duration: 500, onComplete: () => ring.destroy() });
 
-        this.sprite.body.setVelocityY(-800);
+        // FAST ascension
+        this.sprite.body.setVelocityY(-1200);
         this.isFlying = true;
         this.flightTimer = 3000; // 3 seconds of hover
 
-        this.scene.time.delayedCall(400, () => {
-            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('fall');
+        this.scene.time.delayedCall(300, () => {
+            this.isCasting = false; this.stateMachine.unlock();
         });
     }
 
-    // H4: Ice Missile (Maximum)
+    // Aerial Slam — Available only while flying (U + Down while airborne)
+    castAerialSlam() {
+        this.isCasting = true; this.stateMachine.lock(600);
+        this.isFlying = false;
+        this.sprite.body.setAllowGravity(true);
+
+        try { this.scene.sound.play('sfx_dash', { volume: 1.0 }); } catch(e) {}
+
+        // Dive bomb downward
+        this.sprite.body.setVelocityY(1200);
+        this.sprite.body.setVelocityX(300 * this.facing);
+
+        this.scene.time.delayedCall(300, () => {
+            // Shockwave on landing
+            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.05, 400);
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
+
+            const wave = this.scene.add.circle(this.sprite.x, this.sprite.y + 30, 60, 0x87CEEB, 0.7).setDepth(15);
+            this.scene.tweens.add({ targets: wave, scale: 3, alpha: 0, duration: 500, onComplete: () => wave.destroy() });
+
+            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 150) {
+                target.takeDamage(60 * this.power, 400 * this.facing, -500, 600);
+            }
+        });
+
+        this.scene.time.delayedCall(600, () => {
+            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
+    }
+
+    // H4: Ice Missile (Maximum — U + Down on ground)
     castIceMissile() {
         if (!this.domainActive && !this.ceSystem.spend(120)) return;
         this.isCasting = true; this.stateMachine.lock(1200);
@@ -177,7 +214,6 @@ export default class Uro extends Fighter {
             
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
             if (target && !target.isDead) {
-                // Reflect a portion of the attack back to the opponent
                 target.takeDamage(damage, -kbX, -kbY, stunDuration, true);
             }
             return; // Uro takes NO damage
@@ -192,6 +228,10 @@ export default class Uro extends Fighter {
             this.flightTimer -= dt;
             if (this.flightTimer > 0) {
                 this.sprite.body.setAllowGravity(false);
+                // Allow horizontal movement while flying
+                if (this.input.isDown('LEFT')) this.sprite.body.setVelocityX(-this.speed * 1.3);
+                else if (this.input.isDown('RIGHT')) this.sprite.body.setVelocityX(this.speed * 1.3);
+                else this.sprite.body.setVelocityX(0);
                 this.sprite.body.setVelocityY(0); // hover
             } else {
                 this.isFlying = false;
@@ -231,7 +271,7 @@ export default class Uro extends Fighter {
         const legY = masterY + 10;
         let leftLeg = 30, rightLeg = 30;
         if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle; rightLeg -= this.walkCycle; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 10; rightLeg = 10; }
+        else if (this.stateMachine.isAny('jump', 'fall') || this.isFlying) { leftLeg = 10; rightLeg = 10; }
         
         g.fillStyle(skinColor, 1);
         g.fillTriangle(x - 8, legY, x - 8 - 10, legY + leftLeg, x - 8 + 10, legY + leftLeg - 5);
@@ -246,7 +286,7 @@ export default class Uro extends Fighter {
         g.lineTo(x - 10, masterY + 15);
         g.fillPath();
 
-        // Sky Distortion overlay on Torso (since she wears nothing but distorted sky)
+        // Sky Distortion overlay on Torso
         g.fillStyle(0x87CEEB, 0.6);
         g.fillEllipse(x, masterY - 10, 15, 30);
 
@@ -279,5 +319,12 @@ export default class Uro extends Fighter {
         g.lineTo(hx + 15, hy + 20);
         g.lineTo(hx + 12, hy - 5);
         g.fillPath();
+
+        // Flying aura
+        if (this.isFlying) {
+            g.lineStyle(2, 0x87CEEB, 0.5);
+            g.strokeCircle(x, masterY, 35);
+            g.strokeCircle(x, masterY, 45);
+        }
     }
 }

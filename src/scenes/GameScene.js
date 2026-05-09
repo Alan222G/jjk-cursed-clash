@@ -27,6 +27,8 @@ import Nobara from '../entities/fighters/Nobara.js';
 import Kashimo from '../entities/fighters/Kashimo.js';
 import Yorozu from '../entities/fighters/Yorozu.js';
 import Uro from '../entities/fighters/Uro.js';
+import Uraume from '../entities/fighters/Uraume.js';
+import Hana from '../entities/fighters/Hana.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -146,6 +148,8 @@ export default class GameScene extends Phaser.Scene {
             'KASHIMO': Kashimo,
             'YOROZU': Yorozu,
             'URO': Uro,
+            'URAUME': Uraume,
+            'HANA': Hana,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();
@@ -202,6 +206,11 @@ export default class GameScene extends Phaser.Scene {
             HANAMI:   { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0x32CD32, bg: 0x002200, lineColor: 0x228B22, textColor: '#32CD32', name: 'RYŌIKI TENKAI — DAICHI NO MEGUMI' },
             CHOSO:    { voice: 'sukuna_domain_voice',  sign: 'sukuna_sign', color: 0xDC143C, bg: 0x220000, lineColor: 0x8B0000, textColor: '#DC143C', name: 'MAXIMUM CONVERGENCE' },
             MEGUMI:   { voice: 'gojo_domain_voice',    sign: 'gojo_sign',   color: 0x001133, bg: 0x000000, lineColor: 0x333333, textColor: '#FFFFFF', name: 'RYŌIKI TENKAI — CHIMERA SHADOW GARDEN' },
+            KASHIMO:  { voice: 'sukuna_domain_voice',  sign: 'kashimo_sign', color: 0x00FFFF, bg: 0x001122, lineColor: 0x00CCFF, textColor: '#00FFFF', name: 'RYŌIKI TENKAI — BESTIA MÍTICA ÁMBAR' },
+            YOROZU:   { voice: 'gojo_domain_voice',    sign: 'yorozu_sign', color: 0x777788, bg: 0x111118, lineColor: 0x8888AA, textColor: '#8888AA', name: 'RYŌIKI TENKAI — TRIPLE AFLICCIÓN' },
+            URO:      { voice: 'gojo_domain_voice',    sign: 'uro_sign',    color: 0xFFB6C1, bg: 0x1A0011, lineColor: 0xFF69B4, textColor: '#FFB6C1', name: 'RYŌIKI TENKAI — SKY MANIPULATION' },
+            URAUME:   { voice: 'sukuna_domain_voice',  sign: 'uraume_sign', color: 0xAADDFF, bg: 0x001133, lineColor: 0x88CCFF, textColor: '#AADDFF', name: 'RYŌIKI TENKAI — FROZEN LANDSCAPE' },
+            HANA:     { voice: 'gojo_domain_voice',    sign: 'hana_sign',   color: 0xFFFF88, bg: 0x1A1A00, lineColor: 0xFFFF00, textColor: '#FFFF88', name: 'RYŌIKI TENKAI — TECHNIQUE EXTINGUISHMENT' },
         };
 
         const theme = DOMAIN_THEMES[charKey] || DOMAIN_THEMES.SUKUNA;

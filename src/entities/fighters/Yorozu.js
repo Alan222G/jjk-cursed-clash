@@ -15,6 +15,10 @@ export default class Yorozu extends Fighter {
         // Bug Armor state
         this.bugArmorActive = false;
         this.bugArmorTimer = 0;
+
+        // Liquid Metal Sword buff state
+        this.swordActive = false;
+        this.swordTimer = 0;
     }
 
     trySpecialAttack() {
@@ -32,44 +36,60 @@ export default class Yorozu extends Fighter {
         }
     }
 
-    // H1: Liquid Metal Sword
+    // H1: Equip Liquid Metal Sword — buffs normal attacks for 10 seconds
     castLiquidMetalSword() {
+        if (this.swordActive) return; // Already equipped
         if (!this.domainActive && !this.ceSystem.spend(30)) return;
-        this.isCasting = true; this.stateMachine.lock(800);
+        this.isCasting = true; this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
 
         try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
 
-        const sword = this.scene.add.rectangle(this.sprite.x + 30 * this.facing, this.sprite.y, 60, 10, 0x777788).setDepth(15);
-        this.scene.tweens.add({ targets: sword, angle: 360, duration: 400 });
+        this.swordActive = true;
+        this.swordTimer = 10000; // 10 seconds
 
-        this.scene.time.delayedCall(100, () => {
-            this.sprite.body.setVelocityX(400 * this.facing);
-            
-            let hits = 0;
-            const hitInterval = this.scene.time.addEvent({
-                delay: 100,
-                callback: () => {
-                    sword.setPosition(this.sprite.x + 40 * this.facing, this.sprite.y);
-                    const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-                    if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 80) {
-                        // CE cost is 0 in Domain, making it spammable. We don't need to explicitly check CE here since cost was spent initially, but wait, the instructions said domain makes it cost 0 CE? 
-                        target.takeDamage(15 * this.power, 30 * this.facing, -10, 200);
-                    }
-                    hits++;
-                    if (hits >= 4) {
-                        hitInterval.destroy();
-                        sword.destroy();
-                        this.sprite.body.setVelocityX(0);
-                    }
-                },
-                loop: true
-            });
-        });
+        // Flash to signal equip
+        const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0x777788, 0.6).setDepth(15);
+        this.scene.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 500, onComplete: () => flash.destroy() });
 
-        this.scene.time.delayedCall(800, () => {
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'LIQUID METAL SWORD!', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#AABBCC', stroke: '#000000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1200, onComplete: () => txt.destroy() });
+
+        this.scene.time.delayedCall(500, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
         });
+    }
+
+    // Override normal attacks when sword is equipped — more range, adds bleed
+    getBasicAttackData(type) {
+        const base = super.getBasicAttackData(type);
+        if (!base) return base;
+        if (this.swordActive) {
+            base.range += 25; // Extended reach
+            base.damage = Math.floor(base.damage * 1.15); // +15% damage
+            base.onHit = (attacker, victim, dmg) => {
+                // Apply bleed: 5 ticks of 8 damage over 2.5 seconds
+                if (victim && victim.sprite && !victim.isDead) {
+                    let ticks = 0;
+                    const bleedInterval = this.scene.time.addEvent({
+                        delay: 500, repeat: 4,
+                        callback: () => {
+                            ticks++;
+                            if (victim && !victim.isDead && victim.takeDamage) {
+                                victim.takeDamage(8, 0, 0, 0);
+                                // Blood drip visual
+                                const drip = this.scene.add.circle(victim.sprite.x, victim.sprite.y + 10, 3, 0xFF0000, 0.8).setDepth(12);
+                                this.scene.tweens.add({ targets: drip, y: drip.y + 30, alpha: 0, duration: 500, onComplete: () => drip.destroy() });
+                            }
+                            if (ticks >= 5) bleedInterval.destroy();
+                        }
+                    });
+                }
+            };
+        }
+        return base;
     }
 
     // H2: Liquid Metal Whip
@@ -221,6 +241,18 @@ export default class Yorozu extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+
+        // Sword buff countdown
+        if (this.swordActive) {
+            this.swordTimer -= dt;
+            if (this.swordTimer <= 0) {
+                this.swordActive = false;
+                const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 60, 'SWORD EXPIRED', {
+                    fontFamily: 'Arial Black', fontSize: '14px', color: '#FF4444', stroke: '#000000', strokeThickness: 2
+                }).setOrigin(0.5).setDepth(40);
+                this.scene.tweens.add({ targets: txt, y: '-=30', alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+            }
+        }
 
         if (this.bugArmorActive) {
             this.bugArmorTimer -= dt;

@@ -736,6 +736,60 @@ export const CHARACTERS = {
             maximum: { name: 'Ice Missile', cost: 120, damage: 250, type: 'projectile_heavy' },
         },
         domainBg: 'yorozu_domain', // placeholder
+    },
+    URAUME: {
+        id: 'uraume',
+        name: 'Uraume',
+        title: 'Ice Manipulation',
+        colors: {
+            primary: 0xAADDFF, secondary: 0x88CCFF, energy: 0xCCEEFF,
+            accent: 0xDDEEFF, skin: 0xFFE4E1, hair: 0xDDDDFF
+        },
+        stats: {
+            maxHp: 3000,
+            speed: 350,
+            power: 1.1,
+            defense: 1.0,
+            ceRegen: 10,
+            weight: 90,
+            jumpForce: -640,
+            domainDuration: 15000,
+            domainPhase1: 5000,
+        },
+        skills: {
+            skill1: { name: 'Ice Shards', cost: 25, damage: 45, type: 'projectile' },
+            skill2: { name: 'Ice Trail', cost: 40, damage: 50, type: 'projectile_ground' },
+            domain: { name: 'Frozen Landscape', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Ice Fall', cost: 120, damage: 200, type: 'aoe' },
+        },
+        domainBg: 'yorozu_domain', // placeholder
+    },
+    HANA: {
+        id: 'hana',
+        name: 'Hana Kurusu',
+        title: 'Angel\'s Technique',
+        colors: {
+            primary: 0xFFFF88, secondary: 0xFFFFCC, energy: 0xFFFF00,
+            accent: 0xFFFFEE, skin: 0xFFE0CC, hair: 0x222222
+        },
+        stats: {
+            maxHp: 2800,
+            speed: 370,
+            power: 1.0,
+            defense: 0.9,
+            ceRegen: 12,
+            weight: 80,
+            jumpForce: -700,
+            domainDuration: 12000,
+            domainPhase1: 5000,
+        },
+        skills: {
+            skill1: { name: 'Light Beam', cost: 25, damage: 30, type: 'projectile' },
+            skill2: { name: 'Holy Lance', cost: 45, damage: 55, type: 'melee_range' },
+            domain: { name: 'Technique Extinguishment', cost: 100, sureHitType: 'debuff' },
+            maximum: { name: 'Jacob\'s Ladder', cost: 150, damage: 180, type: 'beam_aoe' },
+        },
+        domainBg: 'yorozu_domain', // placeholder
     }
 };
 
