@@ -52,6 +52,7 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TÉCNICAS MALDITAS',
             lines: [
                 `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Golpe de Teletransporte  (30 CE)`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
                 `${moveKeys.block}+${moveKeys.down} — Alternar Infinito`,
@@ -90,6 +91,7 @@ function getCharacterControls(charKey, playerIndex) {
                 `${atkKeys.special}+${moveKeys.down} — Cambiar Arma`,
                 `  Playful Cloud → Soul Katana → Inverted Spear`,
                 `${atkKeys.special} — Buff Físico  (50 CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Ráfaga con Arma  (40 CE)`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Especial del Arma`,
                 `  Cloud: Ráfaga multi-golpe`,
                 `  Katana: Postura de Contraataque (teleport)`,
@@ -113,6 +115,7 @@ function getCharacterControls(charKey, playerIndex) {
                 `  Tipo actual depende del selector`,
                 `${moveKeys.block}+${moveKeys.down} -- Cambiar Tipo de Espiritu`,
                 `  Tonta > Tanque > Distancia > Control`,
+                `${atkKeys.special}+${moveKeys.up} — Pájaro Maldito  (20 CE)`,
                 `${atkKeys.special}+${isP1 ? '<- / ->' : '<- / ->'} -- Gusano dirigido  (${sk.skill1.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} -- ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
             ]
@@ -129,6 +132,7 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TECNICAS MALDITAS',
             lines: [
                 `${atkKeys.special} -- ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Uppercut de Granito  (30 CE)`,
                 `${atkKeys.special}+${isP1 ? '<- / ->' : '<- / ->'} -- ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} -- ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
             ]
@@ -145,6 +149,7 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TECNICAS MALDITAS',
             lines: [
                 `${atkKeys.special} -- ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Embestida Fétida  (30 CE)`,
                 `${atkKeys.special}+${isP1 ? '<- / ->' : '<- / ->'} -- ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} -- ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
             ]
@@ -162,6 +167,8 @@ function getCharacterControls(charKey, playerIndex) {
             lines: [
                 `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
                 `  Triple corte simultáneo (3 proyectiles)`,
+                `${atkKeys.special}+${moveKeys.up} — Corte Divino  (80 CE)`,
+                `  Corte vertical inbloqueable masivo`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Dominio Simple  (15+ CE)`,
                 `  Escudo intocable por 10s (como Infinito)`,
                 `  Consume CE constante + extra al recibir ataques`,
@@ -499,6 +506,7 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TÉCNICAS MALDITAS — MUÑECO DE PAJA',
             lines: [
                 `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Destello Oscuro  (30 CE)`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
             ]
