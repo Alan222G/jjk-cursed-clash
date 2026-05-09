@@ -337,13 +337,14 @@ export default class Choso extends Fighter {
                 const maxHp = target.charData?.stats?.maxHp || 3000;
                 const percentHp = target.hp / maxHp;
                 if (percentHp <= 0.10 && target.hp > 0) {
-                    // Execute! Bypass defense — set hp to 0 and let GameScene handle death
-                    target.hp = 0;
+                    target.bloodPoisonActive = false; // STOP POISON LOOP
+                    // Execute! Bypass defense by dealing massive damage
+                    target.takeDamage(99999, 0, 0, 0);
                     if (this.scene.screenEffects) {
                         this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
                     }
                     try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
-                } else {
+                } else if (target.hp > 0) {
                     // True damage DoT
                     target.hp -= 10;
                     if (target.hp < 1) target.hp = 1; // DoT cannot kill unless execute triggers

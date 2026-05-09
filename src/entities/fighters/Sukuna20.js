@@ -43,6 +43,8 @@ export default class Sukuna20 extends Fighter {
             this.castDivineFlame();
         } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.castSimpleDomain();
+        } else if (tier >= 3 && this.input.isDown('UP')) {
+            this.castDivineCleave();
         } else if (tier >= 1) {
             this.castWorldDismantle();
         }
@@ -103,6 +105,50 @@ export default class Sukuna20 extends Fighter {
             }
             this.stateMachine.setState('idle');
         }, 2500);
+    }
+
+    // ═══════════════════════════════════════
+    // DIVINE CLEAVE (UP+U) — Massive vertical, unblockable slash
+    // ═══════════════════════════════════════
+    castDivineCleave() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1 * 2)) return;
+        
+        this.castWithAudio('sfx_slash', () => {
+            // Screen shake
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.02, 300);
+                this.scene.screenEffects.flash(0xFFFFFF, 100, 0.4);
+            }
+
+            const proj = new Projectile(this.scene,
+                this.sprite.x + 100 * this.facing,
+                this.sprite.y, {
+                owner: this,
+                damage: Math.floor(60 * this.power), // High damage
+                knockbackX: 400 * this.facing, knockbackY: -400,
+                stunDuration: 600, speed: 700,
+                direction: this.facing, color: 0xFF2222,
+                size: { w: 40, h: 250 }, // Massive vertical hitbox
+                lifetime: 1000, type: 'slash',
+            });
+            proj.breaksBlock = true; // Unblockable
+            if (this.scene.projectiles) this.scene.projectiles.push(proj);
+
+            // Slash VFX
+            const g = this.scene.add.graphics().setDepth(15);
+            const sx = this.sprite.x + 80 * this.facing;
+            const sy = this.sprite.y;
+            
+            g.lineStyle(10, 0xFFFFFF, 1);
+            g.beginPath(); g.moveTo(sx-20,sy-150); g.lineTo(sx+20,sy+150); g.strokePath();
+            
+            g.lineStyle(6, 0xFF0000, 0.8);
+            g.beginPath(); g.moveTo(sx-20,sy-150); g.lineTo(sx+20,sy+150); g.strokePath();
+            
+            this.scene.tweens.add({ targets: g, alpha: 0, duration: 400, onComplete: () => g.destroy() });
+
+            this.stateMachine.setState('idle');
+        }, 800);
     }
 
     // ═══════════════════════════════════════

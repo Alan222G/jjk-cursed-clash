@@ -212,6 +212,8 @@ export default class Gojo extends Fighter {
             this.firePurple();
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.fireRed();
+        } else if (tier >= 2 && this.input.isDown('UP')) {
+            this.castTeleportStrike();
         } else if (tier >= 1) {
             this.fireBlue();
         }
@@ -249,6 +251,71 @@ export default class Gojo extends Fighter {
             // Audio failed — fire immediately
             fireAction();
         }
+    }
+
+    // ════════════════════════════════════════════
+    // TELEPORT STRIKE (UP + U)
+    // ════════════════════════════════════════════
+    castTeleportStrike() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
+        
+        this.isCasting = true;
+        this.stateMachine.lock(600);
+        this.sprite.body.setVelocity(0, 0);
+
+        try { this.scene.sound.play('sfx_dash', { volume: 0.8 }); } catch(e){}
+
+        // Teleport exit visual
+        const xOut = this.sprite.x;
+        const yOut = this.sprite.y;
+        const outPulse = this.scene.add.circle(xOut, yOut, 30, 0x44CCFF, 0.8).setDepth(20);
+        this.scene.tweens.add({ targets: outPulse, scale: 2, alpha: 0, duration: 200, onComplete: () => outPulse.destroy() });
+
+        // Hide Gojo
+        this.sprite.setAlpha(0);
+
+        this.scene.time.delayedCall(150, () => {
+            // Teleport destination (above and slightly in front of opponent)
+            if (this.opponent && !this.opponent.isDead) {
+                this.facing = this.opponent.sprite.x > this.sprite.x ? 1 : -1;
+                this.sprite.x = this.opponent.sprite.x - (30 * this.facing);
+                this.sprite.y = this.opponent.sprite.y - 60;
+            }
+
+            this.sprite.setAlpha(1);
+
+            // Teleport entry visual
+            const inPulse = this.scene.add.circle(this.sprite.x, this.sprite.y, 30, 0x44CCFF, 0.8).setDepth(20);
+            this.scene.tweens.add({ targets: inPulse, scale: 2, alpha: 0, duration: 200, onComplete: () => inPulse.destroy() });
+
+            // Downward Strike
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e){}
+            
+            if (this.opponent) {
+                const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.opponent.sprite.x, this.opponent.sprite.y);
+                if (dist < 100) {
+                    const dmg = Math.floor(40 * this.power);
+                    this.opponent.takeDamage(dmg, 100 * this.facing, 400, 500); // Smash down
+                    this.comboSystem.registerHit('SPECIAL');
+                    if (this.scene.screenEffects) this.scene.screenEffects.shake(0.02, 200);
+                }
+            }
+
+            // Visual arc
+            const g = this.scene.add.graphics().setDepth(20);
+            g.lineStyle(6, 0x44CCFF, 0.9);
+            g.beginPath();
+            g.moveTo(this.sprite.x, this.sprite.y - 20);
+            g.lineTo(this.sprite.x + 40 * this.facing, this.sprite.y + 40);
+            g.strokePath();
+            this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+            
+            this.scene.time.delayedCall(300, () => {
+                this.isCasting = false;
+                this.stateMachine.unlock();
+                this.stateMachine.setState('fall');
+            });
+        });
     }
 
     // ════════════════════════════════════════════

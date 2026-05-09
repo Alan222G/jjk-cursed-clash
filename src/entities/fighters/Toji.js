@@ -212,6 +212,12 @@ export default class Toji extends Fighter {
             this.switchWeapon();
             return;
         }
+        
+        // "U + Arriba/W" = Tool Barrage
+        if (this.input.isDown('UP')) {
+            this.castCursedToolBarrage();
+            return;
+        }
 
         // "U + Izquierda/Derecha" = Weapon Special
         if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {
@@ -270,6 +276,63 @@ export default class Toji extends Fighter {
         if (this.scene.screenEffects) {
             this.scene.screenEffects.flash(0x55FF55, 300, 0.3);
         }
+    }
+
+    castCursedToolBarrage() {
+        if (!this.ceSystem.spend(40)) return; // Requires some CE/stamina
+        
+        this.isCasting = true;
+        this.stateMachine.lock(800);
+        this.sprite.body.setVelocityX(0);
+
+        // Quick burst of 3 forward attacks with active weapon
+        let hits = 0;
+        const color = this.currentWeapon.color;
+        
+        const barrageEvent = this.scene.time.addEvent({
+            delay: 150,
+            repeat: 2,
+            callback: () => {
+                hits++;
+                this.sprite.body.setVelocityX(200 * this.facing);
+                
+                // Visual swipe
+                const x = this.sprite.x + 30 * this.facing;
+                const y = this.sprite.y - 20;
+                const swipe = this.scene.add.graphics().setDepth(15);
+                swipe.lineStyle(4, color, 0.8);
+                swipe.beginPath();
+                swipe.moveTo(x, y - 20);
+                swipe.lineTo(x + 50 * this.facing, y);
+                swipe.lineTo(x, y + 20);
+                swipe.strokePath();
+                
+                this.scene.tweens.add({ targets: swipe, alpha: 0, duration: 150, onComplete: () => swipe.destroy() });
+
+                // Hitbox detection
+                if (this.opponent) {
+                    const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                    if (dist < 100) {
+                        const finalHit = hits === 3;
+                        const dmg = finalHit ? Math.floor(40 * this.power) : Math.floor(15 * this.power);
+                        const kbx = finalHit ? 300 * this.facing : 50 * this.facing;
+                        const kby = finalHit ? -200 : -20;
+                        const stun = finalHit ? 400 : 200;
+                        
+                        this.opponent.takeDamage(dmg, kbx, kby, stun);
+                        this.comboSystem.registerHit('SPECIAL');
+                    }
+                }
+
+                if (hits >= 3) {
+                    this.scene.time.delayedCall(200, () => {
+                        this.isCasting = false;
+                        this.stateMachine.unlock();
+                        this.stateMachine.setState('idle');
+                    });
+                }
+            }
+        });
     }
 
     executeWeaponSpecial() {

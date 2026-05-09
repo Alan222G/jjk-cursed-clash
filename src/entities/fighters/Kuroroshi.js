@@ -87,6 +87,11 @@ export default class Kuroroshi extends Fighter {
             if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
                 this.castFesteringPlague();
             }
+        } else if (tier >= 2 && this.input.isDown('UP')) {
+            // UP + U: Festering Life Rush
+            if (this.ceSystem.spend(40)) {
+                this.castFesteringLifeRush();
+            }
         } else if (tier >= 1) {
             // Skill 1: Cockroach Swarm — cloud projectile
             if (this.ceSystem.spend(CE_COSTS.SKILL_1)) {
@@ -224,6 +229,57 @@ export default class Kuroroshi extends Fighter {
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
+        });
+    }
+
+    // ════════════════════════════════════════════
+    // FESTERING LIFE RUSH (UP + U)
+    // Fast dash attack that leaves a trail of bugs
+    // ════════════════════════════════════════════
+    castFesteringLifeRush() {
+        this.isCasting = true;
+        this.stateMachine.lock(600);
+        
+        try { this.scene.sound.play('sfx_dash', { volume: 0.6 }); } catch(e){}
+
+        // Dash forward
+        this.sprite.body.setVelocityX(650 * this.facing);
+
+        // Trail of bugs
+        const trailTimer = this.scene.time.addEvent({
+            delay: 50,
+            repeat: 6,
+            callback: () => {
+                const bug = this.scene.add.ellipse(this.sprite.x, this.sprite.y - 20, 6, 4, 0x332211, 0.9).setDepth(7);
+                this.scene.tweens.add({
+                    targets: bug, x: this.sprite.x + (Math.random()-0.5)*40, y: this.sprite.y - 40, alpha: 0, duration: 600, onComplete: () => bug.destroy()
+                });
+            }
+        });
+
+        this.scene.time.delayedCall(200, () => {
+            this.sprite.body.setVelocityX(0);
+
+            if (this.opponent) {
+                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                if (dist < 100) {
+                    const dmg = Math.floor(35 * this.power);
+                    this.opponent.takeDamage(dmg, 300 * this.facing, -200, 400);
+                    if (this.opponent.applyBurn) this.opponent.applyBurn(2000); // Minor poison
+                    this.comboSystem.registerHit('SPECIAL');
+                    
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.shake(0.01, 150);
+                    }
+                    try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e){}
+                }
+            }
+
+            this.scene.time.delayedCall(200, () => {
+                this.isCasting = false;
+                this.stateMachine.unlock();
+                this.stateMachine.setState('idle');
+            });
         });
     }
 

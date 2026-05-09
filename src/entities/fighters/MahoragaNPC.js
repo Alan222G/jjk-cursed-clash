@@ -17,7 +17,7 @@ export default class MahoragaNPC {
         // Stats
         this.maxHp = 5000;
         this.hp = this.maxHp;
-        this.speed = 200;
+        this.speed = 380;
         this.power = 1.5;
         this.defense = 1.5;
         this.facing = 1;
@@ -309,7 +309,7 @@ export default class MahoragaNPC {
             return;
         }
 
-        if (dist > 300) {
+        if (dist > 110) {
             // Chase
             this.sprite.body.setVelocityX(this.speed * this.facing);
             this.state = 'walk';

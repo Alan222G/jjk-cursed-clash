@@ -68,7 +68,10 @@ export default class Kenjaku extends Fighter {
         if (tier >= 2 && this.input.isDown('DOWN')) {
             this.castUzumaki();
             return;
-        } 
+        } else if (tier >= 1 && this.input.isDown('UP')) {
+            this.castBirdCurse();
+            return;
+        }
         
         if (tier >= 1) {
             if (this.input.isDown('LEFT') || this.input.isDown('RIGHT')) {

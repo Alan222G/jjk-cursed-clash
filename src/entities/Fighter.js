@@ -429,18 +429,10 @@ export default class Fighter {
                 this.scene.spawnDamageNumber(opponent.sprite.x, opponent.sprite.y - 70, dmg);
             }
         } else if (sureHitType === 'lifesteal') {
-            // Hanami domain: FULL paralysis + heal self + drain CE
-            // Force-unlock and re-lock to override any existing state
-            if (opponent.stateMachine) {
-                opponent.stateMachine.unlock();
-                opponent.stateMachine.setState('hitstun');
-                opponent.stateMachine.lock(1200); // Locked until next tick
-            }
-            opponent.stunTimer = 1200;
-            // Zero all movement to prevent sliding/walking
-            if (opponent.sprite && opponent.sprite.body) {
-                opponent.sprite.body.setVelocity(0, 0);
-            }
+            // Hanami domain: Heal self, reduce opponent resistance, NO stun
+            opponent.defenseDebuffActive = true;
+            opponent.defenseDebuffTimer = 1200; // Lasts slightly longer than tick interval
+            
             // Drain opponent CE
             if (opponent.ceSystem && opponent.ceSystem.currentCE > 0) {
                 opponent.ceSystem.currentCE = Math.max(0, opponent.ceSystem.currentCE - 15);
@@ -448,6 +440,11 @@ export default class Fighter {
             // Heal Hanami
             const heal = 60;
             this.hp = Math.min(this.maxHp || this.charData?.stats?.maxHp || 4200, this.hp + heal);
+            
+            // Visual effect
+            if (this.scene.spawnDamageNumber) {
+                this.scene.spawnDamageNumber(this.sprite.x, this.sprite.y - 70, '+' + heal, '#00ff00');
+            }
         } else if (sureHitType === 'clones') {
             const dmg = 20;
             opponent.hp = Math.max(0, opponent.hp - dmg);
@@ -645,7 +642,11 @@ export default class Fighter {
         }
 
         // Apply defense stat
-        damage = Math.floor(damage / this.defense);
+        let effectiveDefense = this.defense;
+        if (this.defenseDebuffActive) {
+            effectiveDefense *= 0.5; // take double damage
+        }
+        damage = Math.floor(damage / effectiveDefense);
         if (damage < 1) damage = 1;
 
         // Apply Yuji knockback reduction if awakened
@@ -980,6 +981,14 @@ export default class Fighter {
             this.comboResetTimer -= dt;
             if (this.comboResetTimer <= 0) {
                 this.comboStep = 0;
+            }
+        }
+        
+        // Defense Debuff Timer
+        if (this.defenseDebuffTimer > 0) {
+            this.defenseDebuffTimer -= dt;
+            if (this.defenseDebuffTimer <= 0) {
+                this.defenseDebuffActive = false;
             }
         }
         

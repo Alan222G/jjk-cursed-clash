@@ -26,6 +26,8 @@ export default class Nobara extends Fighter {
             this.castResonance();
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.castHairpin();
+        } else if (tier >= 2 && this.input.isDown('UP')) {
+            this.castBlackFlash();
         } else if (tier >= 1) {
             this.castNailThrow();
         }
@@ -143,6 +145,46 @@ export default class Nobara extends Fighter {
 
         this.scene.time.delayedCall(700, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
+    }
+
+    // ═══════════════════════════════════════
+    // BLACK FLASH (UP + U)
+    // ═══════════════════════════════════════
+    castBlackFlash() {
+        if (!this.ceSystem.spend(40)) return;
+        this.isCasting = true; this.stateMachine.lock(600);
+        this.sprite.body.setVelocityX(600 * this.facing); // Dash forward
+        
+        try { this.scene.sound.play('sfx_dash', { volume: 0.5 }); } catch(e){}
+
+        this.scene.time.delayedCall(150, () => {
+            this.sprite.body.setVelocityX(0);
+
+            if (this.opponent) {
+                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                if (dist < 80) {
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.flash(0x000000, 200, 0.8);
+                        this.scene.screenEffects.shake(0.04, 300);
+                    }
+                    try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e){}
+                    
+                    const dmg = Math.floor(45 * this.power);
+                    this.opponent.takeDamage(dmg, 400 * this.facing, -300, 500);
+                    this.comboSystem.registerHit('SPECIAL');
+
+                    const bfSpark = this.scene.add.circle(this.opponent.sprite.x, this.opponent.sprite.y - 20, 40, 0x000000, 1).setDepth(20);
+                    bfSpark.setStrokeStyle(4, 0xFF0000);
+                    this.scene.tweens.add({ targets: bfSpark, scale: 2, alpha: 0, duration: 400, onComplete: () => bfSpark.destroy() });
+                    
+                    this.ceSystem.gain(30);
+                }
+            }
+
+            this.scene.time.delayedCall(300, () => {
+                this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+            });
         });
     }
 

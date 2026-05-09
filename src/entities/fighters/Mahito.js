@@ -570,11 +570,19 @@ export default class Mahito extends Fighter {
             
             const isConditionMet = (this.instantSpiritForm && this.mahitoHits >= 10) || (!this.instantSpiritForm && this.mahitoComboCount >= 2);
             
-            if (this.mahitoTimeLeft <= 0 && isConditionMet) {
-                this._executeDomainInstakill();
+            if (this.mahitoTimeLeft <= 0) {
+                if (isConditionMet) {
+                    this._executeDomainInstakill();
+                } else {
+                    // Time ran out but condition not met -> End domain without instakill
+                    this.domainActive = false;
+                    this.ceSystem.endDomain();
+                    if (this.scene.onDomainEnded) this.scene.onDomainEnded();
+                    if (this.mahitoDomainUI) this.mahitoDomainUI.setVisible(false);
+                }
+            } else {
+                this._updateMahitoDomainUI();
             }
-            
-            this._updateMahitoDomainUI();
         } else if (this.mahitoDomainUI) {
             this.mahitoDomainUI.setVisible(false);
         }

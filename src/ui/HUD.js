@@ -220,6 +220,31 @@ export default class HUD {
         this.drawAvatar(g, GAME_WIDTH - s.MARGIN - s.AVATAR_RADIUS, 45, p2.colors, true);
         this.drawRoundPips(g, p2x + s.BAR_WIDTH, p2y + s.BAR_HEIGHT + 6 + s.CE_BAR_HEIGHT + 6, this.p2Rounds, true);
 
+        // ── Mahoraga (Boss Bar) ──
+        if (this.scene.mahoraga && !this.scene.mahoraga.isDead) {
+            const mHpRatio = this.scene.mahoraga.hp / this.scene.mahoraga.maxHp;
+            const mx = GAME_WIDTH / 2 - 150; // Center
+            const my = 110; // Below standard bars
+            
+            g.fillStyle(0x000000, 0.8);
+            g.fillRect(mx - 2, my - 2, 304, 16);
+            
+            g.fillStyle(0xFFFFFF, 1);
+            g.fillRect(mx, my, 300 * Math.max(0, mHpRatio), 12);
+            
+            g.lineStyle(2, 0xFFD700, 1); // Gold border
+            g.strokeRect(mx - 2, my - 2, 304, 16);
+            
+            if (!this.mahoragaText) {
+                this.mahoragaText = this.scene.add.text(GAME_WIDTH / 2, my - 12, 'MAHORAGA', {
+                    fontFamily: 'Arial Black', fontSize: '12px', color: '#FFD700', stroke: '#000000', strokeThickness: 3
+                }).setDepth(101).setScrollFactor(0).setOrigin(0.5, 0.5);
+            }
+        } else if (this.mahoragaText) {
+            this.mahoragaText.destroy();
+            this.mahoragaText = null;
+        }
+
         // ── Round display ──
         this.roundText.setText(`DEATHMATCH`);
 

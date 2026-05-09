@@ -102,6 +102,10 @@ export default class Ishigori extends Fighter {
             if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
                 this.fireDischarge();
             }
+        } else if (tier >= 2 && this.input.isDown('UP')) {
+            if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
+                this.castGraniteUppercut();
+            }
         } else if (tier >= 1) {
             // Spend CE upfront
             if (this.ceSystem.spend(CE_COSTS.SKILL_1)) {
@@ -148,6 +152,43 @@ export default class Ishigori extends Fighter {
             this.isCasting = false;
             this.stateMachine.unlock();
             this.stateMachine.setState('idle');
+        });
+    }
+
+    // ════════════════════════════════════════════
+    // GRANITE UPPERCUT (UP + U)
+    // ════════════════════════════════════════════
+    castGraniteUppercut() {
+        this.isCasting = true;
+        this.stateMachine.lock(600);
+        this.sprite.body.setVelocityX(400 * this.facing); // small dash
+
+        try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.6 }); } catch(e){}
+
+        this.scene.time.delayedCall(150, () => {
+            this.sprite.body.setVelocityX(0);
+            this.sprite.body.setVelocityY(-400); // uppercut jump
+
+            if (this.scene.screenEffects) this.scene.screenEffects.flash(0x44CCFF, 150, 0.4);
+
+            // Explosive blast visual
+            const blast = this.scene.add.circle(this.sprite.x + 30 * this.facing, this.sprite.y - 60, 40, 0x44CCFF, 0.9).setDepth(20);
+            this.scene.tweens.add({ targets: blast, scale: 1.5, alpha: 0, duration: 300, onComplete: () => blast.destroy() });
+
+            if (this.opponent) {
+                const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
+                if (dist < 100) {
+                    const dmg = Math.floor(45 * this.power);
+                    this.opponent.takeDamage(dmg, 100 * this.facing, -800, 600);
+                    this.comboSystem.registerHit('SPECIAL');
+                }
+            }
+        });
+
+        this.scene.time.delayedCall(500, () => {
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            this.stateMachine.setState('fall');
         });
     }
 
