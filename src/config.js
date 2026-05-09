@@ -17,7 +17,7 @@ export const PHYSICS = {
 
 // ── Fighter Defaults ─────────────────────────────────────
 export const FIGHTER_DEFAULTS = {
-    MAX_HP: 3000,
+    MAX_HP: 4000,
     MAX_CE: 200,
     CE_REGEN_RATE: 10,         // CE per second (passive) - increased for faster gameplay
     CE_REGEN_ON_HIT: 12,      // CE gained when landing a hit
@@ -647,6 +647,68 @@ export const CHARACTERS = {
             maximum: { name: 'Resonance', cost: 80, damage: 150, type: 'sure_hit' },
         },
         domainBg: null,
+    },
+    KASHIMO: {
+        id: 'kashimo',
+        name: 'Hajime Kashimo',
+        title: 'God of Lightning',
+        colors: {
+            primary: 0x2288CC,
+            secondary: 0x00FFFF,
+            energy: 0x88FFFF,
+            accent: 0xFFDD00,
+            skin: 0xFFE0CC,
+            hair: 0x00FFFF,
+        },
+        stats: {
+            maxHp: 3800,
+            speed: 370,
+            power: 1.2,
+            defense: 0.9,
+            ceRegen: 5.0,
+            weight: 95,
+            jumpForce: -630,
+            domainDuration: 15000,
+            domainPhase1: 0,
+        },
+        skills: {
+            skill1: { name: 'Lightning Strike', cost: 40, damage: 120, type: 'sure_hit' },
+            skill2: { name: 'Hollow Wicker Basket', cost: 30, type: 'buff' },
+            domain: { name: 'Mythical Beast Amber', cost: 100, sureHitType: 'buff' },
+            maximum: { name: 'Thunder Clap', cost: 80, damage: 200, type: 'heavy_smash' },
+        },
+        domainBg: null,
+    },
+    YOROZU: {
+        id: 'yorozu',
+        name: 'Yorozu',
+        title: 'Heian Era Sorcerer',
+        colors: {
+            primary: 0x550055,
+            secondary: 0xAA22AA,
+            energy: 0xCC44CC,
+            accent: 0x888888,
+            skin: 0xFFE0CC,
+            hair: 0x221122,
+        },
+        stats: {
+            maxHp: 4200,
+            speed: 330,
+            power: 1.1,
+            defense: 1.3,
+            ceRegen: 4.5,
+            weight: 105,
+            jumpForce: -580,
+            domainDuration: 20000,
+            domainPhase1: 0,
+        },
+        skills: {
+            skill1: { name: 'Liquid Metal Sword', cost: 25, damage: 40, type: 'melee_lunge' },
+            skill2: { name: 'Liquid Metal Shield', cost: 40, type: 'defense' },
+            domain: { name: 'Threefold Affliction', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Perfect Sphere', cost: 120, damage: 600, type: 'projectile_heavy' },
+        },
+        domainBg: 'yorozu_domain',
     }
 };
 

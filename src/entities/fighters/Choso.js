@@ -23,7 +23,7 @@ export default class Choso extends Fighter {
             }
         } else if (tier >= 3 && this.input.isDown('UP')) {
             if (this.ceSystem.spend(CE_COSTS.SKILL_1 * 2)) {
-                this.castFlowingRedScale();
+                this.castBloodTsunami();
             }
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             if (this.ceSystem.spend(CE_COSTS.SKILL_2)) {
@@ -67,11 +67,7 @@ export default class Choso extends Fighter {
                 color: 0xDC143C,
                 size: { w: 80, h: 8 },
                 lifetime: 1000,
-                type: 'normal', // Was 'beam', which caused infinite Kamehameha logic and freezes
-                onHitCallback: (p, victim) => {
-                    this.applyBloodPoison(victim);
-                    return false;
-                }
+                type: 'normal'
             });
 
             // Projectile clash logic
@@ -143,11 +139,7 @@ export default class Choso extends Fighter {
                     color: 0x8B0000,
                     size: { w: 15, h: 15 },
                     lifetime: 1500,
-                    type: 'circle',
-                    onHitCallback: (p, victim) => {
-                        this.applyBloodPoison(victim);
-                        return false;
-                    }
+                    type: 'circle'
                 });
                 proj.sprite.body.setVelocityY(dirY * 900);
                 if (this.scene.projectiles) this.scene.projectiles.push(proj);
@@ -179,7 +171,6 @@ export default class Choso extends Fighter {
                         const dist = Math.abs(target.sprite.x - this.sprite.x);
                         if (dist < 80) {
                             target.takeDamage(this.charData.skills.maximum.damage * this.power / 4, 100 * this.facing, -20, 150);
-                            this.applyBloodPoison(target);
                         }
                     }
                     hitCount++;
@@ -194,31 +185,8 @@ export default class Choso extends Fighter {
         });
     }
 
-    // H4: Flowing Red Scale (Blood Armor)
-    castFlowingRedScale() {
-        this.stateMachine.setState('idle');
-        this.stateMachine.lock(500);
-        this.sprite.body.setVelocityX(0);
-
-        this.redScaleActive = true;
-        this.redScaleTimer = 15000;
-
-        // Buff stats slightly
-        this.speed = this.charData.stats.speed * 1.2;
-        this.defense = this.charData.stats.defense * 1.2;
-
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 60, 'BLOOD ARMOR', {
-            fontFamily: 'Arial Black', fontSize: '18px', color: '#DC143C', stroke: '#000000', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(40);
-        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
-
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0xDC143C, 200, 0.4);
-        }
-        try { this.scene.sound.play('sfx_heal', { volume: 0.8 }); } catch(e) {}
-    }
-
-    tryActivateDomain() {
+    // H4: Blood Tsunami (UP+U)
+    castBloodTsunami() {
         if (this.isCasting) return;
         
         if (!this.ceSystem.spend(100)) return;
@@ -254,11 +222,7 @@ export default class Choso extends Fighter {
                 knockbackX: 800, knockbackY: -400,
                 stunDuration: 1000, speed: 600,
                 direction: this.facing, color: 0x8B0000,
-                size: { w: 100, h: 200 }, lifetime: 3000, type: 'slash',
-                onHitCallback: (p, victim) => {
-                    this.applyBloodPoison(victim);
-                    return false;
-                }
+                size: { w: 100, h: 200 }, lifetime: 3000, type: 'slash'
             });
             if (this.scene.projectiles) this.scene.projectiles.push(proj);
         });
@@ -268,94 +232,55 @@ export default class Choso extends Fighter {
         });
     }
 
-    applyBloodPoison(target) {
-        if (!target || target.isDead) return;
-        target.bloodPoisonActive = true;
-        target.bloodPoisonTimer = 30000; // 30 seconds DoT
-        target.bloodPoisonTick = 0;
-    }
+    // ═══════════════════════════════════════
+    // DOMAIN -> AWAKENING (Flowing Red Scale: Stack)
+    // ═══════════════════════════════════════
+    tryActivateDomain() {
+        if (this.chosoAwakened) return;
 
-    // Override to apply poison on all attacks during blood armor
-    onHitOpponent(target) {
-        super.onHitOpponent(target);
-        if (this.redScaleActive) {
-            this.applyBloodPoison(target);
-        }
-    }
+        if (!this.ceSystem.spend(100)) return;
+        
+        this.chosoAwakened = true;
+        this.chosoAwakenedTimer = 15000;
+        
+        // Massive Boosts
+        this.power = (this.charData.stats.power || 1.0) * 1.5;
+        this.speed = (this.charData.stats.speed || 300) * 1.3;
+        this.defense = (this.charData.stats.defense || 0.95) * 1.5;
+        this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 3.5) * 2.0;
+        this.ceRegen = this.charData.stats.ceRegen;
 
-    takeDamage(damage, knockbackX, knockbackY, stunDuration, bypassBlock = false) {
-        if (this.isDead) return; // Guard against dead state
-        // If blood armor is active and attacked, poison the attacker
-        if (this.redScaleActive && damage > 0) {
-            const attacker = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-            if (attacker && !attacker.isDead) {
-                this.applyBloodPoison(attacker);
-            }
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0xDC143C, 300, 0.5);
+            this.scene.screenEffects.shake(0.04, 500);
         }
-        super.takeDamage(damage, knockbackX, knockbackY, stunDuration, bypassBlock);
+        try { this.scene.sound.play('sfx_heal', { volume: 1.0 }); } catch(e) {}
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'FLOWING RED SCALE:\nSTACK!', {
+            fontFamily: 'Arial Black', fontSize: '24px', color: '#DC143C', stroke: '#000000', strokeThickness: 5, align: 'center'
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
     }
 
     update(time, dt) {
         super.update(time, dt);
-        // Blood Armor logic
-        if (this.redScaleActive) {
-            this.redScaleTimer -= dt;
-            if (this.redScaleTimer <= 0) {
-                this.redScaleActive = false;
-                this.speed = this.charData.stats.speed;
-                this.defense = this.charData.stats.defense;
-            } else {
-                // Visual effect: red tint pulse
-                if (Math.floor(time / 200) % 2 === 0) {
-                    this.sprite.setTint(0xFF8888);
-                } else {
-                    this.sprite.clearTint();
-                }
-            }
-        }
+        
+        if (this.chosoAwakened) {
+            this.chosoAwakenedTimer -= dt;
 
-        // Handle target poison logic here instead of modifying all fighters
-        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-        if (target && target.bloodPoisonActive) {
-            target.bloodPoisonTimer -= dt;
-            target.bloodPoisonTick += dt;
-
-            if (target.bloodPoisonTick >= 1000) { // 10 damage per second
-                target.bloodPoisonTick = 0;
-                
-                // Visual Purple tint on HP Bar handled in HUD.js, but we can do a local tint
-                try {
-                    if (target.sprite && target.sprite.active) {
-                        target.sprite.setTint(0xAA00AA);
-                        this.scene.time.delayedCall(200, () => {
-                            if (target.sprite && target.sprite.active) target.sprite.clearTint();
-                        });
-                    }
-                } catch(e) {}
-
-                // 10% Execute Logic
-                const maxHp = target.charData?.stats?.maxHp || 3000;
-                const percentHp = target.hp / maxHp;
-                if (percentHp <= 0.10 && target.hp > 0) {
-                    target.bloodPoisonActive = false; // STOP POISON LOOP
-                    // Execute! Bypass defense by dealing massive damage
-                    target.takeDamage(99999, 0, 0, 0);
-                    if (this.scene.screenEffects) {
-                        this.scene.screenEffects.flash(0x8B0000, 400, 0.8);
-                    }
-                    try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e) {}
-                } else if (target.hp > 0) {
-                    // True damage DoT
-                    target.hp -= 10;
-                    if (target.hp < 1) target.hp = 1; // DoT cannot kill unless execute triggers
-                    if (this.scene.spawnDamageNumber) {
-                        this.scene.spawnDamageNumber(target.sprite.x, target.sprite.y - 70, 10);
-                    }
-                }
+            // Visual aura
+            if (Math.floor(time) % 100 < 40) {
+                const cx = this.sprite.x + (Math.random() - 0.5) * 50;
+                const cy = this.sprite.y + (Math.random() - 0.5) * 90;
+                const spark = this.scene.add.circle(cx, cy, 4, 0xDC143C, 0.8).setDepth(15);
+                this.scene.tweens.add({ targets: spark, y: cy - 50, alpha: 0, duration: 500, onComplete: () => spark.destroy() });
             }
 
-            if (target.bloodPoisonTimer <= 0) {
-                target.bloodPoisonActive = false;
+            if (this.chosoAwakenedTimer <= 0) {
+                this.chosoAwakened = false;
+                this.power = this.charData.stats.power || 1.0;
+                this.speed = this.charData.stats.speed || 300;
+                this.defense = this.charData.stats.defense || 0.95;
             }
         }
     }

@@ -15,7 +15,7 @@ export default class MahoragaNPC {
         this.target = (owner === scene.p1) ? scene.p2 : scene.p1;
 
         // Stats
-        this.maxHp = 5000;
+        this.maxHp = 6000;
         this.hp = this.maxHp;
         this.speed = 380;
         this.power = 1.5;

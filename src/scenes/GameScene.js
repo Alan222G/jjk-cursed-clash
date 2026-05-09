@@ -24,6 +24,8 @@ import Hanami from '../entities/fighters/Hanami.js';
 import Choso from '../entities/fighters/Choso.js';
 import Megumi from '../entities/fighters/Megumi.js';
 import Nobara from '../entities/fighters/Nobara.js';
+import Kashimo from '../entities/fighters/Kashimo.js';
+import Yorozu from '../entities/fighters/Yorozu.js';
 import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
@@ -140,6 +142,8 @@ export default class GameScene extends Phaser.Scene {
             'CHOSO': Choso,
             'MEGUMI': Megumi,
             'NOBARA': Nobara,
+            'KASHIMO': Kashimo,
+            'YOROZU': Yorozu,
         };
 
         const normalizedKey = (key || '').toUpperCase().trim();

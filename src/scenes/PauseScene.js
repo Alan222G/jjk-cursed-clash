@@ -219,28 +219,29 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'TÉCNICAS MALDITAS (TRANSFIGURACIÓN)',
             lines: [
                 `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
-                `  Transforma brazo en cuchilla (5s, +40% daño)`,
+                `  Crea muro de carne estático`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
-                `  Invoca humano transfigurado (ataca al oponente)`,
-                `${atkKeys.special}+${moveKeys.up} — Body Repel  (35 CE)`,
-                `  Explosión de almas AOE (4 proyectiles)`,
+                `  Dispara gusano transfigurado`,
+                `${atkKeys.special}+${moveKeys.up} — Repeler Cuerpo  (35 CE)`,
+                `  Explosión de almas al impactar salto`,
                 `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
-                `  Forma verdadera 120% (15s, x2 poder, x1.8 def)`,
+                `  Corte masivo desde el suelo (Instante)`,
             ]
         });
         sections.push({
             title: 'HABILIDADES PASIVAS',
             lines: [
                 `Defensa de Alma: 25% reducción de daño físico`,
-                `Transfiguración: Inmunidad parcial a ataques normales`,
+                `Cambio de Posturas (Abajo + Bloqueo): Alterna`,
+                `entre Cuchillas, Monstruoso, y Normal.`,
             ]
         });
         sections.push({
-            title: 'EXPANSIÓN DE DOMINIO',
+            title: 'HABILIDAD: INVOCADOR TRANSFIGURADO',
             lines: [
-                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
-                `Efecto: Toque de alma garantizado (60 dmg/tick)`,
-                `Ignora defensa, daño directo al HP`,
+                `${atkKeys.domain} — Crear Minion  (60 CE)`,
+                `Efecto: Invoca un pequeño humano transfigurado`,
+                `que ataca por 10s. (Máx 3 en campo)`,
             ]
         });
     } else if (charKey === 'YUTA') {
@@ -516,6 +517,58 @@ function getCharacterControls(charKey, playerIndex) {
             lines: [
                 `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
                 `Efecto: Lluvia de clavos continua (1 clavo cada segundo)`,
+            ]
+        });
+    } else if (charKey === 'CHOSO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS (PINTURAS DE LA MUERTE)',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Tsunami de Sangre  (40 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'AWAKENING: ESCAMA ROJA FLUYENTE',
+            lines: [
+                `${atkKeys.domain} — Apilar Escamas  (100 CE)`,
+                `Aumenta Daño, Velocidad, Defensa y regeneración de CE`,
+                `durante 15 segundos con un aura roja pulsante.`,
+            ]
+        });
+    } else if (charKey === 'KASHIMO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — ELECTRICIDAD',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Rayo  (50 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Bestia Mítica Ámbar. Gran mejora de estadísticas. Muerte al final.`,
+            ]
+        });
+    } else if (charKey === 'YOROZU') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — CONSTRUCCIÓN',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Armadura de Insecto  (100 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Triple Aflicción. Dispara Esferas Perfectas periódicamente.`,
             ]
         });
     }

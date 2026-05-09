@@ -165,18 +165,16 @@ export default class Nobara extends Fighter {
                 const dist = Math.abs(this.opponent.sprite.x - this.sprite.x);
                 if (dist < 80) {
                     if (this.scene.screenEffects) {
-                        this.scene.screenEffects.flash(0x000000, 200, 0.8);
+                        this.scene.screenEffects.hitFreeze(150);
+                        this.scene.screenEffects.flash(0x000000, 150, 0.4);
                         this.scene.screenEffects.shake(0.04, 300);
                     }
-                    try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.0 }); } catch(e){}
+                    try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e){}
+                    this.spawnBlackFlashEffect(this.opponent.sprite.x, this.opponent.sprite.y);
                     
-                    const dmg = Math.floor(45 * this.power);
+                    const dmg = Math.floor(45 * this.power * 2.5); // Black Flash multiplier applied
                     this.opponent.takeDamage(dmg, 400 * this.facing, -300, 500);
                     this.comboSystem.registerHit('SPECIAL');
-
-                    const bfSpark = this.scene.add.circle(this.opponent.sprite.x, this.opponent.sprite.y - 20, 40, 0x000000, 1).setDepth(20);
-                    bfSpark.setStrokeStyle(4, 0xFF0000);
-                    this.scene.tweens.add({ targets: bfSpark, scale: 2, alpha: 0, duration: 400, onComplete: () => bfSpark.destroy() });
                     
                     this.ceSystem.gain(30);
                 }

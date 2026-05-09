@@ -61,6 +61,7 @@ export default class Nanami extends Fighter {
             }
             try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
             this.spawnBlackFlashEffect(opponent.sprite.x, opponent.sprite.y);
+            if (this.ceSystem) this.ceSystem.gain(30); // Unificado con Black Flash normal
             
             super.onHitOpponent(opponent);
             this.power = originalPower;

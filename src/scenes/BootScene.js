@@ -97,6 +97,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('portrait_kuroroshi', 'assets/portraits/kuroroshi_portrait.jpg');
         this.load.image('portrait_jogo', 'assets/portraits/jogo_portrait.jpg');
         this.load.image('portrait_dagon', 'assets/portraits/dagon_portrait.jpg');
+        this.load.image('portrait_kashimo', 'assets/portraits/kashimo_portrait.jpg');
+        this.load.image('portrait_yorozu', 'assets/portraits/yorozu_portrait.jpg');
 
         // Domain Clash Signs
         this.load.image('gojo_sign', 'assets/images/gojo_sign.jpg');
@@ -106,6 +108,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('kuroroshi_sign', 'assets/images/kuroroshi_sign.jpg');
         this.load.image('jogo_sign', 'assets/images/jogo_sign.jpg');
         this.load.image('dagon_sign', 'assets/images/dagon_sign.jpg');
+        this.load.image('kashimo_sign', 'assets/images/kashimo_sign.jpg');
+        this.load.image('yorozu_sign', 'assets/images/yorozu_sign.jpg');
         // Character Menu Avatars
         this.load.image('menu_gojo', 'assets/menus/gojo_menu.jpg');
         this.load.image('menu_sukuna', 'assets/menus/sukuna_menu.jpg');
@@ -115,6 +119,8 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('menu_kuroroshi', 'assets/menus/kuroroshi_menu.jpg');
         this.load.image('menu_jogo', 'assets/menus/jogo_menu.jpg');
         this.load.image('menu_dagon', 'assets/menus/dagon_menu.jpg');
+        this.load.image('menu_kashimo', 'assets/menus/kashimo_menu.jpg');
+        this.load.image('menu_yorozu', 'assets/menus/yorozu_menu.jpg');
         // Character Sprites (Pixel Art)
         this.load.image('sprite_gojo_idle', 'assets/sprites/gojo_idle.png');
         

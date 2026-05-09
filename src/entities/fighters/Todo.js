@@ -36,7 +36,7 @@ export default class Todo extends Fighter {
     }
 
     executeBoogieWoogie() {
-        const cost = this.tagTeamActive ? 0 : this.charData.skills.skill1.cost;
+        const cost = this.tagTeamActive ? 0 : Math.floor(this.charData.skills.skill1.cost / 2);
         if (cost > 0 && !this.ceSystem.spend(cost)) return;
         
         this.isCasting = true;

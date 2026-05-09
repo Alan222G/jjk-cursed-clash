@@ -365,7 +365,7 @@ export default class Higuruma extends Fighter {
         if (this._domainPoints >= 3) {
             // Death Penalty
             this.hasExecutionerSword = true;
-            this.executionerTimer = 12000; // Lasts 12 seconds
+            this.executionerTimer = 17000; // Lasts 17 seconds
             const txt = this.scene.add.text(cx, cy, '⚔️ DEATH PENALTY ⚔️\nExecutioner\'s Sword Active!', {
                 fontFamily: 'Arial Black', fontSize: '28px', color: '#FF0000', align: 'center', stroke: '#000000', strokeThickness: 5
             }).setOrigin(0.5).setDepth(30);

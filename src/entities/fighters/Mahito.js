@@ -6,6 +6,7 @@
 
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
+import TransfiguredHumanNPC from './TransfiguredHumanNPC.js';
 import { CHARACTERS, CE_COSTS, DOMAIN, ATTACKS } from '../../config.js';
 
 export default class Mahito extends Fighter {
@@ -482,55 +483,39 @@ export default class Mahito extends Fighter {
     }
 
     // ═══════════════════════════════════════
-    // DOMAIN — Self-Embodiment of Perfection
-    // Guaranteed Idle Transfiguration hit (soul touch)
+    // DOMAIN REWORK — Summon Transfigured Humans
     // ═══════════════════════════════════════
     tryActivateDomain() {
         if (this.isCasting) return;
-        if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                const clash = this.scene.attemptDomainClash(this);
-                if (!clash) return;
-            } else return;
-        } else if (this.domainActive) return;
+        if (!this.ceSystem.spend(60)) return;
 
-        this.ceSystem.spend(CE_COSTS.DOMAIN);
-        this.domainActive = true;
-        this.ceSystem.startDomain();
-        if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
+        this.stateMachine.setState('idle');
+        this.stateMachine.lock(600);
+        this.sprite.body.setVelocityX(0);
 
-        try { this.scene.sound.play('sfx_fire', { volume: (window.gameSettings?.sfx ?? 50) / 100 }); } catch(e) {}
-        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'self_embodiment');
+        try { this.scene.sound.play('sfx_heal', { volume: 0.8 }); } catch(e) {}
 
-        this.mahitoTimeLeft = 15000;
-        this.mahitoComboCount = 0;
-        this.mahitoHits = 0;
-        this.mahitoTarget = (this.scene.p1 === this) ? this.scene.p2 : this.scene.p1;
-    }
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'TRANSFIGURED MINION!', {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#00FFAA', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: txt.y - 40, alpha: 0, duration: 1000, onComplete: () => txt.destroy() });
 
-    applySureHitTick(opponent) {
-        if (!this.domainActive) return;
-        
-        const ox = opponent.sprite.x; const oy = opponent.sprite.y - 20;
-        const hx = ox + (Math.random() - 0.5) * 60;
-        const hy = oy + (Math.random() - 0.5) * 60;
-        
-        const hand = this.scene.add.text(hx, hy, '✋', { fontSize: '20px' }).setDepth(15);
-        this.scene.tweens.add({ targets: hand, scale: 1.5, alpha: 0, duration: 600, onComplete: () => hand.destroy() });
-    }
+        if (!this.transfiguredHumans) this.transfiguredHumans = [];
 
-    onHitOpponent(opponent) {
-        super.onHitOpponent(opponent);
-        if (this.domainActive && opponent === this.mahitoTarget) {
-            if (this.instantSpiritForm) {
-                this.mahitoHits = (this.mahitoHits || 0) + 1;
-            } else {
-                if (this.currentAttack && this.currentAttack.type === 'COMBO' && this.currentAttack.comboHit === 4) {
-                    this.mahitoComboCount = (this.mahitoComboCount || 0) + 1;
-                }
-            }
+        // Max 3 humans
+        if (this.transfiguredHumans.length >= 3) {
+            // Kill the oldest one to make room
+            const oldest = this.transfiguredHumans.shift();
+            if (oldest) oldest.die();
         }
+
+        const minion = new TransfiguredHumanNPC(this.scene, this.sprite.x + 80 * this.facing, this.sprite.y - 20, this);
+        this.transfiguredHumans.push(minion);
+
+        this.scene.time.delayedCall(600, () => {
+            this.isCasting = false;
+            this.stateMachine.unlock();
+        });
     }
 
     // ═══════════════════════════════════════
@@ -562,66 +547,12 @@ export default class Mahito extends Fighter {
             this.cycleStance();
         }
 
-        if (this.domainActive && this.mahitoTarget && !this.mahitoTarget.isDead) {
-            const dist = Math.abs(this.sprite.x - this.mahitoTarget.sprite.x);
-            if (dist < 150) {
-                this.mahitoTimeLeft -= dt;
+        // Update minions
+        if (this.transfiguredHumans) {
+            this.transfiguredHumans = this.transfiguredHumans.filter(m => !m.isDead);
+            for (let minion of this.transfiguredHumans) {
+                minion.update(time, dt);
             }
-            
-            const isConditionMet = (this.instantSpiritForm && this.mahitoHits >= 10) || (!this.instantSpiritForm && this.mahitoComboCount >= 2);
-            
-            if (this.mahitoTimeLeft <= 0) {
-                if (isConditionMet) {
-                    this._executeDomainInstakill();
-                } else {
-                    // Time ran out but condition not met -> End domain without instakill
-                    this.domainActive = false;
-                    this.ceSystem.endDomain();
-                    if (this.scene.onDomainEnded) this.scene.onDomainEnded();
-                    if (this.mahitoDomainUI) this.mahitoDomainUI.setVisible(false);
-                }
-            } else {
-                this._updateMahitoDomainUI();
-            }
-        } else if (this.mahitoDomainUI) {
-            this.mahitoDomainUI.setVisible(false);
-        }
-    }
-
-    _executeDomainInstakill() {
-        if (this.mahitoDomainUI) this.mahitoDomainUI.setVisible(false);
-        this.mahitoTarget.takeDamage(99999, 0, -200, 1000); // Instakill
-        
-        if (this.scene.screenEffects) {
-            this.scene.screenEffects.flash(0xFFFFFF, 500, 1.0);
-            this.scene.screenEffects.shake(0.1, 1000);
-        }
-        const boom = this.scene.add.circle(this.mahitoTarget.sprite.x, this.mahitoTarget.sprite.y, 100, 0x880000, 0.9).setDepth(25);
-        this.scene.tweens.add({ targets: boom, scale: 5, alpha: 0, duration: 800, onComplete: () => boom.destroy() });
-        try { this.scene.sound.play('heavy_smash', { volume: 1.5 }); } catch(e){}
-        
-        this.domainActive = false;
-        this.ceSystem.endDomain();
-        if (this.scene.onDomainEnded) this.scene.onDomainEnded();
-    }
-
-    _updateMahitoDomainUI() {
-        if (!this.mahitoDomainUI) {
-            this.mahitoDomainUI = this.scene.add.text(0, 0, '', {
-                fontSize: '12px', fontFamily: 'Arial Black', color: '#00FFAA', stroke: '#000000', strokeThickness: 3
-            }).setOrigin(0.5).setDepth(30);
-        }
-        this.mahitoDomainUI.setVisible(true);
-        this.mahitoDomainUI.setPosition(this.mahitoTarget.sprite.x, this.mahitoTarget.sprite.y - 120);
-        
-        const timeSec = Math.max(0, Math.ceil(this.mahitoTimeLeft / 1000));
-        const conditionText = this.instantSpiritForm ? `GOLPES: ${this.mahitoHits}/10` : `COMBOS: ${this.mahitoComboCount}/2`;
-        this.mahitoDomainUI.setText(`PROXIMIDAD: ${timeSec}s\n${conditionText}`);
-        
-        if (timeSec === 0 && (this.instantSpiritForm ? this.mahitoHits >= 10 : this.mahitoComboCount >= 2)) {
-            this.mahitoDomainUI.setColor('#FF0000');
-        } else {
-            this.mahitoDomainUI.setColor('#00FFAA');
         }
     }
 
