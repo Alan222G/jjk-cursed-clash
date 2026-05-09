@@ -14,6 +14,42 @@ export default class Choso extends Fighter {
         this.wingKingShootTimer = 0;
     }
 
+    // Override normal attacks to apply blood poison
+    getBasicAttackData(type) {
+        const base = { ...super.getBasicAttackData(type) };
+        if (!base) return base;
+        base.onHit = (attacker, victim, dmg) => {
+            this.applyBloodPoison(victim);
+        };
+        return base;
+    }
+
+    // Blood Poison — 5 ticks of 10 damage over 2.5 seconds
+    applyBloodPoison(victim) {
+        if (!victim || victim.isDead || !victim.sprite) return;
+        let ticks = 0;
+        const poisonInterval = this.scene.time.addEvent({
+            delay: 500, repeat: 4,
+            callback: () => {
+                ticks++;
+                if (victim && !victim.isDead && victim.takeDamage) {
+                    victim.takeDamage(10, 0, 0, 0);
+                    // Crimson drip visual
+                    const drip = this.scene.add.circle(
+                        victim.sprite.x + (Math.random() - 0.5) * 20,
+                        victim.sprite.y + 10,
+                        3, 0xDC143C, 0.8
+                    ).setDepth(12);
+                    this.scene.tweens.add({
+                        targets: drip, y: drip.y + 30, alpha: 0,
+                        duration: 600, onComplete: () => drip.destroy()
+                    });
+                }
+                if (ticks >= 5) poisonInterval.destroy();
+            }
+        });
+    }
+
     trySpecialAttack() {
         const tier = this.ceSystem.getTier();
 
@@ -67,7 +103,8 @@ export default class Choso extends Fighter {
                 color: 0xDC143C,
                 size: { w: 80, h: 8 },
                 lifetime: 1000,
-                type: 'normal'
+                type: 'normal',
+                onHitCallback: (p, victim) => { this.applyBloodPoison(victim); return false; }
             });
 
             // Projectile clash logic
@@ -139,7 +176,8 @@ export default class Choso extends Fighter {
                     color: 0x8B0000,
                     size: { w: 15, h: 15 },
                     lifetime: 1500,
-                    type: 'circle'
+                    type: 'circle',
+                    onHitCallback: (p, victim) => { this.applyBloodPoison(victim); return false; }
                 });
                 proj.sprite.body.setVelocityY(dirY * 900);
                 if (this.scene.projectiles) this.scene.projectiles.push(proj);
@@ -171,6 +209,7 @@ export default class Choso extends Fighter {
                         const dist = Math.abs(target.sprite.x - this.sprite.x);
                         if (dist < 80) {
                             target.takeDamage(this.charData.skills.maximum.damage * this.power / 4, 100 * this.facing, -20, 150);
+                            this.applyBloodPoison(target);
                         }
                     }
                     hitCount++;
@@ -222,7 +261,8 @@ export default class Choso extends Fighter {
                 knockbackX: 800, knockbackY: -400,
                 stunDuration: 1000, speed: 600,
                 direction: this.facing, color: 0x8B0000,
-                size: { w: 100, h: 200 }, lifetime: 3000, type: 'slash'
+                size: { w: 100, h: 200 }, lifetime: 3000, type: 'slash',
+                onHitCallback: (p, victim) => { this.applyBloodPoison(victim); return false; }
             });
             if (this.scene.projectiles) this.scene.projectiles.push(proj);
         });

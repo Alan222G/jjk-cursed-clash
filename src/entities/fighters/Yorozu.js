@@ -19,6 +19,10 @@ export default class Yorozu extends Fighter {
         // Liquid Metal Sword buff state
         this.swordActive = false;
         this.swordTimer = 0;
+
+        // Domain Weapon state (Toji random weapon)
+        this.domainWeapon = null; // 'cloud', 'katana', or 'spear'
+        this.domainWeaponTimer = 0;
     }
 
     trySpecialAttack() {
@@ -36,26 +40,47 @@ export default class Yorozu extends Fighter {
         }
     }
 
-    // H1: Equip Liquid Metal Sword — buffs normal attacks for 10 seconds
+    // H1: Equip Liquid Metal Sword — buffs normal attacks for 10 seconds (or Toji weapon in Domain)
     castLiquidMetalSword() {
-        if (this.swordActive) return; // Already equipped
+        if (this.swordActive || this.domainWeapon) return; // Already equipped something
+        
         if (!this.domainActive && !this.ceSystem.spend(30)) return;
         this.isCasting = true; this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
 
         try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
 
-        this.swordActive = true;
-        this.swordTimer = 10000; // 10 seconds
+        if (this.domainActive) {
+            // Pick a random Toji weapon for 20 seconds
+            const weapons = ['cloud', 'katana', 'spear'];
+            this.domainWeapon = weapons[Math.floor(Math.random() * weapons.length)];
+            this.domainWeaponTimer = 20000;
+            
+            const weaponNames = { cloud: 'PLAYFUL CLOUD!', katana: 'SOUL KATANA!', spear: 'INVERTED SPEAR!' };
+            const weaponColors = { cloud: 0x55FF55, katana: 0xFF44AA, spear: 0x88CCFF };
+            const colorHex = '#' + weaponColors[this.domainWeapon].toString(16).padStart(6, '0');
 
-        // Flash to signal equip
-        const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0x777788, 0.6).setDepth(15);
-        this.scene.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 500, onComplete: () => flash.destroy() });
+            const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 50, weaponColors[this.domainWeapon], 0.6).setDepth(15);
+            this.scene.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
 
-        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'LIQUID METAL SWORD!', {
-            fontFamily: 'Arial Black', fontSize: '18px', color: '#AABBCC', stroke: '#000000', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(40);
-        this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1200, onComplete: () => txt.destroy() });
+            const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, weaponNames[this.domainWeapon], {
+                fontFamily: 'Arial Black', fontSize: '20px', color: colorHex, stroke: '#000000', strokeThickness: 4
+            }).setOrigin(0.5).setDepth(40);
+            this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+        } else {
+            // Normal Liquid Metal Sword
+            this.swordActive = true;
+            this.swordTimer = 10000; // 10 seconds
+
+            // Flash to signal equip
+            const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 40, 0x777788, 0.6).setDepth(15);
+            this.scene.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 500, onComplete: () => flash.destroy() });
+
+            const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'LIQUID METAL SWORD!', {
+                fontFamily: 'Arial Black', fontSize: '18px', color: '#AABBCC', stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5).setDepth(40);
+            this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1200, onComplete: () => txt.destroy() });
+        }
 
         this.scene.time.delayedCall(500, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
@@ -66,7 +91,18 @@ export default class Yorozu extends Fighter {
     getBasicAttackData(type) {
         const base = super.getBasicAttackData(type);
         if (!base) return base;
-        if (this.swordActive) {
+        if (this.domainWeapon) {
+            if (this.domainWeapon === 'cloud') {
+                base.damage = Math.floor(base.damage * 1.5);
+                base.knockbackX = (base.knockbackX || 200) * 1.5;
+            } else if (this.domainWeapon === 'katana') {
+                base.ignoresBlockDamage = true;
+                base.percentDamage = type === 'HEAVY' ? 0.05 : 0.02; // 5% / 2% hp damage
+            } else if (this.domainWeapon === 'spear') {
+                base.range += 40;
+                base.damage = Math.floor(base.damage * 1.3);
+            }
+        } else if (this.swordActive) {
             base.range += 25; // Extended reach
             base.damage = Math.floor(base.damage * 1.15); // +15% damage
             base.onHit = (attacker, victim, dmg) => {
@@ -242,6 +278,18 @@ export default class Yorozu extends Fighter {
     update(time, dt) {
         super.update(time, dt);
 
+        // Domain Weapon buff countdown
+        if (this.domainWeapon) {
+            this.domainWeaponTimer -= dt;
+            if (this.domainWeaponTimer <= 0) {
+                this.domainWeapon = null;
+                const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 60, 'WEAPON EXPIRED', {
+                    fontFamily: 'Arial Black', fontSize: '14px', color: '#FF4444', stroke: '#000000', strokeThickness: 2
+                }).setOrigin(0.5).setDepth(40);
+                this.scene.tweens.add({ targets: txt, y: '-=30', alpha: 0, duration: 800, onComplete: () => txt.destroy() });
+            }
+        }
+
         // Sword buff countdown
         if (this.swordActive) {
             this.swordTimer -= dt;
@@ -357,6 +405,48 @@ export default class Yorozu extends Fighter {
         g.moveTo(x + 10 * f, armY);
         g.lineTo(x + (20 + armExtend) * f, armY + 5);
         g.strokePath();
+
+        // Weapon rendering (Hand weapon)
+        if (this.swordActive || this.domainWeapon) {
+            const handX = x + (20 + armExtend) * f;
+            const handY = armY + 5;
+            
+            let wColor = 0x777788; // Liquid metal sword default
+            if (this.domainWeapon === 'cloud') wColor = 0x55FF55;
+            else if (this.domainWeapon === 'katana') wColor = 0xFF44AA;
+            else if (this.domainWeapon === 'spear') wColor = 0x88CCFF;
+
+            g.lineStyle(6, wColor, 1);
+            g.beginPath();
+            g.moveTo(handX, handY);
+
+            // Draw swing arc if attacking
+            if (this.stateMachine.is('attack')) {
+                const swing = this.attackSwing;
+                let angle = f > 0 ? (swing * Math.PI) - Math.PI/2 : Math.PI + Math.PI/2 - (swing * Math.PI);
+                const len = 70;
+                g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
+            } else {
+                // Idle weapon stance
+                g.lineTo(handX + 30 * f, handY - 40);
+            }
+            g.strokePath();
+
+            // Katana core highlight
+            if (this.domainWeapon === 'katana' || this.swordActive) {
+                g.lineStyle(2, 0xFFFFFF, 0.5);
+                g.beginPath();
+                g.moveTo(handX, handY);
+                if (this.stateMachine.is('attack')) {
+                    const swing = this.attackSwing;
+                    let angle = f > 0 ? (swing * Math.PI) - Math.PI/2 : Math.PI + Math.PI/2 - (swing * Math.PI);
+                    g.lineTo(handX + Math.cos(angle)*70, handY + Math.sin(angle)*70);
+                } else {
+                    g.lineTo(handX + 30 * f, handY - 40);
+                }
+                g.strokePath();
+            }
+        }
 
         // Head
         const hx = x; const hy = masterY - 45;

@@ -9,6 +9,15 @@ export default class Todo extends Fighter {
         this.isCasting = false;
     }
 
+    // +50% knockback on ALL normal attacks
+    getBasicAttackData(type) {
+        const base = { ...super.getBasicAttackData(type) };
+        if (!base) return base;
+        base.knockbackX = Math.floor((base.knockbackX || 200) * 1.5);
+        base.knockbackY = Math.floor((base.knockbackY || -100) * 1.5);
+        return base;
+    }
+
     update(time, dt) {
         super.update(time, dt);
 
@@ -107,7 +116,7 @@ export default class Todo extends Fighter {
                 try { this.scene.sound.play('black_flash_sfx', { volume: 1.0 }); } catch(e) {}
                 this.spawnBlackFlashEffect(this.opponent.sprite.x, this.opponent.sprite.y);
                 
-                this.opponent.takeDamage(Math.floor(100 * this.power), 600 * this.facing, -300, 800);
+                this.opponent.takeDamage(Math.floor(100 * this.power), 900 * this.facing, -450, 800);
             }
         });
 
@@ -126,7 +135,7 @@ export default class Todo extends Fighter {
         this.scene.time.delayedCall(300, () => {
             if (!this.isCasting || !this.opponent) return;
             if (!this.opponent.isDead && Math.abs(this.opponent.sprite.x - this.sprite.x) < 160) {
-                this.opponent.takeDamage(Math.floor(55 * this.power), 1000 * this.facing, -400, 800);
+                this.opponent.takeDamage(Math.floor(55 * this.power), 1500 * this.facing, -600, 800);
             }
         });
 

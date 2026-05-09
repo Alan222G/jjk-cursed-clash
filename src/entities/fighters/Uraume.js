@@ -1,6 +1,7 @@
 // ========================================================
 // Uraume — Ice Manipulation Cursed Technique
-// Frost attacks, Ice Trail, Frozen Domain
+// Frost attacks, Ice Trail, Freeze, Ice Fall
+// NO DOMAIN — uses Reverse Cursed Technique heal instead
 // ========================================================
 
 import Fighter from '../Fighter.js';
@@ -26,7 +27,7 @@ export default class Uraume extends Fighter {
         } else if (tier >= 2 && this.input.isDown('UP')) {
             this.castFrostArmor();
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            this.castIceTrail();
+            this.castIceFreeze();
         } else if (tier >= 1) {
             this.castIceShards();
         }
@@ -64,31 +65,72 @@ export default class Uraume extends Fighter {
         });
     }
 
-    // H2: Ice Trail — Sends a ground-level ice wave
-    castIceTrail() {
-        if (!this.ceSystem.spend(40)) return;
-        this.isCasting = true; this.stateMachine.lock(600);
+    // H2: Ice Freeze — Freezes/immobilizes the opponent in a block of ice
+    castIceFreeze() {
+        if (!this.ceSystem.spend(50)) return;
+        this.isCasting = true; this.stateMachine.lock(800);
         this.sprite.body.setVelocityX(0);
 
-        try { this.scene.sound.play('sfx_beam', { volume: 0.8 }); } catch(e) {}
+        try { this.scene.sound.play('sfx_charge', { volume: 0.9 }); } catch(e) {}
 
-        const iceY = PHYSICS.GROUND_Y - 20;
-        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, iceY, {
+        // Shoot a freeze projectile
+        const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y, {
             owner: this,
-            damage: 50 * this.power,
-            knockbackX: 400,
-            knockbackY: -300,
-            stunDuration: 600,
-            speed: 600,
+            damage: 20 * this.power,
+            knockbackX: 0,
+            knockbackY: 0,
+            stunDuration: 0,
+            speed: 700,
             direction: this.facing,
-            color: 0x88CCFF,
-            size: { w: 80, h: 30 },
+            color: 0x88EEFF,
+            size: { w: 40, h: 40 },
             lifetime: 1200,
-            type: 'normal'
+            type: 'circle',
+            onHitCallback: (p, victim) => {
+                // FREEZE the target — lock them for 2.5 seconds
+                if (victim && !victim.isDead) {
+                    victim.takeDamage(20 * this.power, 0, 0, 2500); // 2500ms stun = frozen
+                    
+                    // Visual: ice block around enemy
+                    const iceBlock = this.scene.add.rectangle(victim.sprite.x, victim.sprite.y, 60, 80, 0x88EEFF, 0.5).setDepth(18);
+                    iceBlock.isStroked = true; iceBlock.strokeColor = 0xAADDFF; iceBlock.lineWidth = 3;
+                    
+                    // Ice block follows enemy for freeze duration then shatters
+                    const followTimer = this.scene.time.addEvent({
+                        delay: 50, loop: true,
+                        callback: () => {
+                            if (victim && victim.sprite) {
+                                iceBlock.setPosition(victim.sprite.x, victim.sprite.y);
+                            }
+                        }
+                    });
+                    
+                    this.scene.time.delayedCall(2500, () => {
+                        followTimer.destroy();
+                        // Shatter effect
+                        for (let i = 0; i < 6; i++) {
+                            const shard = this.scene.add.rectangle(
+                                iceBlock.x + (Math.random() - 0.5) * 40,
+                                iceBlock.y + (Math.random() - 0.5) * 40,
+                                10, 15, 0xAADDFF, 0.8
+                            ).setDepth(19);
+                            this.scene.tweens.add({
+                                targets: shard,
+                                x: shard.x + (Math.random() - 0.5) * 100,
+                                y: shard.y + Math.random() * 60,
+                                alpha: 0, rotation: Math.random() * 6,
+                                duration: 500, onComplete: () => shard.destroy()
+                            });
+                        }
+                        iceBlock.destroy();
+                    });
+                }
+                return false; // Destroy projectile after hit
+            }
         });
         if (this.scene.projectiles) this.scene.projectiles.push(proj);
 
-        this.scene.time.delayedCall(600, () => {
+        this.scene.time.delayedCall(800, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
         });
     }
@@ -132,7 +174,6 @@ export default class Uraume extends Fighter {
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         const targetX = target ? target.sprite.x : this.sprite.x + 200 * this.facing;
 
-        // Create falling ice pillars
         for (let i = 0; i < 5; i++) {
             this.scene.time.delayedCall(i * 150, () => {
                 const px = targetX + (i - 2) * 60;
@@ -163,38 +204,40 @@ export default class Uraume extends Fighter {
         });
     }
 
-    // Domain: Frozen Landscape — slows opponent and boosts Uraume
+    // NO DOMAIN — Uraume uses Reverse Cursed Technique (heals 30% HP)
     tryActivateDomain() {
         if (this.isCasting) return;
-        if (!this.ceSystem.canAfford(CE_COSTS.DOMAIN)) return;
-        if (this.scene.domainActive || this.scene.domainPhase1) {
-            if (this.scene.domainOwner !== this) {
-                const clash = this.scene.attemptDomainClash(this);
-                if (!clash) return;
-            } else return;
-        } else if (this.domainActive) return;
+        if (!this.ceSystem.spend(80)) return;
 
-        this.ceSystem.spend(CE_COSTS.DOMAIN);
-        this.domainActive = true;
-        this.ceSystem.startDomain();
-        if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
+        this.isCasting = true; this.stateMachine.lock(800);
+        this.sprite.body.setVelocityX(0);
 
-        try { this.scene.sound.play('sfx_heal', { volume: 0.8 }); } catch(e) {}
-        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'frozen_landscape');
+        try { this.scene.sound.play('sfx_heal', { volume: 1.0 }); } catch(e) {}
+        if (this.scene.screenEffects) this.scene.screenEffects.flash(0xAADDFF, 200, 0.5);
 
-        this.domainTimer = 15000;
-        this.power = (this.charData.stats.power || 1.1) * 1.4;
-        this.speed = (this.charData.stats.speed || 350) * 1.3;
+        const healAmount = Math.floor(this.charData.stats.maxHp * 0.3);
+        this.hp = Math.min(this.charData.stats.maxHp, this.hp + healAmount);
+
+        const txt = this.scene.add.text(this.sprite.x, this.sprite.y - 80, 'REVERSE CURSED TECHNIQUE!', {
+            fontFamily: 'Arial Black', fontSize: '18px', color: '#00FF88', stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(40);
+        this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
+
+        // Heal VFX
+        const healVfx = this.scene.add.circle(this.sprite.x, this.sprite.y, 50, 0x00FF88, 0.5).setDepth(15);
+        this.scene.tweens.add({ targets: healVfx, scale: 2, alpha: 0, duration: 600, onComplete: () => healVfx.destroy() });
+
+        this.scene.time.delayedCall(800, () => {
+            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
     }
 
     takeDamage(damage, kbX, kbY, stunDuration, bypassBlock = false) {
-        // Frost Armor reflects 20% of damage back
         if (this.frostArmorActive && !bypassBlock) {
             const reflectDmg = Math.floor(damage * 0.2);
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
             if (target && !target.isDead && reflectDmg > 0) {
                 target.takeDamage(reflectDmg, 0, 0, 0, true);
-                // Ice crack visual
                 const crack = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0xAADDFF, 0.6).setDepth(15);
                 this.scene.tweens.add({ targets: crack, scale: 2, alpha: 0, duration: 300, onComplete: () => crack.destroy() });
             }
@@ -212,25 +255,10 @@ export default class Uraume extends Fighter {
                 this.defense = this.charData.stats.defense || 1.0;
             }
         }
+    }
 
-        if (this.domainActive) {
-            this.domainTimer -= dt;
-
-            // Slow the opponent while domain is active
-            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-            if (target && !target.isDead && target.sprite && target.sprite.body) {
-                const vel = target.sprite.body.velocity;
-                target.sprite.body.setVelocityX(vel.x * 0.7); // 30% slower
-            }
-
-            if (this.domainTimer <= 0) {
-                this.domainActive = false;
-                this.power = this.charData.stats.power || 1.1;
-                this.speed = this.charData.stats.speed || 350;
-                this.ceSystem.endDomain();
-                if (this.scene.onDomainEnded) this.scene.onDomainEnded();
-            }
-        }
+    applySureHitTick(opponent) {
+        // No domain — no sure-hit
     }
 
     drawBody(dt) {
@@ -274,7 +302,7 @@ export default class Uraume extends Fighter {
             g.strokeCircle(x, masterY - 10, 28);
         }
 
-        // Arms
+        // Arms (NO weapon — just bare hands)
         const armY = masterY - 26;
         g.lineStyle(8, skinColor, 1);
         g.beginPath(); g.moveTo(x - 10 * f, armY); g.lineTo(x - 20 * f, armY + 15); g.strokePath();
