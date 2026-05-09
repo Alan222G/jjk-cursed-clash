@@ -28,7 +28,7 @@ export default class Kashimo extends Fighter {
     onHitOpponent(target) {
         super.onHitOpponent(target);
         if (target && !target.isDead) {
-            this.chargeLevel = Math.min(100, this.chargeLevel + 10);
+            this.chargeLevel = Math.min(100, this.chargeLevel + 25);
             
             // Visual spark
             const spark = this.scene.add.circle(target.sprite.x, target.sprite.y - 40, 5, 0x00FFFF, 0.8).setDepth(20);
@@ -78,8 +78,9 @@ export default class Kashimo extends Fighter {
                     staff.setPosition(this.sprite.x + 40 * this.facing, this.sprite.y);
                     const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
                     if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 90) {
-                        target.takeDamage(20 * this.power, 50 * this.facing, -20, 200);
-                        this.chargeLevel = Math.min(100, this.chargeLevel + 15);
+                        const dmgMultiplier = 1 + (this.chargeLevel / 100);
+                        target.takeDamage(20 * this.power * dmgMultiplier, 50 * this.facing, -20, 200);
+                        this.chargeLevel = 0;
                     }
                     hits++;
                     if (hits >= 4) {
@@ -200,8 +201,9 @@ export default class Kashimo extends Fighter {
 
                 const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
                 if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 250) {
-                    target.takeDamage(120 * this.power, 600 * this.facing, -500, 1000);
-                    this.chargeLevel = Math.min(100, this.chargeLevel + 30);
+                    const dmgMultiplier = 1 + (this.chargeLevel / 100);
+                    target.takeDamage(120 * this.power * dmgMultiplier, 600 * this.facing, -500, 1000);
+                    this.chargeLevel = 0;
                 }
             });
         });
@@ -217,7 +219,7 @@ export default class Kashimo extends Fighter {
         if (!this.ceSystem.spend(100)) return;
 
         this.mbaActive = true;
-        this.mbaTimer = 18000;
+        this.mbaTimer = 60000;
 
         this.power = (this.charData.stats.power || 1.2) * 1.6;
         this.speed = (this.charData.stats.speed || 370) * 1.5;
@@ -258,10 +260,18 @@ export default class Kashimo extends Fighter {
                 this.scene.tweens.add({ targets: spark, alpha: 0, scale: 2, duration: 300, onComplete: () => spark.destroy() });
             }
 
-            // At end of MBA, Kashimo dies (canonically his body breaks down)
+            // At end of MBA, Kashimo's body breaks down (drains to 1 HP)
             if (this.mbaTimer <= 0 && !this.isDead) {
-                this.takeDamage(99999, 0, 0, 0); // Self-destruct
+                if (this.hp > 1) {
+                    this.hp = Math.max(1, this.hp - Math.floor(this.maxHp * 0.05 * (dt / 1000)));
+                    if (Math.floor(time) % 100 < 50) this.hitFlash = 1; // Flashing indicator of dying
+                }
             }
+        }
+
+        // Passive CE Regen scaling with charge
+        if (!this.mbaActive && this.chargeLevel > 0) {
+            this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 5.0) * (1 + (this.chargeLevel / 100));
         }
 
         // Draw charge UI above character

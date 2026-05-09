@@ -709,6 +709,33 @@ export const CHARACTERS = {
             maximum: { name: 'Perfect Sphere', cost: 120, damage: 600, type: 'projectile_heavy' },
         },
         domainBg: 'yorozu_domain',
+    },
+    URO: {
+        id: 'uro',
+        name: 'Takako Uro',
+        title: 'Sky Manipulation',
+        colors: {
+            primary: 0xFFB6C1, secondary: 0xFF69B4, energy: 0x87CEEB,
+            accent: 0xFFC0CB, skin: 0xFFE4C4, hair: 0xFF69B4
+        },
+        stats: {
+            maxHp: 3000,
+            speed: 360,
+            power: 1.0,
+            defense: 1.0,
+            ceRegen: 12,
+            weight: 85,
+            jumpForce: -680,
+            domainDuration: 15000,
+            domainPhase1: 5000,
+        },
+        skills: {
+            skill1: { name: 'Thin Ice Breaker', cost: 30, damage: 45, type: 'projectile_melee' },
+            skill2: { name: 'Spatial Distortion', cost: 50, damage: 0, type: 'utility_flight' },
+            domain: { name: 'Sky Domain', cost: 100, sureHitType: 'dps' },
+            maximum: { name: 'Ice Missile', cost: 120, damage: 250, type: 'projectile_heavy' },
+        },
+        domainBg: 'yorozu_domain', // placeholder
     }
 };
 

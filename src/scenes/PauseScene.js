@@ -545,13 +545,14 @@ function getCharacterControls(charKey, playerIndex) {
                 `${atkKeys.special}+${moveKeys.up} — Rayo  (50 CE)`,
                 `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — ${sk.skill2.name}  (${sk.skill2.cost} CE)`,
                 `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+                `Pasiva: Golpes aumentan 25% de Carga. Los especiales la consumen y multiplican daño.`,
             ]
         });
         sections.push({
             title: 'EXPANSIÓN DE DOMINIO',
             lines: [
                 `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
-                `Efecto: Bestia Mítica Ámbar. Gran mejora de estadísticas. Muerte al final.`,
+                `Efecto: Bestia Mítica Ámbar. Mejora brutal de estadísticas por 60s. Drena HP lentamente al acabar.`,
             ]
         });
     } else if (charKey === 'YOROZU') {
@@ -568,7 +569,24 @@ function getCharacterControls(charKey, playerIndex) {
             title: 'EXPANSIÓN DE DOMINIO',
             lines: [
                 `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
-                `Efecto: Triple Aflicción. Dispara Esferas Perfectas periódicamente.`,
+                `Efecto: Habilidades Cuestan 0 CE, aumenta Velocidad/Daño, y lanza Esfera Perfecta periódicamente.`,
+            ]
+        });
+    } else if (charKey === 'URO') {
+        sections.push({
+            title: 'TÉCNICAS MALDITAS — MANIPULACIÓN DEL CIELO',
+            lines: [
+                `${atkKeys.special} — ${sk.skill1.name}  (${sk.skill1.cost} CE)`,
+                `${atkKeys.special}+${moveKeys.up} — Vuelo Espacial  (50 CE)`,
+                `${atkKeys.special}+${isP1 ? '← / →' : '← / →'} — Distorsión de Vuelo  (Hover)`,
+                `${atkKeys.special}+${moveKeys.down} — ${sk.maximum.name}  (${sk.maximum.cost} CE)`,
+            ]
+        });
+        sections.push({
+            title: 'EXPANSIÓN DE DOMINIO',
+            lines: [
+                `${atkKeys.domain} — ${sk.domain.name}  (${sk.domain.cost} CE)`,
+                `Efecto: Distorsión Espacial Constante. Uro se vuelve intocable a golpes físicos y los refleja.`,
             ]
         });
     }

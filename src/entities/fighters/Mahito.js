@@ -116,6 +116,7 @@ export default class Mahito extends Fighter {
     castIdleTransfiguration() {
         if (!this.ceSystem.spend(this.charData.skills.skill1.cost)) return;
 
+        this.isCasting = true;
         this.stateMachine.setState('idle');
         this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
@@ -167,6 +168,11 @@ export default class Mahito extends Fighter {
         });
 
         if (this.scene.projectiles) this.scene.projectiles.push(proj);
+
+        this.scene.time.delayedCall(500, () => {
+            this.isCasting = false;
+            if (this.stateMachine.locked) this.stateMachine.unlock();
+        });
     }
 
     // ═══════════════════════════════════════

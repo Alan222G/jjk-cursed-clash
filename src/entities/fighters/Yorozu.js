@@ -28,44 +28,53 @@ export default class Yorozu extends Fighter {
         } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
             this.castLiquidMetalWhip();
         } else if (tier >= 1) {
-            this.castLiquidMetalSpikes();
+            this.castLiquidMetalSword();
         }
     }
 
-    // H1: Liquid Metal Spikes
-    castLiquidMetalSpikes() {
-        if (!this.ceSystem.spend(30)) return;
-        this.isCasting = true; this.stateMachine.lock(600);
+    // H1: Liquid Metal Sword
+    castLiquidMetalSword() {
+        if (!this.domainActive && !this.ceSystem.spend(30)) return;
+        this.isCasting = true; this.stateMachine.lock(800);
         this.sprite.body.setVelocityX(0);
 
-        try { this.scene.sound.play('sfx_beam', { volume: 0.8 }); } catch(e) {}
+        try { this.scene.sound.play('sfx_slash', { volume: 0.8 }); } catch(e) {}
 
-        const px = this.sprite.x + 40 * this.facing;
-        const py = this.sprite.y;
+        const sword = this.scene.add.rectangle(this.sprite.x + 30 * this.facing, this.sprite.y, 60, 10, 0x777788).setDepth(15);
+        this.scene.tweens.add({ targets: sword, angle: 360, duration: 400 });
 
-        const proj = new Projectile(this.scene, px, py, {
-            owner: this,
-            damage: 35 * this.power,
-            knockbackX: 400,
-            knockbackY: -200,
-            stunDuration: 400,
-            speed: 1200,
-            direction: this.facing,
-            color: 0x777788, // Liquid metal color
-            size: { w: 60, h: 20 },
-            lifetime: 1000,
-            type: 'normal'
+        this.scene.time.delayedCall(100, () => {
+            this.sprite.body.setVelocityX(400 * this.facing);
+            
+            let hits = 0;
+            const hitInterval = this.scene.time.addEvent({
+                delay: 100,
+                callback: () => {
+                    sword.setPosition(this.sprite.x + 40 * this.facing, this.sprite.y);
+                    const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+                    if (target && !target.isDead && Math.abs(target.sprite.x - this.sprite.x) < 80) {
+                        // CE cost is 0 in Domain, making it spammable. We don't need to explicitly check CE here since cost was spent initially, but wait, the instructions said domain makes it cost 0 CE? 
+                        target.takeDamage(15 * this.power, 30 * this.facing, -10, 200);
+                    }
+                    hits++;
+                    if (hits >= 4) {
+                        hitInterval.destroy();
+                        sword.destroy();
+                        this.sprite.body.setVelocityX(0);
+                    }
+                },
+                loop: true
+            });
         });
-        if (this.scene.projectiles) this.scene.projectiles.push(proj);
 
-        this.scene.time.delayedCall(600, () => {
+        this.scene.time.delayedCall(800, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
         });
     }
 
     // H2: Liquid Metal Whip
     castLiquidMetalWhip() {
-        if (!this.ceSystem.spend(50)) return;
+        if (!this.domainActive && !this.ceSystem.spend(50)) return;
         this.isCasting = true; this.stateMachine.lock(800);
         this.sprite.body.setVelocityX(0);
 
@@ -106,7 +115,7 @@ export default class Yorozu extends Fighter {
     // H3: Bug Armor (Awakening)
     castBugArmor() {
         if (this.bugArmorActive) return;
-        if (!this.ceSystem.spend(100)) return;
+        if (!this.domainActive && !this.ceSystem.spend(100)) return;
 
         this.isCasting = true; this.stateMachine.lock(1000);
         this.sprite.body.setVelocityX(0);
@@ -136,7 +145,7 @@ export default class Yorozu extends Fighter {
 
     // H4: True Sphere (Maximum)
     castTrueSphere() {
-        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        if (!this.domainActive && !this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
         this.isCasting = true; this.stateMachine.lock(2000);
         this.sprite.body.setVelocityX(0);
 
@@ -158,8 +167,8 @@ export default class Yorozu extends Fighter {
             scale: 20,
             y: PHYSICS.GROUND_Y - 50,
             x: targetX,
-            duration: 1000,
-            ease: 'Cubic.easeIn',
+            duration: 3500, // Make it very slow
+            ease: 'Linear',
             onComplete: () => {
                 if (this.scene.screenEffects) {
                     this.scene.screenEffects.flash(0xFFFFFF, 300, 1.0);
@@ -203,8 +212,11 @@ export default class Yorozu extends Fighter {
         if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'threefold_affliction');
 
         // Yorozu domain gives guaranteed True Sphere hit periodically
+        // AND utility: massive power boost inside domain
         this.domainTimer = 15000;
         this.trueSphereTick = 3000; // Fires every 3 seconds
+        this.power = (this.charData.stats.power || 1.1) * 1.5;
+        this.speed = (this.charData.stats.speed || 340) * 1.3;
     }
 
     update(time, dt) {
@@ -238,6 +250,8 @@ export default class Yorozu extends Fighter {
 
             if (this.domainTimer <= 0) {
                 this.domainActive = false;
+                this.power = this.charData.stats.power || 1.1; // Revert power
+                if (!this.bugArmorActive) this.speed = this.charData.stats.speed || 340; // Revert speed
                 this.ceSystem.endDomain();
                 if (this.scene.onDomainEnded) this.scene.onDomainEnded();
             }
