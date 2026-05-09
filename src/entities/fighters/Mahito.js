@@ -489,6 +489,7 @@ export default class Mahito extends Fighter {
         if (this.isCasting) return;
         if (!this.ceSystem.spend(60)) return;
 
+        this.isCasting = true;
         this.stateMachine.setState('idle');
         this.stateMachine.lock(600);
         this.sprite.body.setVelocityX(0);

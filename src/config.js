@@ -17,7 +17,7 @@ export const PHYSICS = {
 
 // ── Fighter Defaults ─────────────────────────────────────
 export const FIGHTER_DEFAULTS = {
-    MAX_HP: 4000,
+    MAX_HP: 3000,
     MAX_CE: 200,
     CE_REGEN_RATE: 10,         // CE per second (passive) - increased for faster gameplay
     CE_REGEN_ON_HIT: 12,      // CE gained when landing a hit
@@ -516,7 +516,7 @@ export const CHARACTERS = {
         name: 'Aoi Todo',
         title: 'The Brother',
         colors: { primary: 0x222222, secondary: 0x333333, energy: 0xAA22AA, accent: 0xAA22AA, skin: 0x996644, hair: 0x111111 },
-        stats: { maxHp: 3000, speed: 340, power: 1.15, defense: 0.95, ceRegen: 3.0, weight: 95, jumpForce: -670, domainDuration: 10000, domainPhase1: 5000 },
+        stats: { maxHp: 4000, speed: 340, power: 1.15, defense: 0.95, ceRegen: 3.0, weight: 95, jumpForce: -670, domainDuration: 10000, domainPhase1: 5000 },
         skills: {
             skill1: { name: 'Boogie Woogie', cost: 10, damage: 0, type: 'utility' },
             skill2: { name: 'Patada Gran Alcance', cost: 20, damage: 55, type: 'melee' },

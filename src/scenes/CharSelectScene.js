@@ -12,6 +12,7 @@ const GRID = [
     ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO', 'TODO'],
     ['NAOYA', 'HAKARI', 'HIGURUMA', 'NANAMI', 'NOBARA'],
     ['JOGO', 'DAGON', 'HANAMI', 'CHOSO', 'MEGUMI'],
+    ['KASHIMO', 'YOROZU'],
 ];
 
 // Map character key → menu avatar texture key
@@ -37,6 +38,8 @@ const MENU_KEY = {
     HANAMI: 'menu_sukuna', // Placeholder portrait
     CHOSO: 'menu_gojo',    // Placeholder portrait
     MEGUMI: 'menu_toji',   // Placeholder portrait
+    KASHIMO: 'menu_kashimo',
+    YOROZU: 'menu_yorozu',
 };
 
 // Iconic JJK titles for each character
@@ -62,6 +65,8 @@ const CHAR_TITLES = {
     HANAMI: 'THE VIGOR OF NATURE',
     CHOSO: 'DEATH PAINTING WOMB',
     MEGUMI: 'TEN SHADOWS SORCERER',
+    KASHIMO: 'GOD OF LIGHTNING',
+    YOROZU: 'CONSTRUCTION SORCERER',
 };
 
 export default class CharSelectScene extends Phaser.Scene {
