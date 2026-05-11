@@ -161,16 +161,19 @@ export default class Hana extends Fighter {
 
         // Slow charge-up (1.5s), then pillar descends
         this.scene.time.delayedCall(1500, () => {
-            // Giant light pillar from sky (MASSIVE)
-            const pillarWidth = 150; // Much wider
-            const pillar = this.scene.add.rectangle(targetX, 0, pillarWidth, PHYSICS.GROUND_Y + 100, 0xFFFF88, 0.9).setDepth(22).setOrigin(0.5, 0);
-            const core = this.scene.add.rectangle(targetX, 0, pillarWidth * 0.4, PHYSICS.GROUND_Y + 100, 0xFFFFFF, 0.8).setDepth(23).setOrigin(0.5, 0);
+            // Recalculate position right before drop for maximum precision
+            const finalTargetX = (target && !target.isDead) ? target.sprite.x : targetX;
 
-            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.1, 1200);
+            // Giant light pillar from sky (MASSIVE)
+            const pillarWidth = 300; // Even wider
+            const pillar = this.scene.add.rectangle(finalTargetX, 0, pillarWidth, PHYSICS.GROUND_Y + 100, 0xFFFF88, 0.9).setDepth(22).setOrigin(0.5, 0);
+            const core = this.scene.add.rectangle(finalTargetX, 0, pillarWidth * 0.4, PHYSICS.GROUND_Y + 100, 0xFFFFFF, 0.8).setDepth(23).setOrigin(0.5, 0);
+
+            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.15, 1200);
 
             // Massive damage in a wide area
             if (target && !target.isDead) {
-                const dist = Math.abs(target.sprite.x - targetX);
+                const dist = Math.abs(target.sprite.x - finalTargetX);
                 if (dist < pillarWidth) {
                     target.takeDamage(250 * this.power, 600 * this.facing, -800, 1500, true);
                 }
@@ -184,7 +187,7 @@ export default class Hana extends Fighter {
 
             // FIRE left behind — burning ground for 5 seconds
             const fireZoneWidth = pillarWidth + 40;
-            const fireLeft = targetX - fireZoneWidth / 2;
+            const fireLeft = finalTargetX - fireZoneWidth / 2;
             const fireGfx = this.scene.add.graphics().setDepth(10);
             let fireTicks = 0;
             const fireTimer = this.scene.time.addEvent({
@@ -204,7 +207,7 @@ export default class Hana extends Fighter {
                     
                     // Damage anyone standing in fire
                     if (target && !target.isDead) {
-                        if (Math.abs(target.sprite.x - targetX) < fireZoneWidth / 2) {
+                        if (Math.abs(target.sprite.x - finalTargetX) < fireZoneWidth / 2) {
                             target.takeDamage(15, 0, 0, 0);
                         }
                     }
@@ -239,10 +242,10 @@ export default class Hana extends Fighter {
         }).setOrigin(0.5).setDepth(40);
         this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
 
-        // Instantly drain 50% of opponent's CE
+        // Instantly drain ALL of opponent's CE
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && target.ceSystem) {
-            target.ceSystem.ce = Math.floor(target.ceSystem.ce * 0.5);
+            target.ceSystem.ce = 0;
         }
 
         // Boost own power for 10 seconds

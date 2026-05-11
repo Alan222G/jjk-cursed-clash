@@ -175,6 +175,7 @@ export default class Mahito extends Fighter {
             let tx = spawnX; const tfLife = { val: 3000 };
 
             const drawTF = () => {
+                if (!tg || !tg.scene) return; // Prevent calling clear on a destroyed graphics object
                 tg.clear();
                 if (tfLife.val <= 0) { tg.destroy(); return; }
                 // Grotesque body

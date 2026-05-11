@@ -96,16 +96,19 @@ export default class Uraume extends Fighter {
                     iceBlock.isStroked = true; iceBlock.strokeColor = 0xAADDFF; iceBlock.lineWidth = 3;
                     
                     // Ice block follows enemy for freeze duration then shatters
+                    if (victim) victim.isFrozen = true;
                     const followTimer = this.scene.time.addEvent({
                         delay: 50, loop: true,
                         callback: () => {
-                            if (victim && victim.sprite) {
+                            if (victim && victim.sprite && !victim.isDead) {
+                                victim.sprite.body.setVelocity(0, 0); // Completely still
                                 iceBlock.setPosition(victim.sprite.x, victim.sprite.y);
                             }
                         }
                     });
                     
                     this.scene.time.delayedCall(2500, () => {
+                        if (victim) victim.isFrozen = false;
                         followTimer.destroy();
                         // Shatter effect
                         for (let i = 0; i < 6; i++) {
@@ -238,6 +241,22 @@ export default class Uraume extends Fighter {
             const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
             if (target && !target.isDead && reflectDmg > 0) {
                 target.takeDamage(reflectDmg, 0, 0, 0, true);
+                
+                // Slow attacker by 75% for 2 seconds
+                if (!target.isFrostSlowed) {
+                    target.isFrostSlowed = true;
+                    target.speed = (target.charData.stats.speed || 300) * 0.25;
+                    const iceFeet = this.scene.add.rectangle(target.sprite.x, target.sprite.y + 40, 40, 20, 0xAADDFF, 0.7).setDepth(18);
+                    this.scene.tweens.add({ targets: iceFeet, alpha: 0, duration: 2000, onComplete: () => iceFeet.destroy() });
+                    
+                    this.scene.time.delayedCall(2000, () => {
+                        if (target && !target.isDead) {
+                            target.isFrostSlowed = false;
+                            target.speed = target.charData.stats.speed || 300;
+                        }
+                    });
+                }
+
                 const crack = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0xAADDFF, 0.6).setDepth(15);
                 this.scene.tweens.add({ targets: crack, scale: 2, alpha: 0, duration: 300, onComplete: () => crack.destroy() });
             }

@@ -24,20 +24,25 @@ export default class Kashimo extends Fighter {
         this.hwbTimer = 0;
     }
 
-    // Passive: Build charge on hit
+    // Passive: Build charge on hit (with 200ms cooldown to avoid multi-hit bugs)
     onHitOpponent(target) {
         super.onHitOpponent(target);
         if (target && !target.isDead) {
-            this.chargeLevel = Math.min(100, this.chargeLevel + 25);
-            
-            // Visual spark
-            const spark = this.scene.add.circle(target.sprite.x, target.sprite.y - 40, 5, 0x00FFFF, 0.8).setDepth(20);
-            this.scene.tweens.add({ targets: spark, scale: 3, alpha: 0, duration: 300, onComplete: () => spark.destroy() });
-            
-            // Chance to stun with electricity
-            if (Math.random() < 0.1 || (this.mbaActive && Math.random() < 0.3)) {
-                target.takeDamage(0, 0, 0, 400); // 400ms mini-stun
-                if (this.scene.screenEffects) this.scene.screenEffects.flash(0x00FFFF, 50, 0.2);
+            const now = this.scene.time.now;
+            if (!this.lastChargeTime || now - this.lastChargeTime >= 200) {
+                this.chargeLevel += 25;
+                if (this.chargeLevel > 100) this.chargeLevel = 100;
+                this.lastChargeTime = now;
+                
+                // Visual spark
+                const spark = this.scene.add.circle(target.sprite.x, target.sprite.y - 40, 5, 0x00FFFF, 0.8).setDepth(20);
+                this.scene.tweens.add({ targets: spark, scale: 3, alpha: 0, duration: 300, onComplete: () => spark.destroy() });
+                
+                // Chance to stun with electricity
+                if (Math.random() < 0.1 || (this.mbaActive && Math.random() < 0.3)) {
+                    target.takeDamage(0, 0, 0, 400); // 400ms mini-stun
+                    if (this.scene.screenEffects) this.scene.screenEffects.flash(0x00FFFF, 50, 0.2);
+                }
             }
         }
     }
@@ -106,7 +111,9 @@ export default class Kashimo extends Fighter {
 
         this.hwbActive = true;
         this.hwbTimer = 8000;
-        this.defense = (this.charData.stats.defense || 0.9) * 1.5;
+        const defMult = 1.5 + (this.chargeLevel / 100);
+        this.defense = (this.charData.stats.defense || 0.9) * defMult;
+        this.chargeLevel = 0; // Drains charge for extra defense
 
         // Visual HWB Grid
         const hwb = this.scene.add.graphics().setDepth(14);
@@ -260,10 +267,10 @@ export default class Kashimo extends Fighter {
                 this.scene.tweens.add({ targets: spark, alpha: 0, scale: 2, duration: 300, onComplete: () => spark.destroy() });
             }
 
-            // At end of MBA, Kashimo's body breaks down (drains to 1 HP)
+            // At end of MBA, Kashimo's body breaks down (drains to 1 HP slowly)
             if (this.mbaTimer <= 0 && !this.isDead) {
                 if (this.hp > 1) {
-                    this.hp = Math.max(1, this.hp - Math.floor(this.maxHp * 0.05 * (dt / 1000)));
+                    this.hp = Math.max(1, this.hp - Math.floor(100 * (dt / 1000))); // Drains 100 HP per second
                     if (Math.floor(time) % 100 < 50) this.hitFlash = 1; // Flashing indicator of dying
                 }
             }
@@ -271,7 +278,10 @@ export default class Kashimo extends Fighter {
 
         // Passive CE Regen scaling with charge
         if (!this.mbaActive && this.chargeLevel > 0) {
-            this.charData.stats.ceRegen = (this.charData.stats.ceRegen || 5.0) * (1 + (this.chargeLevel / 100));
+            const baseRegen = (this.charData.stats.ceRegen || 5.0) * 1.3;
+            this.ceSystem.regenRate = baseRegen * (1 + (this.chargeLevel / 100));
+        } else if (!this.mbaActive) {
+            this.ceSystem.regenRate = (this.charData.stats.ceRegen || 5.0) * 1.3;
         }
 
         // Draw charge UI above character

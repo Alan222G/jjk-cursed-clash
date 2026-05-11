@@ -33,16 +33,19 @@ export default class Choso extends Fighter {
             callback: () => {
                 ticks++;
                 if (victim && !victim.isDead && victim.takeDamage) {
-                    victim.takeDamage(10, 0, 0, 0);
+                    victim.takeDamage(30, 0, 0, 0); // Increased damage
+                    victim.sprite.setTintFill(0x8B008B); // Purple poison tint
+                    this.scene.time.delayedCall(150, () => victim.sprite.clearTint());
+                    
                     // Crimson drip visual
                     const drip = this.scene.add.circle(
                         victim.sprite.x + (Math.random() - 0.5) * 20,
                         victim.sprite.y + 10,
-                        3, 0xDC143C, 0.8
+                        4, 0x8B008B, 0.9
                     ).setDepth(12);
                     this.scene.tweens.add({
-                        targets: drip, y: drip.y + 30, alpha: 0,
-                        duration: 600, onComplete: () => drip.destroy()
+                        targets: drip, y: drip.y + 40, alpha: 0,
+                        duration: 800, onComplete: () => drip.destroy()
                     });
                 }
                 if (ticks >= 5) poisonInterval.destroy();

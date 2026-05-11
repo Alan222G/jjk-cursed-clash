@@ -36,6 +36,8 @@ export default class Uro extends Fighter {
 
         if (tier >= 4 && this.input.isDown('DOWN')) {
             this.castIceMissile();
+        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
+            this.castThinIceBreaker();
         } else if (tier >= 1 && this.input.isDown('UP')) {
             this.castFlight();
         } else if (tier >= 1) {
@@ -63,6 +65,35 @@ export default class Uro extends Fighter {
         if (this.scene.screenEffects) this.scene.screenEffects.flash(0x87CEEB, 100, 0.3);
 
         this.scene.time.delayedCall(400, () => {
+            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
+    }
+
+    // H1.5: Thin Ice Breaker (U + Left/Right)
+    castThinIceBreaker() {
+        if (!this.ceSystem.spend(40)) return;
+        this.isCasting = true; this.stateMachine.lock(500);
+        
+        try { this.scene.sound.play('sfx_dash', { volume: 1.0 }); } catch(e) {}
+
+        // Visual distortion (breaking the sky)
+        const breakFx = this.scene.add.rectangle(this.sprite.x + 80 * this.facing, this.sprite.y - 20, 40, 100, 0x87CEEB, 0.5).setDepth(15);
+        this.scene.tweens.add({ targets: breakFx, scaleX: 3, scaleY: 1.5, alpha: 0, duration: 300, onComplete: () => breakFx.destroy() });
+
+        this.scene.time.delayedCall(100, () => {
+            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.04, 300);
+            
+            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            if (target && !target.isDead) {
+                const dist = Math.abs(target.sprite.x - this.sprite.x);
+                if (dist < 180) {
+                    // Ignores block due to spatial nature
+                    target.takeDamage(45 * this.power, 400 * this.facing, -100, 500, true);
+                }
+            }
+        });
+
+        this.scene.time.delayedCall(500, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
         });
     }
@@ -176,8 +207,8 @@ export default class Uro extends Fighter {
         }).setOrigin(0.5).setDepth(40);
         this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
 
-        // Lasts 8 seconds — any physical hit is reflected
-        this.distortionTimer = 8000;
+        // Lasts 10 seconds — any physical hit and projectiles are reflected
+        this.distortionTimer = 10000;
 
         this.scene.time.delayedCall(500, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
@@ -216,19 +247,25 @@ export default class Uro extends Fighter {
             }
         }
 
-        // Shield — reflect projectiles
-        if (this.shieldActive) {
-            this.shieldTimer -= dt;
-            if (this.shieldTimer <= 0) {
+        // Shield / Space Distortion — reflect projectiles
+        if (this.shieldActive || this.spaceDistortionActive) {
+            if (this.shieldActive) this.shieldTimer -= dt;
+            if (this.shieldTimer <= 0 && !this.spaceDistortionActive) {
                 this.shieldActive = false;
-            } else if (this.scene.projectiles) {
+            }
+            if (this.scene.projectiles) {
                 // Reflect any incoming projectile within range
                 for (let p of this.scene.projectiles) {
                     if (!p.alive || p.owner === this) continue;
                     const dist = Math.abs(p.sprite.x - this.sprite.x);
-                    if (dist < 80) {
+                    // Infinity-like range (larger for domain)
+                    const reflectRange = this.spaceDistortionActive ? 120 : 80;
+                    if (dist < reflectRange) {
                         p.direction *= -1;
-                        p.sprite.body.setVelocityX(p.speed * p.direction);
+                        // For Space Distortion, reflect slightly slower than normal
+                        const newSpeed = this.spaceDistortionActive ? p.speed * 0.8 : p.speed;
+                        p.sprite.body.setVelocityX(newSpeed * p.direction);
+                        p.speed = newSpeed;
                         p.owner = this; // Now it belongs to Uro
                         p.damage = Math.floor(p.damage * 1.2); // +20% reflected damage
 

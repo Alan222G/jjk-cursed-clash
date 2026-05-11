@@ -154,9 +154,9 @@ export default class CharSelectScene extends Phaser.Scene {
 
         // ── Character Grid (centered properly) ──
         this.gridGraphics = this.add.graphics().setDepth(5);
-        this.slotSize = 110; // Slightly smaller to fit 5 per row easily
-        this.gridStartY = 160; // Moved up to remove dead space
-        this.rowGap = 15; // Vertical gap between rows
+        this.slotSize = 90; // Smaller to fit 5 rows
+        this.gridStartY = 120; // Moved up
+        this.rowGap = 10; // Vertical gap between rows
 
         this.slots = []; // { key, char, x, y, row, col }
         this.slotImages = [];
