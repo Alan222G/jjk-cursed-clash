@@ -56,8 +56,8 @@ export default class Yorozu extends Fighter {
             this.domainWeapon = weapons[Math.floor(Math.random() * weapons.length)];
             this.domainWeaponTimer = 20000;
             
-            const weaponNames = { cloud: 'PLAYFUL CLOUD!', katana: 'SOUL KATANA!', spear: 'INVERTED SPEAR!', chain: 'CHAIN OF 1000 MILES!' };
-            const weaponColors = { cloud: 0x55FF55, katana: 0xFF44AA, spear: 0x88CCFF, chain: 0x888888 };
+            const weaponNames = { cloud: 'PLAYFUL CLOUD!', katana: 'SOUL KATANA!', spear: 'INVERTED SPEAR!', chain: 'CHAIN OF A THOUSAND MILES!' };
+            const weaponColors = { cloud: 0x55FF55, katana: 0xFF44AA, spear: 0x88CCFF, chain: 0xAAAAAA };
             const colorHex = '#' + weaponColors[this.domainWeapon].toString(16).padStart(6, '0');
 
             const flash = this.scene.add.circle(this.sprite.x, this.sprite.y, 50, weaponColors[this.domainWeapon], 0.6).setDepth(15);
@@ -88,12 +88,16 @@ export default class Yorozu extends Fighter {
     }
 
     // Override normal attacks when sword is equipped — more range, adds bleed
+    getBasicAttackData(type) {
+        const base = { ...super.getBasicAttackData(type) };
+        if (!base) return base;
+        
         if (this.domainWeapon) {
             if (this.domainWeapon === 'cloud') {
                 base.damage = Math.floor(base.damage * 1.5);
                 base.knockbackX = (base.knockbackX || 200) * 1.5;
                 base.onHit = (attacker, victim, dmg) => {
-                    // Apply bleed: 5 ticks of 8 damage over 2.5 seconds
+                    // Playful Cloud Bleed
                     if (victim && victim.sprite && !victim.isDead) {
                         let ticks = 0;
                         const bleedInterval = this.scene.time.addEvent({
@@ -118,12 +122,14 @@ export default class Yorozu extends Fighter {
                 base.damage = Math.floor(base.damage * 1.3);
             } else if (this.domainWeapon === 'chain') {
                 base.range += 150; // Massive range
-                base.damage = Math.floor(base.damage * 0.9); // Slightly less damage
+                base.damage = Math.floor(base.damage * 0.9); // Slightly less damage for huge range
             }
         } else if (this.swordActive) {
             base.range += 25; // Extended reach
             base.damage = Math.floor(base.damage * 1.15); // +15% damage
         }
+        return base;
+    }
 
     // H2: Liquid Metal Whip
     castLiquidMetalWhip() {
@@ -174,11 +180,11 @@ export default class Yorozu extends Fighter {
         this.sprite.body.setVelocityX(0);
 
         this.bugArmorActive = true;
-        this.bugArmorTimer = this.domainActive ? 20000 : 15000;
+        this.bugArmorTimer = this.domainActive ? 20000 : 15000; // 5 seconds longer in domain
 
-        this.power = (this.charData.stats.power || 1.1) * 1.4;
-        this.speed = (this.charData.stats.speed || 340) * 1.5;
-        this.defense = (this.charData.stats.defense || 1.0) * 1.5; // Greatly increased defense
+        this.power = (this.charData.stats.power || 1.1) * (this.domainActive ? 1.6 : 1.4);
+        this.speed = (this.charData.stats.speed || 340) * (this.domainActive ? 1.6 : 1.5);
+        this.defense = (this.charData.stats.defense || 1.0) * (this.domainActive ? 2.5 : 1.5); // Monstrous defense in domain
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.flash(0x333344, 300, 0.6);
@@ -245,25 +251,39 @@ export default class Yorozu extends Fighter {
         });
     }
 
-    // Yorozu's Domain
     tryActivateDomain() {
-        if (!super.tryActivateDomain()) return;
+        if (this.isCasting) return;
+        if (this.domainActive || this.scene.domainActive || this.scene.domainPhase1) {
+            if (this.scene.domainOwner !== this) {
+                const clash = this.scene.attemptDomainClash(this);
+                if (!clash) return;
+            } else return;
+        }
+
+        if (!this.ceSystem.spend(80)) return; // Reduced CE cost from 100 to 80
+        this.domainActive = true;
+        this.ceSystem.startDomain();
+        if (this.stateMachine.is('attack')) this.stateMachine.setState('idle');
+
+        try { this.scene.sound.play('sfx_fire', { volume: 0.8 }); } catch(e) {}
+        if (this.scene.onDomainActivated) this.scene.onDomainActivated(this, 'threefold_affliction');
 
         // Yorozu domain gives guaranteed True Sphere hit periodically
         // AND utility: massive power boost inside domain
-        this.domainTimer = 30000; // Increased duration
+        this.domainTimer = 25000; // Increased duration from 15000 to 25000
         this.trueSphereTick = 3000; // Fires every 3 seconds
         this.power = (this.charData.stats.power || 1.1) * 1.5;
         this.speed = (this.charData.stats.speed || 340) * 1.3;
     }
 
-    takeDamage(damage, kbX, kbY, stunDuration, bypassBlock = false) {
-        if (this.bugArmorActive && this.domainActive && !bypassBlock) {
-            // Immovable in domain!
-            super.takeDamage(damage, 0, 0, 0, bypassBlock);
-            return;
+    takeDamage(damage, kbX, kbY, stunDuration, isProjectile = false) {
+        // Super armor: completely immovable & immune to hitstun/knockback when bug armor is active in domain
+        if (this.bugArmorActive && this.domainActive) {
+            stunDuration = 0;
+            kbX = 0;
+            kbY = 0;
         }
-        super.takeDamage(damage, kbX, kbY, stunDuration, bypassBlock);
+        super.takeDamage(damage, kbX, kbY, stunDuration, isProjectile);
     }
 
     update(time, dt) {
@@ -342,7 +362,10 @@ export default class Yorozu extends Fighter {
         
         // Colors
         const skinColor = isFlashing ? 0xFFFFFF : 0xFFE0CC;
-        const armorColor = isFlashing ? 0xFFFFFF : 0x333344;
+        let armorColor = isFlashing ? 0xFFFFFF : 0x333344;
+        if (this.bugArmorActive && this.domainActive) {
+            armorColor = 0x111122; // Darker monstrous armor inside domain
+        }
         const robeColor = isFlashing ? 0xFFFFFF : 0x992222;
         const hairColor = isFlashing ? 0xFFFFFF : 0x111111;
         const armExtend = this.attackSwing * 30;
@@ -366,37 +389,32 @@ export default class Yorozu extends Fighter {
         g.lineTo(x - 10, masterY + 15);
         g.fillPath();
 
-            // Bug Armor details
-            if (this.bugArmorActive) {
-                if (this.domainActive) {
-                    // Monstrous version
-                    g.lineStyle(3, 0x555566, 1);
-                    g.beginPath();
-                    g.moveTo(x - 8, masterY - 20); g.lineTo(x + 8, masterY - 20);
-                    g.moveTo(x - 12, masterY - 10); g.lineTo(x + 12, masterY - 10);
-                    g.moveTo(x - 8, masterY); g.lineTo(x + 8, masterY);
-                    // Spikes
-                    g.moveTo(x - 10, masterY - 20); g.lineTo(x - 18, masterY - 35);
-                    g.moveTo(x + 10, masterY - 20); g.lineTo(x + 18, masterY - 35);
-                    g.strokePath();
-
-                    g.fillStyle(0x333344, 0.8);
-                    g.fillEllipse(x - 30 * f, masterY - 25, 25, 60);
-                    g.fillEllipse(x - 40 * f, masterY - 5, 20, 50);
-                } else {
-                    g.lineStyle(2, 0x777788, 1);
-                    g.beginPath();
-                    g.moveTo(x - 8, masterY - 20); g.lineTo(x + 8, masterY - 20);
-                    g.moveTo(x - 10, masterY - 10); g.lineTo(x + 10, masterY - 10);
-                    g.moveTo(x - 8, masterY); g.lineTo(x + 8, masterY);
-                    g.strokePath();
-                    
-                    // Wings
-                    g.fillStyle(0x777788, 0.6);
-                    g.fillEllipse(x - 20 * f, masterY - 20, 15, 40);
-                    g.fillEllipse(x - 25 * f, masterY, 12, 35);
-                }
+        // Bug Armor details
+        if (this.bugArmorActive) {
+            g.lineStyle(2, 0x777788, 1);
+            g.beginPath();
+            g.moveTo(x - 8, masterY - 20);
+            g.lineTo(x + 8, masterY - 20);
+            g.moveTo(x - 10, masterY - 10);
+            g.lineTo(x + 10, masterY - 10);
+            g.moveTo(x - 8, masterY);
+            g.lineTo(x + 8, masterY);
+            g.strokePath();
+            
+            // Wings
+            if (this.domainActive) {
+                // Giant spikey wings in domain
+                g.fillStyle(0x2b2b3a, 0.8);
+                g.fillEllipse(x - 30 * f, masterY - 25, 25, 60);
+                g.fillEllipse(x - 35 * f, masterY + 5, 20, 50);
+                g.fillEllipse(x - 20 * f, masterY - 35, 18, 45);
+                g.fillEllipse(x - 25 * f, masterY - 5, 15, 35);
+            } else {
+                g.fillStyle(0x777788, 0.6);
+                g.fillEllipse(x - 20 * f, masterY - 20, 15, 40);
+                g.fillEllipse(x - 25 * f, masterY, 12, 35);
             }
+        }
 
         // Arms
         const armY = masterY - 26;
@@ -420,7 +438,7 @@ export default class Yorozu extends Fighter {
             if (this.domainWeapon === 'cloud') wColor = 0x55FF55;
             else if (this.domainWeapon === 'katana') wColor = 0xFF44AA;
             else if (this.domainWeapon === 'spear') wColor = 0x88CCFF;
-            else if (this.domainWeapon === 'chain') wColor = 0x888888;
+            else if (this.domainWeapon === 'chain') wColor = 0xAAAAAA;
 
             g.lineStyle(6, wColor, 1);
             g.beginPath();
@@ -430,33 +448,20 @@ export default class Yorozu extends Fighter {
             if (this.stateMachine.is('attack')) {
                 const swing = this.attackSwing;
                 let angle = f > 0 ? (swing * Math.PI) - Math.PI/2 : Math.PI + Math.PI/2 - (swing * Math.PI);
-                let len = this.domainWeapon === 'chain' ? 180 : 70;
+                let len = this.domainWeapon === 'chain' ? 220 : 70; // Chain has massive visual arc
                 
+                // Chain visual specifics
                 if (this.domainWeapon === 'chain') {
-                    // Draw linked chain
-                    g.strokePath(); // Finish hand path
-                    g.lineStyle(3, 0x555555, 1);
-                    const endX = handX + Math.cos(angle)*len;
-                    const endY = handY + Math.sin(angle)*len;
-                    const links = 10;
-                    for(let i=0; i<links; i++) {
-                        const cx = Phaser.Math.Interpolation.Linear([handX, endX], i/(links-1));
-                        const cy = Phaser.Math.Interpolation.Linear([handY, endY], i/(links-1));
-                        if (i % 2 === 0) g.strokeEllipse(cx, cy, 6, 3);
-                        else g.strokeEllipse(cx, cy, 3, 6);
+                    g.lineStyle(3, wColor, 1);
+                    for(let j=0; j<5; j++) {
+                        g.strokeEllipse(handX + Math.cos(angle)*(len*j/5), handY + Math.sin(angle)*(len*j/5), 8, 4);
                     }
-                    g.beginPath();
-                    g.moveTo(endX, endY);
-                } else {
-                    g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
                 }
+                
+                g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
             } else {
                 // Idle weapon stance
-                if (this.domainWeapon === 'chain') {
-                    g.lineTo(handX + 15 * f, handY + 30);
-                } else {
-                    g.lineTo(handX + 30 * f, handY - 40);
-                }
+                g.lineTo(handX + 30 * f, handY - 40);
             }
             g.strokePath();
 

@@ -422,6 +422,7 @@ export default class MahoragaNPC {
     // ── Ultimate: World Slash ──
     castWorldSlash() {
         this.ultimateReady = false;
+        this.lifetimeTimer = 0; // Reset timer so it takes another 30 seconds to charge
         this.state = 'attack';
         this.actionCooldown = 5000;
 

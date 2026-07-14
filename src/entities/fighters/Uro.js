@@ -36,13 +36,71 @@ export default class Uro extends Fighter {
 
         if (tier >= 4 && this.input.isDown('DOWN')) {
             this.castIceMissile();
-        } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
-            this.castThinIceBreaker();
         } else if (tier >= 1 && this.input.isDown('UP')) {
             this.castFlight();
+        } else if (tier >= 1 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
+            this.castThinIceBreaker();
         } else if (tier >= 1) {
             this.castSkyShield();
         }
+    }
+
+    // H1: Thin Ice Breaker (U + Left/Right)
+    castThinIceBreaker() {
+        if (!this.ceSystem.spend(30)) return;
+        this.isCasting = true; this.stateMachine.lock(600);
+        this.sprite.body.setVelocityX(600 * this.facing); // lunge forward
+
+        try { this.scene.sound.play('sfx_slash', { volume: 0.9 }); } catch(e) {}
+
+        this.scene.time.delayedCall(200, () => {
+            this.sprite.body.setVelocityX(0);
+            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+            
+            // Visual crack in space
+            const crackX = this.sprite.x + 60 * this.facing;
+            const crackY = this.sprite.y - 10;
+            const crack = this.scene.add.graphics().setDepth(15);
+            crack.lineStyle(4, 0x87CEEB, 1);
+            
+            // Draw a cracked circle
+            crack.beginPath();
+            crack.arc(crackX, crackY, 40, 0, Math.PI * 2);
+            crack.strokePath();
+            crack.lineStyle(2, 0xFFFFFF, 0.8);
+            crack.beginPath();
+            // Cracks radiating from center
+            for (let i = 0; i < 4; i++) {
+                const angle = (i * Math.PI) / 2;
+                crack.moveTo(crackX, crackY);
+                crack.lineTo(crackX + Math.cos(angle) * 40, crackY + Math.sin(angle) * 40);
+            }
+            crack.strokePath();
+
+            this.scene.tweens.add({
+                targets: crack,
+                scaleX: 1.5,
+                scaleY: 1.5,
+                alpha: 0,
+                duration: 300,
+                onComplete: () => crack.destroy()
+            });
+
+            if (target && !target.isDead) {
+                const dist = Math.abs(target.sprite.x - this.sprite.x);
+                if (dist < 130) {
+                    target.takeDamage(55 * this.power, 600 * this.facing, -250, 500);
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.flash(0x87CEEB, 150, 0.4);
+                        this.scene.screenEffects.shake(0.04, 300);
+                    }
+                }
+            }
+        });
+
+        this.scene.time.delayedCall(600, () => {
+            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
+        });
     }
 
     // H1: Sky Shield — Reflects all incoming projectiles for 3 seconds
@@ -65,35 +123,6 @@ export default class Uro extends Fighter {
         if (this.scene.screenEffects) this.scene.screenEffects.flash(0x87CEEB, 100, 0.3);
 
         this.scene.time.delayedCall(400, () => {
-            this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
-        });
-    }
-
-    // H1.5: Thin Ice Breaker (U + Left/Right)
-    castThinIceBreaker() {
-        if (!this.ceSystem.spend(40)) return;
-        this.isCasting = true; this.stateMachine.lock(500);
-        
-        try { this.scene.sound.play('sfx_dash', { volume: 1.0 }); } catch(e) {}
-
-        // Visual distortion (breaking the sky)
-        const breakFx = this.scene.add.rectangle(this.sprite.x + 80 * this.facing, this.sprite.y - 20, 40, 100, 0x87CEEB, 0.5).setDepth(15);
-        this.scene.tweens.add({ targets: breakFx, scaleX: 3, scaleY: 1.5, alpha: 0, duration: 300, onComplete: () => breakFx.destroy() });
-
-        this.scene.time.delayedCall(100, () => {
-            if (this.scene.screenEffects) this.scene.screenEffects.shake(0.04, 300);
-            
-            const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
-            if (target && !target.isDead) {
-                const dist = Math.abs(target.sprite.x - this.sprite.x);
-                if (dist < 180) {
-                    // Ignores block due to spatial nature
-                    target.takeDamage(45 * this.power, 400 * this.facing, -100, 500, true);
-                }
-            }
-        });
-
-        this.scene.time.delayedCall(500, () => {
             this.isCasting = false; this.stateMachine.unlock(); this.stateMachine.setState('idle');
         });
     }
@@ -207,7 +236,7 @@ export default class Uro extends Fighter {
         }).setOrigin(0.5).setDepth(40);
         this.scene.tweens.add({ targets: txt, y: '-=40', alpha: 0, duration: 1500, onComplete: () => txt.destroy() });
 
-        // Lasts 10 seconds — any physical hit and projectiles are reflected
+        // Lasts 10 seconds — any physical hit is reflected, and reflects projectiles
         this.distortionTimer = 10000;
 
         this.scene.time.delayedCall(500, () => {
@@ -247,25 +276,19 @@ export default class Uro extends Fighter {
             }
         }
 
-        // Shield / Space Distortion — reflect projectiles
-        if (this.shieldActive || this.spaceDistortionActive) {
-            if (this.shieldActive) this.shieldTimer -= dt;
-            if (this.shieldTimer <= 0 && !this.spaceDistortionActive) {
+        // Shield — reflect projectiles
+        if (this.shieldActive) {
+            this.shieldTimer -= dt;
+            if (this.shieldTimer <= 0) {
                 this.shieldActive = false;
-            }
-            if (this.scene.projectiles) {
+            } else if (this.scene.projectiles) {
                 // Reflect any incoming projectile within range
                 for (let p of this.scene.projectiles) {
                     if (!p.alive || p.owner === this) continue;
                     const dist = Math.abs(p.sprite.x - this.sprite.x);
-                    // Infinity-like range (larger for domain)
-                    const reflectRange = this.spaceDistortionActive ? 120 : 80;
-                    if (dist < reflectRange) {
+                    if (dist < 80) {
                         p.direction *= -1;
-                        // For Space Distortion, reflect slightly slower than normal
-                        const newSpeed = this.spaceDistortionActive ? p.speed * 0.8 : p.speed;
-                        p.sprite.body.setVelocityX(newSpeed * p.direction);
-                        p.speed = newSpeed;
+                        p.sprite.body.setVelocityX(p.speed * p.direction);
                         p.owner = this; // Now it belongs to Uro
                         p.damage = Math.floor(p.damage * 1.2); // +20% reflected damage
 
@@ -276,11 +299,27 @@ export default class Uro extends Fighter {
             }
         }
 
-        // Space distortion timer
+        // Space distortion timer (Limitless-like projectile deflection, slightly slower)
         if (this.spaceDistortionActive) {
             this.distortionTimer -= dt;
             if (this.distortionTimer <= 0) {
                 this.spaceDistortionActive = false;
+            } else if (this.scene.projectiles) {
+                for (let p of this.scene.projectiles) {
+                    if (!p.alive || p.owner === this) continue;
+                    const dist = Math.abs(p.sprite.x - this.sprite.x);
+                    if (dist < 150) { // Wider range
+                        p.direction *= -1;
+                        // Return slightly slower (e.g. 0.7x speed)
+                        p.speed = Math.floor(p.speed * 0.7);
+                        p.sprite.body.setVelocityX(p.speed * p.direction);
+                        p.owner = this;
+                        p.damage = Math.floor(p.damage * 1.2); // +20% reflected damage
+                        
+                        if (this.scene.screenEffects) this.scene.screenEffects.flash(0xFFB6C1, 50, 0.2);
+                        try { this.scene.sound.play('sfx_teleport', { volume: 0.5 }); } catch(e) {}
+                    }
+                }
             }
         }
     }
