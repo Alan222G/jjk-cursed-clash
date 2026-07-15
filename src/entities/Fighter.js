@@ -949,21 +949,9 @@ export default class Fighter {
         this.auraGraphics.setScale(S);
         this.auraGraphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
 
-        // ═══ Ground-plane enforcement ═══
-        // The physics world is taller than the visual ground, so we enforce
-        // a hard floor at PHYSICS.GROUND_Y manually every frame.
-        const groundFloor = PHYSICS.GROUND_Y;
-        const halfH = FIGHTER_DEFAULTS.BODY_HEIGHT / 2;
-        if (this.sprite.y + halfH >= groundFloor) {
-            this.sprite.y = groundFloor - halfH;
-            this.sprite.body.y = this.sprite.y - halfH;
-            if (this.sprite.body.velocity.y > 0) {
-                this.sprite.body.velocity.y = 0;
-            }
-            this.isOnGround = true;
-        } else {
-            this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
-        }
+        // Ground check — physics world bottom is at GROUND_Y,
+        // so collideWorldBounds handles floor collision natively
+        this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
 
         // Reset aerial combo state when landing on ground
         if (this.isOnGround && this.aerialComboActive) {

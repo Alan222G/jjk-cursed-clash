@@ -11,7 +11,7 @@ export const PHYSICS = {
     GROUND_Y: 650,
     DRAG_X: 1500,
     WALL_LEFT: 60,
-    WALL_RIGHT: 2500,
+    WALL_RIGHT: 1860,
     BOUNCE: 0,
 };
 

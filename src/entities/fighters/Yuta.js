@@ -22,11 +22,41 @@ export default class Yuta extends Fighter {
         this.copyCdLight = 0;
         this.copyCdHeavy = 0;
         this.copyCdUlt = 0;
+
+        // Revival & U-variant tracking
+        this.domainCount = 0;
+        this.usedU_normal = false;
+        this.usedU_up = false;
+        this.usedU_down = false;
+        this.usedU_side = false;
+        this.isGojoForm = false;
+
+        // Gojo state variables
+        this.infinityActive = false;
+        this.infinityTimer = 0;
+        this.blueAuraActive = false;
+        this.blueAuraTimer = 0;
+        this.blueTickTimer = 0;
+        this.blueGraphics = null;
     }
 
     trySpecialAttack() {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();
+
+        // ── GOJO FORM: Gojo Satoru's possessed abilities ──
+        if (this.isGojoForm) {
+            if (tier >= 4 && this.input.isDown('DOWN')) {
+                this.firePurple();
+            } else if (tier >= 2 && (this.input.isDown('LEFT') || this.input.isDown('RIGHT'))) {
+                this.fireRed();
+            } else if (tier >= 2 && this.input.isDown('UP')) {
+                this.castTeleportStrike();
+            } else if (tier >= 1) {
+                this.fireBlue();
+            }
+            return;
+        }
 
         // ── COPY MODE: Literal attacks from other characters ──
         if (this.copyActive && this._copiedOpponent) {
@@ -492,6 +522,7 @@ export default class Yuta extends Fighter {
     // ═══════════════════════════════════════
     castKatanaRush() {
         if (!this.ceSystem.spend(this.charData.skills.skill1.cost)) return;
+        this.usedU_normal = true;
         this.isCasting = true;
         this.stateMachine.lock(1200);
         this.sprite.body.setVelocityX(500 * this.facing);
@@ -546,6 +577,7 @@ export default class Yuta extends Fighter {
     castCursedSpeech() {
         if (this.cursedSpeechCooldown > 0) return;
         if (!this.ceSystem.spend(25)) return;
+        this.usedU_up = true;
         this.cursedSpeechCooldown = 5000;
 
         this.isCasting = true;
@@ -585,6 +617,7 @@ export default class Yuta extends Fighter {
     castThinIceBreaker() {
         if (this.thinIceCooldown > 0) return;
         if (!this.ceSystem.spend(this.charData.skills.skill2.cost)) return;
+        this.usedU_side = true;
         this.thinIceCooldown = 3000;
 
         this.castWithAudio('sfx_slash', () => {
@@ -622,6 +655,7 @@ export default class Yuta extends Fighter {
     // ═══════════════════════════════════════
     fireLoveBeam() {
         if (!this.ceSystem.spend(this.charData.skills.maximum.cost)) return;
+        this.usedU_down = true;
         this.isCasting = true;
         this.stateMachine.lock(1500);
         this.sprite.body.setVelocityX(0);
@@ -685,6 +719,7 @@ export default class Yuta extends Fighter {
             } else return;
         } else if (this.domainActive) return;
 
+        this.domainCount++;
         // NO upfront spend — domain drains CE from the moment it activates
         this.domainActive = true;
         this.ceSystem.startDomain();
@@ -719,6 +754,68 @@ export default class Yuta extends Fighter {
 
     update(time, dt) {
         super.update(time, dt);
+        if (this.isGojoForm) {
+            if (this.blueAuraActive) {
+                this.blueAuraTimer -= dt;
+                const bx = this.blueFixedX;
+                const by = this.blueFixedY;
+
+                if (!this.blueGraphics) {
+                    this.blueGraphics = this.scene.add.graphics();
+                    this.blueGraphics.setDepth(15);
+                }
+                this.blueGraphics.clear();
+
+                if (this.blueAuraTimer <= 0) {
+                    this.blueAuraActive = false;
+                    this.blueGraphics.clear();
+                    return;
+                }
+
+                const pulse = 0.8 + Math.sin(time * 0.01) * 0.2;
+                this.blueGraphics.fillStyle(0x2244FF, pulse);
+                this.blueGraphics.fillCircle(bx, by, 150);
+
+                this.blueGraphics.fillStyle(0xFFFFFF, pulse * 0.6);
+                this.blueGraphics.fillCircle(bx, by, 70);
+
+                this.blueGraphics.lineStyle(4, 0x00D4FF, pulse * 0.5);
+                this.blueGraphics.strokeCircle(bx, by, 150 + (time % 500) / 10);
+                this.blueGraphics.lineStyle(2, 0x88EEFF, pulse * 0.3);
+                this.blueGraphics.strokeCircle(bx, by, 210 + (time % 800) / 15);
+
+                const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+                if (target && !target.isDead) {
+                    const dx = bx - target.sprite.x;
+                    const dy = by - target.sprite.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 400 && dist > 5) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const forceMagnitude = 600 * (1 - dist / 400);
+
+                        target.sprite.body.velocity.x += nx * forceMagnitude * (dt / 1000) * 8;
+                        target.sprite.body.velocity.y += ny * forceMagnitude * (dt / 1000) * 5;
+
+                        if (dist < 90) {
+                            this.blueTickTimer -= dt;
+                            if (this.blueTickTimer <= 0) {
+                                this.blueTickTimer = 400;
+                                target.takeDamage(20, (target.sprite.x > bx ? -100 : 100), -80, 250);
+                                if (this.scene.screenEffects) {
+                                    this.scene.screenEffects.shake(0.008, 150);
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (this.blueGraphics) {
+                this.blueGraphics.clear();
+            }
+            return;
+        }
+
         if (this.cursedSpeechCooldown > 0) this.cursedSpeechCooldown -= dt;
         if (this.thinIceCooldown > 0) {
             this.thinIceCooldown -= dt;
@@ -748,12 +845,96 @@ export default class Yuta extends Fighter {
     // DRAW — Yuta with katana + Rika behind
     // ═══════════════════════════════════════
     drawBody(dt) {
-        super.drawBody(dt); // Calls base to draw everything
-        const g = this.graphics; 
+        const g = this.graphics;
         const x = this.sprite.x; const y = this.sprite.y;
         const f = this.facing;
         const masterY = y + (this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0);
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
 
+        if (this.isGojoForm) {
+            g.clear();
+            if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
+
+            const skinColor = isFlashing ? 0xFFFFFF : 0xFFE0CC;
+            const uColor = isFlashing ? 0xFFFFFF : 0x111118; // Compression shirt
+            const pColor = isFlashing ? 0xFFFFFF : 0x151520; // Hakama pants
+            const hairColor = 0xF5F5FF; // White hair
+            const armExtend = this.attackSwing * 40;
+            const hx = x; const hy = masterY - 52;
+
+            // 1. Legs
+            const legY = masterY + 5;
+            let leftKnee = 35, rightKnee = 35;
+            let pLx = -10, pRx = 10;
+            if (this.stateMachine.is('walk')) {
+                leftKnee += this.walkCycle * 1.5;
+                rightKnee -= this.walkCycle * 1.5;
+            } else if (this.stateMachine.isAny('jump', 'fall')) {
+                leftKnee = 20; rightKnee = 20;
+                pLx = -14; pRx = 14;
+            }
+            g.fillStyle(pColor, 0.85);
+            g.fillTriangle(x + pLx, legY, x + pLx - 10, legY + leftKnee, x + pLx + 10, legY + leftKnee - 5);
+            g.fillStyle(pColor, 1);
+            g.fillTriangle(x + pRx, legY, x + pRx - 12 * f, legY + rightKnee, x + pRx + 12 * f, legY + rightKnee - 2);
+
+            // 2. Torso
+            g.fillStyle(uColor, 1);
+            g.beginPath();
+            g.moveTo(x - 16, masterY - 38);
+            g.lineTo(x + 16, masterY - 38);
+            g.lineTo(x + 12, masterY + 12);
+            g.lineTo(x - 12, masterY + 12);
+            g.fillPath();
+
+            // 3. Arms
+            g.lineStyle(8, uColor, 1);
+            // Back arm
+            g.beginPath();
+            g.moveTo(x - 12 * f, masterY - 34);
+            g.lineTo(x - 22 * f, masterY - 16);
+            g.strokePath();
+
+            // Front arm / attack swing
+            g.beginPath();
+            g.moveTo(x + 12 * f, masterY - 34);
+            if (this.attackSwing > 0) {
+                g.lineTo(hx + (25 + armExtend) * f, masterY - 34);
+                g.fillStyle(0x4488FF, 0.8);
+                g.fillCircle(hx + (28 + armExtend) * f, masterY - 34, 8);
+            } else {
+                g.lineTo(x + 22 * f, masterY - 16);
+            }
+            g.strokePath();
+
+            // 4. Head & Neck
+            g.fillStyle(skinColor, 1);
+            g.fillRect(x - 4, masterY - 45, 8, 8);
+            g.fillCircle(x, hy, 12);
+
+            // 5. Six Eyes Glow
+            g.fillStyle(0x00D8FF, 0.9);
+            g.fillCircle(hx - 3 * f, hy - 2, 2.5);
+            g.fillCircle(hx + 3 * f, hy - 2, 2.5);
+
+            // 6. White Hair Spikes
+            g.fillStyle(hairColor, 1);
+            for (let i = -14; i <= 14; i += 4) {
+                const spikeH = 14 + Math.cos((i / 14) * (Math.PI / 2)) * 10;
+                const slant = (i * 0.5) * f;
+                g.fillTriangle(hx + i, hy - 8, hx + i + 2, hy - 8, hx + i + slant, hy - 8 - spikeH);
+            }
+
+            // 7. Infinity Shield visual if infinity state active
+            if (this.stateMachine.is('infinity') || this.infinityActive) {
+                const shieldPulse = 0.4 + Math.sin(this.animTimer * 0.008) * 0.2;
+                g.lineStyle(1.5, 0x00CCFF, shieldPulse * 0.4);
+                g.strokeCircle(x, masterY - 15, 50);
+            }
+            return;
+        }
+
+        super.drawBody(dt); // Calls base to draw everything
         // UI Cooldown "Mini Clock" Indicators
         if (this.copyActive && !this.isDead) {
             const renderClock = (xOffset, cd, maxCd, color) => {
@@ -781,7 +962,6 @@ export default class Yuta extends Fighter {
             renderClock(15, this.copyCdUlt, 5000, 0xFF0000); // Ult (Red)
         }
 
-        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
         if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
         const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
@@ -971,8 +1151,327 @@ export default class Yuta extends Fighter {
             const x = this.sprite.x; const y = this.sprite.y;
             const t = this.scene.time.now;
             const pulse = 0.08 + Math.sin(t * 0.005) * 0.05;
-            ag.fillStyle(0xFF88CC, pulse);
-            ag.fillEllipse(x, y - 30, 50, 85);
+            if (this.isGojoForm) {
+                ag.fillStyle(0x00CCFF, pulse * 1.5);
+                ag.fillEllipse(x, y - 30, 50, 85);
+            } else {
+                ag.fillStyle(0xFF88CC, pulse);
+                ag.fillEllipse(x, y - 30, 50, 85);
+            }
         }
+    }
+
+    takeDamage(damage, kbX, kbY, stunDuration, isProjectile = false) {
+        if (this.infinityActive) {
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.003, 100);
+            }
+            return;
+        }
+        super.takeDamage(damage, kbX, kbY, stunDuration, isProjectile);
+        
+        // Gojo Revival condition
+        if (this.hp <= 0 && !this.isGojoForm && this.domainCount >= 2 && this.usedU_normal && this.usedU_up && this.usedU_down && this.usedU_side) {
+            this.reviveAsGojo();
+        }
+    }
+
+    reviveAsGojo() {
+        this.hp = this.maxHp;
+        this.isDead = false;
+        this.isGojoForm = true;
+        this.fighterId = 'gojo'; // Allows generic Gojo mechanics to work on Yuta (like Block = Infinity, Infinity CE drain)
+        this.power *= 1.4; // Boost power by 40%
+        this.speed = this._baseSpeed * 1.25; // 25% faster movement
+
+        // Stop any current attack or casting
+        this.isCasting = false;
+        this.stateMachine.unlock();
+        this.stateMachine.setState('idle');
+
+        // Visual / Audio splash
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.flash(0x00D8FF, 800, 0.7);
+            this.scene.screenEffects.shake(0.06, 1000);
+            this.scene.screenEffects.slowMotion(0.2, 2000);
+        }
+
+        try {
+            this.scene.sound.play('sfx_purple', { volume: 1.0 });
+        } catch (e) {}
+
+        // Add dramatic text
+        const rx = this.sprite.x;
+        const ry = this.sprite.y - 100;
+        const text = this.scene.add.text(rx, ry, 'GOJO SATORU BODY REVIVAL', {
+            fontFamily: 'Arial Black',
+            fontSize: '24px',
+            color: '#00D8FF',
+            stroke: '#000000',
+            strokeThickness: 5
+        }).setOrigin(0.5).setDepth(30);
+
+        this.scene.tweens.add({
+            targets: text,
+            y: ry - 40,
+            alpha: 0,
+            duration: 3000,
+            onComplete: () => text.destroy()
+        });
+    }
+
+    // ── GOJO COPIED SKILLS ──
+
+    castTeleportStrike() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
+        this.isCasting = true;
+        this.stateMachine.lock(600);
+        this.sprite.body.setVelocity(0, 0);
+
+        try { this.scene.sound.play('sfx_dash', { volume: 0.8 }); } catch(e){}
+
+        const xOut = this.sprite.x;
+        const yOut = this.sprite.y;
+        const outPulse = this.scene.add.circle(xOut, yOut, 30, 0x44CCFF, 0.8).setDepth(20);
+        this.scene.tweens.add({ targets: outPulse, scale: 2, alpha: 0, duration: 200, onComplete: () => outPulse.destroy() });
+
+        this.sprite.setAlpha(0);
+
+        this.scene.time.delayedCall(150, () => {
+            if (this.opponent && !this.opponent.isDead) {
+                this.facing = this.opponent.sprite.x > this.sprite.x ? 1 : -1;
+                this.sprite.x = this.opponent.sprite.x - (30 * this.facing);
+                this.sprite.y = this.opponent.sprite.y - 60;
+            }
+
+            this.sprite.setAlpha(1);
+
+            const inPulse = this.scene.add.circle(this.sprite.x, this.sprite.y, 30, 0x44CCFF, 0.8).setDepth(20);
+            this.scene.tweens.add({ targets: inPulse, scale: 2, alpha: 0, duration: 200, onComplete: () => inPulse.destroy() });
+
+            try { this.scene.sound.play('sfx_heavy_hit', { volume: 0.8 }); } catch(e){}
+            
+            if (this.opponent) {
+                const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.opponent.sprite.x, this.opponent.sprite.y);
+                if (dist < 100) {
+                    const dmg = Math.floor(40 * this.power);
+                    this.opponent.takeDamage(dmg, 100 * this.facing, 400, 500);
+                    this.comboSystem.registerHit('SPECIAL');
+                    if (this.scene.screenEffects) this.scene.screenEffects.shake(0.02, 200);
+                }
+            }
+
+            const g = this.scene.add.graphics().setDepth(20);
+            g.lineStyle(6, 0x44CCFF, 0.9);
+            g.beginPath();
+            g.moveTo(this.sprite.x, this.sprite.y - 20);
+            g.lineTo(this.sprite.x + 40 * this.facing, this.sprite.y + 40);
+            g.strokePath();
+            this.scene.tweens.add({ targets: g, alpha: 0, duration: 200, onComplete: () => g.destroy() });
+            
+            this.scene.time.delayedCall(300, () => {
+                this.isCasting = false;
+                this.stateMachine.unlock();
+                this.stateMachine.setState('fall');
+            });
+        });
+    }
+
+    fireBlue() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_1)) return;
+        this.spawnBlueEffect();
+
+        this.isCasting = true;
+        this.stateMachine.lock(99999);
+        this.sprite.body.setVelocityX(0);
+
+        try {
+            const snd = this.scene.sound.add('sfx_blue', {
+                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 3.0
+            });
+            snd.play();
+        } catch(e) {}
+
+        this.scene.time.delayedCall(5000, () => {
+            this.blueAuraActive = true;
+            this.blueAuraTimer = 4000;
+            this.blueTickTimer = 0;
+            this.blueFixedX = this.sprite.x + 250 * this.facing;
+            this.blueFixedY = this.sprite.y - 15;
+            this.isCasting = false;
+            this.stateMachine.unlock();
+            if (this.stateMachine.is('attack')) {
+                this.stateMachine.setState('idle');
+            }
+        });
+    }
+
+    fireRed() {
+        if (!this.ceSystem.spend(CE_COSTS.SKILL_2)) return;
+        this.spawnRedEffect();
+
+        // AKA: BURST (Yuta-Gojo slight variation: faster startup and double rapid explosions on hit)
+        this.castWithAudio('sfx_red', () => {
+            const proj = new Projectile(this.scene, this.sprite.x + 40 * this.facing, this.sprite.y - 50, {
+                owner: this,
+                damage: Math.floor(this.charData.skills.skill2.damage * this.power),
+                knockbackX: 1800,
+                knockbackY: -500,
+                stunDuration: 700,
+                speed: 600, // Faster red
+                direction: this.facing,
+                color: 0xFF1144,
+                size: { w: 40, h: 40 },
+                lifetime: 1800,
+                type: 'circle',
+                onHitCallback: (projectile, target) => {
+                    const x = target.sprite.x;
+                    const y = target.sprite.y - 45;
+
+                    const c1 = this.scene.add.circle(x, y, 10, 0xFF1144, 0.8).setDepth(20);
+                    this.scene.tweens.add({
+                        targets: c1,
+                        scaleX: 8, scaleY: 8, alpha: 0,
+                        duration: 300,
+                        onComplete: () => c1.destroy()
+                    });
+
+                    this.scene.time.delayedCall(150, () => {
+                        if (target && !target.isDead) {
+                            target.takeDamage(Math.floor(25 * this.power), 400 * this.facing, -150, 400);
+                            const c2 = this.scene.add.circle(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40, 10, 0xFF4488, 0.7).setDepth(20);
+                            this.scene.tweens.add({
+                                targets: c2,
+                                scaleX: 6, scaleY: 6, alpha: 0,
+                                duration: 300,
+                                onComplete: () => c2.destroy()
+                            });
+                        }
+                    });
+
+                    if (this.scene.screenEffects) {
+                        this.scene.screenEffects.shake(0.02, 300);
+                    }
+                    return false;
+                }
+            });
+
+            if (this.scene.projectiles) {
+                this.scene.projectiles.push(proj);
+            }
+
+            if (this.stateMachine.is('attack')) {
+                this.stateMachine.setState('idle');
+            }
+        }, 3000);
+    }
+
+    firePurple() {
+        if (!this.ceSystem.spend(CE_COSTS.MAXIMUM)) return;
+        this.sprite.body.setVelocityX(0);
+
+        if (this.scene.screenEffects) {
+            this.scene.screenEffects.domainFlash(0xAA00FF);
+            this.scene.screenEffects.slowMotion(0.3, 2000);
+        }
+
+        const cx = this.sprite.x + 30 * this.facing;
+        const cy = this.sprite.y - 15;
+        const redC = this.scene.add.circle(cx, cy - 60, 25, 0xFF2222, 0.9).setDepth(15);
+        const blueC = this.scene.add.circle(cx, cy + 60, 25, 0x2244FF, 0.9).setDepth(15);
+
+        this.scene.tweens.add({
+            targets: redC,
+            x: cx + 40, y: cy - 30,
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 2,
+        });
+        this.scene.tweens.add({
+            targets: blueC,
+            x: cx - 40, y: cy + 30,
+            duration: 2000,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: 2,
+        });
+
+        const purpleGlow = this.scene.add.circle(cx, cy, 5, 0x9922FF, 0.3).setDepth(14);
+        this.scene.tweens.add({
+            targets: purpleGlow,
+            scaleX: 8, scaleY: 8, alpha: 0.7,
+            duration: 8000,
+            ease: 'Quad.easeIn',
+        });
+
+        const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
+        if (target && !target.isDead) {
+            target.stateMachine.unlock();
+            target.stateMachine.lock(99999);
+            target.sprite.body.setVelocity(0, 0);
+        }
+
+        this.castWithAudio('sfx_purple', () => {
+            redC.destroy();
+            blueC.destroy();
+            purpleGlow.destroy();
+
+            const proj = new Projectile(this.scene, this.sprite.x + 60 * this.facing, this.sprite.y - 50, {
+                owner: this,
+                damage: Math.floor(this.charData.skills.maximum.damage * this.power),
+                knockbackX: 1200, knockbackY: -400,
+                stunDuration: 800, speed: 1200,
+                direction: this.facing, color: 0x9922FF,
+                size: { w: 600, h: 600 }, lifetime: 3000,
+                type: 'circle',
+                isHollowPurple: true,
+            });
+
+            if (this.scene.projectiles) {
+                this.scene.projectiles.push(proj);
+            }
+
+            if (this.scene.screenEffects) {
+                this.scene.screenEffects.shake(0.04, 800);
+            }
+
+            if (target && !target.isDead) {
+                target.stateMachine.unlock();
+                if (!target.stateMachine.isAny('idle', 'walk', 'jump', 'fall', 'attack')) {
+                    target.stateMachine.setState('idle');
+                }
+            }
+
+            this.stateMachine.setState('idle');
+        }, 15000);
+    }
+
+    spawnBlueEffect() {
+        const x = this.sprite.x + 20 * this.facing;
+        const y = this.sprite.y - 15;
+        const circle = this.scene.add.circle(x, y, 15, 0x2244FF, 0.7);
+        circle.setDepth(12);
+        this.scene.tweens.add({
+            targets: circle,
+            scaleX: 10, scaleY: 10, alpha: 0,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => circle.destroy(),
+        });
+    }
+
+    spawnRedEffect() {
+        const x = this.sprite.x + 20 * this.facing;
+        const y = this.sprite.y - 15;
+        const circle = this.scene.add.circle(x, y, 20, 0xFF2222, 0.8);
+        circle.setDepth(12);
+        this.scene.tweens.add({
+            targets: circle,
+            scaleX: 8, scaleY: 8, alpha: 0,
+            duration: 400,
+            ease: 'Power2',
+            onComplete: () => circle.destroy(),
+        });
     }
 }

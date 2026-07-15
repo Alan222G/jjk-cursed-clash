@@ -79,7 +79,7 @@ export default class Projectile {
         }
 
         // Out of bounds check
-        if (this.type !== 'beam' && (this.sprite.x < -50 || this.sprite.x > 2610)) {
+        if (this.type !== 'beam' && (this.sprite.x < -50 || this.sprite.x > 1970)) {
             this.destroy();
             return;
         }

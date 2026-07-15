@@ -73,24 +73,24 @@ export default class GameScene extends Phaser.Scene {
         } catch(e) { console.warn('BGM combat play failed', e); }
         
         // ═══════════════════════════════════════════════════
-        // EXPANDED WORLD — wider physics world for camera room
+        // EXPANDED WORLD — wider arena with proper ground collision
         // ═══════════════════════════════════════════════════
-        const WORLD_W = 2560;
-        const WORLD_H = 800;
-        this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+        const WORLD_W = 1920;
+        // Physics world height = GROUND_Y so collideWorldBounds stops fighters at the floor
+        this.physics.world.setBounds(0, 0, WORLD_W, PHYSICS.GROUND_Y);
         this.worldWidth = WORLD_W;
-        this.worldHeight = WORLD_H;
+        this.worldHeight = PHYSICS.GROUND_Y;
+        
+        // Camera bounds are taller so we can see below the ground line
+        this.cameras.main.setBounds(0, 0, WORLD_W, PHYSICS.GROUND_Y + 200);
         
         // ── Ground Floor ──
         this.groundY = PHYSICS.GROUND_Y; // 650
         
-        // Draw a ground-plane collision line (invisible but consistent)
-        // Fighters collide with world bounds bottom; GROUND_Y is enforced in Fighter.update()
-        
         // Draw visible ground line for visual reference
         this.groundLine = this.add.graphics().setDepth(2);
         this.groundLine.lineStyle(3, 0xFFFFFF, 0.15);
-        this.groundLine.lineBetween(0, PHYSICS.GROUND_Y + 75, WORLD_W, PHYSICS.GROUND_Y + 75);
+        this.groundLine.lineBetween(0, PHYSICS.GROUND_Y, WORLD_W, PHYSICS.GROUND_Y);
 
         // ── Groups ──
         this.projectiles = [];
@@ -141,16 +141,16 @@ export default class GameScene extends Phaser.Scene {
         // DYNAMIC CAMERA — follows both fighters with zoom
         // ═══════════════════════════════════════════════════
         const cam = this.cameras.main;
-        cam.setBounds(0, 0, WORLD_W, WORLD_H);
+        // Camera bounds were already set above (taller than physics for visual space)
         // Start centered between fighters
         cam.scrollX = spawnCenterX - GAME_WIDTH / 2;
         cam.scrollY = 0;
         
-        // Camera zoom limits
-        this.camZoomMin = 0.55;  // Zoomed out — see the full arena
-        this.camZoomMax = 0.90;  // Zoomed in — close combat, but never too tight
+        // Camera zoom limits — tight range for smooth feel
+        this.camZoomMin = 0.70;  // Zoomed out — see the arena without extreme zoom
+        this.camZoomMax = 0.85;  // Zoomed in — close combat
         this.camPadding = 200;   // Minimum pixel padding from edge of screen to fighters
-        this.camLerpSpeed = 0.06; // Smooth interpolation speed
+        this.camLerpSpeed = 0.03; // Very smooth interpolation (was 0.06)
 
         // ── Pause Menu ──
         this.input.keyboard.on('keydown-ESC', () => {
@@ -797,13 +797,13 @@ export default class GameScene extends Phaser.Scene {
 
         // Pin camera vertically: always show the ground near the bottom of screen
         // We want GROUND_Y to appear about 85% down from the top of the visible area
-        const groundScreenTarget = 0.82;
-        const groundY = PHYSICS.GROUND_Y + 75; // Visual ground line position
+        const groundScreenTarget = 0.85;
+        const groundY = PHYSICS.GROUND_Y; // Ground line position
         targetScrollY = groundY - viewH * groundScreenTarget;
 
-        // Clamp to world bounds
-        targetScrollX = Phaser.Math.Clamp(targetScrollX, 0, this.worldWidth - viewW);
-        targetScrollY = Phaser.Math.Clamp(targetScrollY, 0, this.worldHeight - viewH);
+        // Clamp to world / camera bounds (camera bounds height is worldHeight + 200)
+        targetScrollX = Phaser.Math.Clamp(targetScrollX, 0, Math.max(0, this.worldWidth - viewW));
+        targetScrollY = Phaser.Math.Clamp(targetScrollY, 0, Math.max(0, (PHYSICS.GROUND_Y + 200) - viewH));
 
         // Smooth lerp scroll
         cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetScrollX, lerpSpeed);

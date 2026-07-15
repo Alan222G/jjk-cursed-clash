@@ -267,16 +267,7 @@ export default class MahoragaNPC {
             this.ultimateReady = true;
         }
 
-        // ── Ground-plane enforcement (same as Fighter) ──
-        const groundFloor = PHYSICS.GROUND_Y;
-        const halfH = 75; // half of body height (150/2)
-        if (this.sprite.y + halfH >= groundFloor) {
-            this.sprite.y = groundFloor - halfH;
-            this.sprite.body.y = this.sprite.y - halfH;
-            if (this.sprite.body.velocity.y > 0) {
-                this.sprite.body.velocity.y = 0;
-            }
-        }
+        // Ground handled by physics world bounds (height = GROUND_Y)
 
         // Wheel rendering
         if (this.wheel) {
@@ -312,7 +303,7 @@ export default class MahoragaNPC {
         this.facing = this.target.sprite.x > this.sprite.x ? 1 : -1;
 
         // ── JUMP LOGIC (pursue vertical targets) ──
-        const isOnGround = (this.sprite.y + halfH >= PHYSICS.GROUND_Y - 10);
+        const isOnGround = this.sprite.body.blocked.down;
         if (isOnGround && this.target.sprite.y < this.sprite.y - 120 && Math.random() < 0.05) {
             this.sprite.body.setVelocityY(-750);
         }
