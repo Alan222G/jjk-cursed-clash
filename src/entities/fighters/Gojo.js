@@ -470,6 +470,7 @@ export default class Gojo extends Fighter {
                 size: { w: 600, h: 600 },
                 lifetime: 3000,
                 type: 'circle',
+                isHollowPurple: true,
             });
 
             if (this.scene.projectiles) {

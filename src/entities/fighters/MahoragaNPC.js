@@ -267,6 +267,17 @@ export default class MahoragaNPC {
             this.ultimateReady = true;
         }
 
+        // ── Ground-plane enforcement (same as Fighter) ──
+        const groundFloor = PHYSICS.GROUND_Y;
+        const halfH = 75; // half of body height (150/2)
+        if (this.sprite.y + halfH >= groundFloor) {
+            this.sprite.y = groundFloor - halfH;
+            this.sprite.body.y = this.sprite.y - halfH;
+            if (this.sprite.body.velocity.y > 0) {
+                this.sprite.body.velocity.y = 0;
+            }
+        }
+
         // Wheel rendering
         if (this.wheel) {
             this.wheel.clear();
@@ -294,39 +305,42 @@ export default class MahoragaNPC {
 
         if (this.state === 'attack') return; // Don't act while attacking
 
-        // AI Logic
-        this.actionCooldown -= dt;
-        if (this.actionCooldown > 0) return;
-
         // Verify target is still valid
         if (!this.target || this.target.isDead || !this.target.sprite || !this.target.sprite.active) return;
 
-        const dist = Phaser.Math.Distance.Between(this.sprite.x, this.sprite.y, this.target.sprite.x, this.target.sprite.y);
+        const dx = Math.abs(this.target.sprite.x - this.sprite.x);
         this.facing = this.target.sprite.x > this.sprite.x ? 1 : -1;
 
-        if (this.ultimateReady) {
-            this.castWorldSlash();
-            return;
+        // ── JUMP LOGIC (pursue vertical targets) ──
+        const isOnGround = (this.sprite.y + halfH >= PHYSICS.GROUND_Y - 10);
+        if (isOnGround && this.target.sprite.y < this.sprite.y - 120 && Math.random() < 0.05) {
+            this.sprite.body.setVelocityY(-750);
         }
 
-        if (dist > 110) {
-            // Chase
+        // ── MOVEMENT/CHASE (relentless chase if not in active attack state) ──
+        if (dx > 100) {
             this.sprite.body.setVelocityX(this.speed * this.facing);
             this.state = 'walk';
-
-            if (Math.random() < 0.02) {
-                this.castAdaptationCharge();
-            }
         } else {
             this.sprite.body.setVelocityX(0);
             this.state = 'idle';
+        }
 
-            if (Math.random() < 0.05) {
+        // ── ATTACK TRIGGER LOGIC (governed by actionCooldown) ──
+        this.actionCooldown -= dt;
+        if (this.actionCooldown <= 0) {
+            if (this.ultimateReady) {
+                this.castWorldSlash();
+            } else if (dx <= 120) {
+                // Close range choices
                 if (Math.random() < 0.5) {
                     this.castExterminationSword();
                 } else {
                     this.castGroundSmash();
                 }
+            } else if (dx > 220 && Math.random() < 0.15) {
+                // Charge from distance
+                this.castAdaptationCharge();
             }
         }
     }
@@ -428,7 +442,8 @@ export default class MahoragaNPC {
 
         if (this.scene.screenEffects) this.scene.screenEffects.flash(0xFFFFFF, 500, 0.8);
 
-        const slash = this.scene.add.rectangle(GAME_WIDTH/2, this.sprite.y, GAME_WIDTH, 10, 0x000000).setDepth(50);
+        const worldW = this.scene.worldWidth || 2560;
+        const slash = this.scene.add.rectangle(worldW / 2, this.sprite.y, worldW, 10, 0x000000).setDepth(50);
 
         this.scene.time.delayedCall(500, () => {
             try { this.scene.sound.play('sfx_heavy_hit', { volume: 1.5 }); } catch(e) {}

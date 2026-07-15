@@ -388,7 +388,6 @@ export default class Ishigori extends Fighter {
 
         // Set cooldown after doing full combo variation
         this.comboStep = 0;
-        this.comboCooldown = 2000;
 
         const skill = this.charData.skills.skill1;
         

@@ -19,6 +19,7 @@ export default class Projectile {
         const baseSize = config.size || { w: 30, h: 20 };
         this.size = { w: baseSize.w * 1.5, h: baseSize.h * 1.5 }; // Increased by 50%
         this.type = config.type || 'normal'; // normal, heavy, beam, circle, slash, fire_arrow, worm, uzumaki
+        this.isHollowPurple = config.isHollowPurple || false;
         this.alive = true;
         this.timer = 0;
         this.onHitCallback = config.onHitCallback || null;
@@ -78,7 +79,7 @@ export default class Projectile {
         }
 
         // Out of bounds check
-        if (this.type !== 'beam' && (this.sprite.x < -50 || this.sprite.x > 1330)) {
+        if (this.type !== 'beam' && (this.sprite.x < -50 || this.sprite.x > 2610)) {
             this.destroy();
             return;
         }
@@ -316,6 +317,17 @@ export default class Projectile {
     /** Called when hitting an opponent */
     onHit(target) {
         if (!this.alive) return;
+
+        // Trigger impact frames for specific powerful attacks
+        if (this.scene.screenEffects) {
+            if (this.isHollowPurple) {
+                this.scene.screenEffects.triggerImpactFrame('purple');
+            } else if (this.type === 'fire_arrow') {
+                this.scene.screenEffects.triggerImpactFrame('fuga');
+            } else if (this.type === 'beam' && this.owner && this.owner.fighterId === 'ishigori') {
+                this.scene.screenEffects.triggerImpactFrame('beam');
+            }
+        }
 
         if (this.onHitCallback) {
             const override = this.onHitCallback(this, target);

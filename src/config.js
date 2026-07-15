@@ -8,10 +8,10 @@ export const GAME_HEIGHT = 720;
 // ── Physics ──────────────────────────────────────────────
 export const PHYSICS = {
     GRAVITY: 1200,
-    GROUND_Y: 550,
-    DRAG_X: 900,
+    GROUND_Y: 650,
+    DRAG_X: 1500,
     WALL_LEFT: 60,
-    WALL_RIGHT: 1220,
+    WALL_RIGHT: 2500,
     BOUNCE: 0,
 };
 
@@ -19,11 +19,11 @@ export const PHYSICS = {
 export const FIGHTER_DEFAULTS = {
     MAX_HP: 3000,
     MAX_CE: 200,
-    CE_REGEN_RATE: 10,         // CE per second (passive) - increased for faster gameplay
+    CE_REGEN_RATE: 25,         // CE per second (passive) — x2.5 buff for faster gameplay
     CE_REGEN_ON_HIT: 12,      // CE gained when landing a hit
     CE_REGEN_ON_DAMAGE: 8,    // CE gained when taking damage
-    SPEED: 320,
-    JUMP_FORCE: -620,
+    SPEED: 400,
+    JUMP_FORCE: -750,
     WEIGHT: 100,
     BODY_WIDTH: 75,
     BODY_HEIGHT: 150,
@@ -41,7 +41,7 @@ export const ATTACKS = {
         hitboxH: 40,
         startup: 60,
         active: 80,
-        recovery: 300,       // 300ms cooldown to prevent spam
+        recovery: 50,        // Near-instant recovery — no cooldown on normals
         ceGain: 3,
         breaksBlock: false,
         blockKnockMult: 0.1,  // Barely pushes if blocked
@@ -56,7 +56,7 @@ export const ATTACKS = {
         hitboxH: 50,
         startup: 120,
         active: 120,
-        recovery: 250,
+        recovery: 80,         // Near-instant recovery — no cooldown on normals
         ceGain: 8,
         breaksBlock: false,
         blockKnockMult: 0.3,  // Reduced push if blocked
@@ -71,7 +71,7 @@ export const ATTACKS = {
         hitboxH: 60,
         startup: 250,
         active: 150,
-        recovery: 450,
+        recovery: 120,         // Reduced recovery — keeps flow aggressive
         ceGain: 12,
         breaksBlock: true,     // Breaks normal block
         blockKnockMult: 1.0,   // Full launch even through block

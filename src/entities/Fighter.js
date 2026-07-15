@@ -66,7 +66,7 @@ export default class Fighter {
         this.sprite.body.setDragX(PHYSICS.DRAG_X);
         this.sprite.body.setCollideWorldBounds(true);
         this.sprite.body.setBounce(0);
-        this.sprite.body.setMaxVelocityX(600);
+        this.sprite.body.setMaxVelocityX(700);
         this.sprite.setDepth(10);
 
         // ── Hitbox (attack zone, starts disabled) ──
@@ -480,7 +480,7 @@ export default class Fighter {
 
         // Normal attacks
         if (this.stateMachine.isAny('idle', 'walk', 'jump', 'fall')) {
-            if (attackAction === 'LIGHT' && (this.comboCooldown <= 0 || this.aerialComboActive)) {
+            if (attackAction === 'LIGHT') {
                 this.comboStep = (this.comboStep || 0) + 1;
                 if (this.comboStep > 4) this.comboStep = 1;
                 
@@ -543,7 +543,6 @@ export default class Fighter {
                         // Aerial combo finisher: end aerial state, apply normal cooldown
                         this.aerialComboActive = false;
                     }
-                    this.comboCooldown = 2000;
                     this.comboStep = 0;
                 }
             }
@@ -858,9 +857,7 @@ export default class Fighter {
         // Screen effects
         if (this.scene.screenEffects) {
             if (isBlackFlash) {
-                this.scene.screenEffects.shake(0.015, 400);
-                this.scene.screenEffects.hitFreeze(150);
-                this.scene.screenEffects.flash(0x000000, 150, 0.4);
+                this.scene.screenEffects.triggerImpactFrame('black_flash');
                 this.spawnBlackFlashEffect(this.hitbox.x, this.hitbox.y);
             } else if (atk.type === 'HEAVY') {
                 this.scene.screenEffects.shake(0.005, 200);
@@ -952,8 +949,21 @@ export default class Fighter {
         this.auraGraphics.setScale(S);
         this.auraGraphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
 
-        // Ground check
-        this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
+        // ═══ Ground-plane enforcement ═══
+        // The physics world is taller than the visual ground, so we enforce
+        // a hard floor at PHYSICS.GROUND_Y manually every frame.
+        const groundFloor = PHYSICS.GROUND_Y;
+        const halfH = FIGHTER_DEFAULTS.BODY_HEIGHT / 2;
+        if (this.sprite.y + halfH >= groundFloor) {
+            this.sprite.y = groundFloor - halfH;
+            this.sprite.body.y = this.sprite.y - halfH;
+            if (this.sprite.body.velocity.y > 0) {
+                this.sprite.body.velocity.y = 0;
+            }
+            this.isOnGround = true;
+        } else {
+            this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
+        }
 
         // Reset aerial combo state when landing on ground
         if (this.isOnGround && this.aerialComboActive) {
@@ -992,9 +1002,7 @@ export default class Fighter {
             }
         }
         
-        if (this.comboCooldown > 0) {
-            this.comboCooldown -= dt;
-        }
+        // comboCooldown removed — normals have no cooldown
 
         // Infinity Drain
         if (this.fighterId === 'gojo' && this.infinityActive) {

@@ -59,7 +59,11 @@ export default class GameScene extends Phaser.Scene {
         }
 
         this.events.on('shutdown', () => {
-            if (bgImg) bgImg.style.display = 'none';
+            if (bgImg) {
+                bgImg.style.display = 'none';
+                bgImg.style.transform = '';
+                bgImg.style.transformOrigin = '';
+            }
         });
             
         // BGM Deathmatch Mapeado a Loop
@@ -68,13 +72,33 @@ export default class GameScene extends Phaser.Scene {
             this.sound.play('bgm_combat', { volume: 0.4, loop: true });
         } catch(e) { console.warn('BGM combat play failed', e); }
         
+        // ═══════════════════════════════════════════════════
+        // EXPANDED WORLD — wider physics world for camera room
+        // ═══════════════════════════════════════════════════
+        const WORLD_W = 2560;
+        const WORLD_H = 800;
+        this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+        this.worldWidth = WORLD_W;
+        this.worldHeight = WORLD_H;
+        
+        // ── Ground Floor ──
+        this.groundY = PHYSICS.GROUND_Y; // 650
+        
+        // Draw a ground-plane collision line (invisible but consistent)
+        // Fighters collide with world bounds bottom; GROUND_Y is enforced in Fighter.update()
+        
+        // Draw visible ground line for visual reference
+        this.groundLine = this.add.graphics().setDepth(2);
+        this.groundLine.lineStyle(3, 0xFFFFFF, 0.15);
+        this.groundLine.lineBetween(0, PHYSICS.GROUND_Y + 75, WORLD_W, PHYSICS.GROUND_Y + 75);
+
         // ── Groups ──
-        this.groundY = GAME_HEIGHT - 60;
         this.projectiles = [];
         
-        // ── Entities ──
-        this.p1 = this.createFighter(this.p1Key, 300, PHYSICS.GROUND_Y - 50, 0);
-        this.p2 = this.createFighter(this.p2Key, 980, PHYSICS.GROUND_Y - 50, 1);
+        // ── Entities — spawn near center of wider world ──
+        const spawnCenterX = WORLD_W / 2;
+        this.p1 = this.createFighter(this.p1Key, spawnCenterX - 300, PHYSICS.GROUND_Y - 50, 0);
+        this.p2 = this.createFighter(this.p2Key, spawnCenterX + 300, PHYSICS.GROUND_Y - 50, 1);
         
         this.p1.opponent = this.p2;
         this.p2.opponent = this.p1;
@@ -112,6 +136,21 @@ export default class GameScene extends Phaser.Scene {
         this.domainFlash = null;
         this.sureHitTimer = 0;
         this.matchEnded = false;
+
+        // ═══════════════════════════════════════════════════
+        // DYNAMIC CAMERA — follows both fighters with zoom
+        // ═══════════════════════════════════════════════════
+        const cam = this.cameras.main;
+        cam.setBounds(0, 0, WORLD_W, WORLD_H);
+        // Start centered between fighters
+        cam.scrollX = spawnCenterX - GAME_WIDTH / 2;
+        cam.scrollY = 0;
+        
+        // Camera zoom limits
+        this.camZoomMin = 0.55;  // Zoomed out — see the full arena
+        this.camZoomMax = 0.90;  // Zoomed in — close combat, but never too tight
+        this.camPadding = 200;   // Minimum pixel padding from edge of screen to fighters
+        this.camLerpSpeed = 0.06; // Smooth interpolation speed
 
         // ── Pause Menu ──
         this.input.keyboard.on('keydown-ESC', () => {
@@ -242,7 +281,7 @@ export default class GameScene extends Phaser.Scene {
             GAME_WIDTH / 2, GAME_HEIGHT / 2, 
             GAME_WIDTH, GAME_HEIGHT, 
             bgColor, 0
-        ).setDepth(50).setOrigin(0.5);
+        ).setDepth(50).setOrigin(0.5).setScrollFactor(0);
 
         this.tweens.add({
             targets: this.domainOverlay,
@@ -288,7 +327,7 @@ export default class GameScene extends Phaser.Scene {
         const startX = isP1 ? -400 : GAME_WIDTH + 400;
         this.domainPortrait = this.add.image(
             startX, GAME_HEIGHT / 2, signKey
-        ).setDepth(51).setOrigin(0.5);
+        ).setDepth(51).setOrigin(0.5).setScrollFactor(0);
 
         const imgScale = Math.min(GAME_WIDTH / this.domainPortrait.width, GAME_HEIGHT / this.domainPortrait.height) * 0.95;
         this.domainPortrait.setScale(imgScale);
@@ -313,7 +352,7 @@ export default class GameScene extends Phaser.Scene {
 
         // Parallel diagonal lines
         this.domainLines = this.add.graphics();
-        this.domainLines.setDepth(52);
+        this.domainLines.setDepth(52).setScrollFactor(0);
         
         const lineColor = theme.lineColor;
         
@@ -356,7 +395,7 @@ export default class GameScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 5,
             align: 'center',
-        }).setDepth(53).setOrigin(0.5).setAlpha(0);
+        }).setDepth(53).setOrigin(0.5).setAlpha(0).setScrollFactor(0);
         
         this.domainText.setRotation(angleRad);
         this.tweens.add({
@@ -654,7 +693,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.time.delayedCall(2000, () => {
             this.physics.pause();
-            this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setDepth(200);
+            this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7).setOrigin(0).setDepth(200).setScrollFactor(0);
 
             this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 50, 'K.O.', {
                 fontFamily: 'Arial Black',
@@ -662,7 +701,7 @@ export default class GameScene extends Phaser.Scene {
                 color: '#FF0000',
                 stroke: '#000000',
                 strokeThickness: 8
-            }).setOrigin(0.5).setDepth(201);
+            }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
 
             this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 50, `${winner.charData.name.toUpperCase()} WINS!`, {
                 fontFamily: 'Arial Black',
@@ -670,13 +709,13 @@ export default class GameScene extends Phaser.Scene {
                 color: '#D4A843',
                 stroke: '#000000',
                 strokeThickness: 6
-            }).setOrigin(0.5).setDepth(201);
+            }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
 
             const retryText = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 80, 'PRESS [ENTER] PARA REVANCHA', {
                 fontFamily: 'Arial',
                 fontSize: '24px',
                 color: '#FFFFFF'
-            }).setOrigin(0.5).setDepth(201);
+            }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
 
             this.tweens.add({
                 targets: retryText,
@@ -705,7 +744,7 @@ export default class GameScene extends Phaser.Scene {
             color: '#FF0000',
             stroke: '#000000',
             strokeThickness: 8
-        }).setOrigin(0.5).setDepth(200);
+        }).setOrigin(0.5).setDepth(200).setScrollFactor(0);
         
         this.time.delayedCall(3000, () => {
             this.scene.restart();
@@ -714,6 +753,73 @@ export default class GameScene extends Phaser.Scene {
 
     spawnDamageNumber(x, y, amount) {
         this.damageNumbers.spawn(x, y, amount);
+    }
+
+    // ════════════════════════════════════════════════════════
+    // DYNAMIC CAMERA — smooth follow + zoom
+    // ════════════════════════════════════════════════════════
+
+    updateDynamicCamera(delta) {
+        const cam = this.cameras.main;
+        if (!cam || !this.p1 || !this.p2) return;
+
+        const p1x = this.p1.sprite.x;
+        const p1y = this.p1.sprite.y;
+        const p2x = this.p2.sprite.x;
+        const p2y = this.p2.sprite.y;
+
+        // ── Midpoint between both fighters ──
+        const midX = (p1x + p2x) / 2;
+        const midY = (p1y + p2y) / 2;
+
+        // ── Distance-based zoom ──
+        const dx = Math.abs(p1x - p2x);
+        const dy = Math.abs(p1y - p2y);
+        const dist = Math.max(dx, dy * 1.5); // Weight vertical distance more
+
+        // Calculate zoom: the further apart, the more we zoom out
+        // At dist=0 → maxZoom, at dist=1200+ → minZoom
+        const zoomRange = this.camZoomMax - this.camZoomMin;
+        const distNorm = Phaser.Math.Clamp(dist / 1200, 0, 1);
+        const targetZoom = this.camZoomMax - distNorm * zoomRange;
+
+        // Smooth lerp zoom
+        const lerpSpeed = this.camLerpSpeed;
+        cam.zoom = Phaser.Math.Linear(cam.zoom, targetZoom, lerpSpeed);
+
+        // ── Camera scroll target (centered on midpoint) ──
+        const viewW = GAME_WIDTH / cam.zoom;
+        const viewH = GAME_HEIGHT / cam.zoom;
+
+        // Target scroll position to center the midpoint
+        let targetScrollX = midX - viewW / 2;
+        let targetScrollY = midY - viewH / 2;
+
+        // Pin camera vertically: always show the ground near the bottom of screen
+        // We want GROUND_Y to appear about 85% down from the top of the visible area
+        const groundScreenTarget = 0.82;
+        const groundY = PHYSICS.GROUND_Y + 75; // Visual ground line position
+        targetScrollY = groundY - viewH * groundScreenTarget;
+
+        // Clamp to world bounds
+        targetScrollX = Phaser.Math.Clamp(targetScrollX, 0, this.worldWidth - viewW);
+        targetScrollY = Phaser.Math.Clamp(targetScrollY, 0, this.worldHeight - viewH);
+
+        // Smooth lerp scroll
+        cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetScrollX, lerpSpeed);
+        cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetScrollY, lerpSpeed);
+
+        // ── Sync HTML background to camera ──
+        const bgImg = document.getElementById('game-bg-img');
+        if (bgImg) {
+            // Scale the background image to match the camera zoom
+            const scaleX = cam.zoom;
+            // Pan the background proportional to camera scroll within the world
+            const panX = -(cam.scrollX / (this.worldWidth - viewW || 1)) * (this.worldWidth * scaleX - GAME_WIDTH);
+            const panY = -(cam.scrollY / (this.worldHeight - viewH || 1)) * 50; // Subtle vertical parallax
+            bgImg.style.transform = `scale(${scaleX * 1.15}) translate(${panX / scaleX}px, ${panY / scaleX}px)`;
+            bgImg.style.transformOrigin = 'center center';
+        }
     }
 
     // ════════════════════════════════════════════════════════
@@ -755,6 +861,11 @@ export default class GameScene extends Phaser.Scene {
         }
 
         this.hud.update(this.p1, this.p2);
+
+        // ═══════════════════════════════════════════════════
+        // DYNAMIC CAMERA — zoom + follow both fighters
+        // ═══════════════════════════════════════════════════
+        this.updateDynamicCamera(delta);
 
         // Projectiles
         this.projectiles = this.projectiles.filter(p => {
@@ -847,14 +958,14 @@ export default class GameScene extends Phaser.Scene {
         this.clashP1Beam = (beamA.owner === this.p1) ? 'A' : 'B';
         // Create UI
         const cx = GAME_WIDTH / 2; const cy = 80;
-        this.clashBg = this.add.graphics().setDepth(100);
+        this.clashBg = this.add.graphics().setDepth(100).setScrollFactor(0);
         this.clashBg.fillStyle(0x000000, 0.7); this.clashBg.fillRoundedRect(cx - 200, cy - 25, 400, 50, 8);
         this.clashBg.lineStyle(3, 0xFFDD00, 1); this.clashBg.strokeRoundedRect(cx - 200, cy - 25, 400, 50, 8);
-        this.clashIndicator = this.add.graphics().setDepth(101);
+        this.clashIndicator = this.add.graphics().setDepth(101).setScrollFactor(0);
         this.clashText = this.add.text(cx, cy - 40, 'BEAM CLASH! MASH YOUR ATTACK KEY!', {
             fontFamily: 'Arial Black', fontSize: '14px', color: '#FFDD00',
             stroke: '#000000', strokeThickness: 3
-        }).setOrigin(0.5).setDepth(101);
+        }).setOrigin(0.5).setDepth(101).setScrollFactor(0);
         // Input listeners
         this._clashP1Key = this.input.keyboard.addKey('J');
         this._clashP2Key = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ONE);

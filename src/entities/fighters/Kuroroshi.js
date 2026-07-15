@@ -427,7 +427,7 @@ export default class Kuroroshi extends Fighter {
             try { this.scene.sound.play('heavy_smash', { volume: 0.2 }); } catch(e){}
             
             // Screen-obscuring "stain" effect (nubla la vista)
-            const stain = this.scene.add.graphics().setDepth(200);
+            const stain = this.scene.add.graphics().setDepth(200).setScrollFactor(0);
             stain.fillStyle(0x000000, 0.98); // Almost pitch black
             stain.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT); // Cover entire screen
             

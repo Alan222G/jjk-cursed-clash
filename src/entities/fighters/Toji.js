@@ -5,7 +5,7 @@
 
 import Fighter from '../Fighter.js';
 import Projectile from '../Projectile.js';
-import { CHARACTERS, CE_COSTS, ATTACKS } from '../../config.js';
+import { CHARACTERS, CE_COSTS, ATTACKS, GAME_WIDTH, GAME_HEIGHT } from '../../config.js';
 
 const WEAPONS = [
     { name: 'Playful Cloud', key: 'cloud', color: 0x55FF55 },
@@ -469,10 +469,10 @@ export default class Toji extends Fighter {
         }
 
         // Visual: multiple slashes shattering the screen
-        const g = this.scene.add.graphics().setDepth(100);
+        const g = this.scene.add.graphics().setDepth(100).setScrollFactor(0);
         for(let i=0; i<10; i++) {
-            const x1 = Math.random() * 1280;
-            const y1 = Math.random() * 720;
+            const x1 = Math.random() * GAME_WIDTH;
+            const y1 = Math.random() * GAME_HEIGHT;
             const x2 = x1 + (Math.random() - 0.5) * 800;
             const y2 = y1 + (Math.random() - 0.5) * 800;
             g.lineStyle(8, 0x88CCFF, 0.9);
