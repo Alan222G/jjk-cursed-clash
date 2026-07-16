@@ -326,20 +326,19 @@ export default class Gojo extends Fighter {
 
         this.spawnBlueEffect();
 
-        // Lock the character, play audio. Blue deploys at 5 seconds.
+        // Lock the character briefly for 500ms, deploy fast
         this.isCasting = true;
-        this.stateMachine.lock(99999);
+        this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
 
         try {
             const snd = this.scene.sound.add('sfx_blue', {
-                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 3.0
+                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 1.5
             });
             snd.play();
         } catch(e) {}
 
-        // Deploy the anomaly at 5 seconds into the audio
-        this.scene.time.delayedCall(5000, () => {
+        this.scene.time.delayedCall(500, () => {
             // Record fixed world position — Blue stays HERE, does NOT follow Gojo
             this.blueAuraActive = true;
             this.blueAuraTimer = 4000; // Floats for 4 seconds
@@ -404,51 +403,51 @@ export default class Gojo extends Fighter {
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.domainFlash(0xAA00FF);
-            this.scene.screenEffects.slowMotion(0.3, 2000);
+            this.scene.screenEffects.slowMotion(0.3, 1000);
         }
 
-        // Extended dramatic convergence animation (orbiting spheres)
+        // Fast convergence animation (orbiting spheres)
         const cx = this.sprite.x + 30 * this.facing;
         const cy = this.sprite.y - 15;
         const redC = this.scene.add.circle(cx, cy - 60, 25, 0xFF2222, 0.9).setDepth(15);
         const blueC = this.scene.add.circle(cx, cy + 60, 25, 0x2244FF, 0.9).setDepth(15);
 
-        // Phase 1: Orbiting around the convergence point
+        // Fast orbit
         this.scene.tweens.add({
             targets: redC,
             x: cx + 40,
             y: cy - 30,
-            duration: 2000,
+            duration: 400,
             ease: 'Sine.easeInOut',
             yoyo: true,
-            repeat: 2,
+            repeat: 1,
         });
         this.scene.tweens.add({
             targets: blueC,
             x: cx - 40,
             y: cy + 30,
-            duration: 2000,
+            duration: 400,
             ease: 'Sine.easeInOut',
             yoyo: true,
-            repeat: 2,
+            repeat: 1,
         });
 
-        // Growing purple glow at center
+        // Fast growing purple glow
         const purpleGlow = this.scene.add.circle(cx, cy, 5, 0x9922FF, 0.3).setDepth(14);
         this.scene.tweens.add({
             targets: purpleGlow,
             scaleX: 8,
             scaleY: 8,
             alpha: 0.7,
-            duration: 8000,
+            duration: 1000,
             ease: 'Quad.easeIn',
         });
 
-        // Stun enemy during cast
+        // Stun enemy during cast (brief 1.5s lock)
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && !target.isDead) {
             target.stateMachine.unlock();
-            target.stateMachine.lock(99999);
+            target.stateMachine.lock(1500);
             target.sprite.body.setVelocity(0, 0);
         }
 
@@ -490,7 +489,7 @@ export default class Gojo extends Fighter {
             }
 
             this.stateMachine.setState('idle');
-        }, 15000);
+        }, 1500);
     }
 
     // ════════════════════════════════════════════

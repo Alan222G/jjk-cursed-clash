@@ -20,11 +20,22 @@ export default class Fighter {
         // ── Stats ──
         this.maxHp = charData.stats.maxHp || FIGHTER_DEFAULTS.MAX_HP;
         this.hp = this.maxHp;
-        this.speed = charData.stats.speed || FIGHTER_DEFAULTS.SPEED;
+        
+        // Scale speed by 1.25 for all characters
+        if (!charData.stats._speedScaled) {
+            charData.stats.speed = (charData.stats.speed || FIGHTER_DEFAULTS.SPEED) * 1.25;
+            charData.stats._speedScaled = true;
+        }
+        this.speed = charData.stats.speed;
+        this._baseSpeed = this.speed;
+
         this.jumpForce = charData.stats.jumpForce || FIGHTER_DEFAULTS.JUMP_FORCE;
         this.weight = charData.stats.weight || FIGHTER_DEFAULTS.WEIGHT;
         this.power = charData.stats.power || 1.0;
         this.defense = charData.stats.defense || 1.0;
+        
+        // Double jump tracking
+        this.jumpCount = 0;
 
         // ── State ──
         this.facing = playerIndex === 0 ? 1 : -1;
@@ -61,7 +72,11 @@ export default class Fighter {
         const bh = FIGHTER_DEFAULTS.BODY_HEIGHT;
         this.sprite = scene.add.rectangle(x, y, bw, bh, 0x000000, 0);
         scene.physics.add.existing(this.sprite);
-        this.sprite.body.setSize(bw, bh);
+        
+        // Custom compact body size & offset to ground visual feet perfectly
+        this.sprite.body.setSize(55, 90);
+        this.sprite.body.setOffset(10, 25);
+        
         this.sprite.body.setGravityY(PHYSICS.GRAVITY);
         this.sprite.body.setDragX(PHYSICS.DRAG_X);
         this.sprite.body.setCollideWorldBounds(true);
@@ -396,7 +411,11 @@ export default class Fighter {
         }
 
         // Jump
-        if (this.input.justPressed('UP') && this.isOnGround) {
+        const canJump = this.isOnGround || (this.jumpCount < 2);
+        if (this.input.justPressed('UP') && canJump) {
+            this.jumpCount++;
+            this.isOnGround = false;
+
             if (this.aerialComboActive && this._launchTarget) {
                 // Aerial boost: launch attacker to opponent's height
                 const targetY = this._launchTarget.sprite.y;
@@ -404,9 +423,11 @@ export default class Fighter {
                 // Calculate velocity needed to reach opponent's height (boosted)
                 const boostVel = Math.min(-900, -(distUp * 2.5 + 400));
                 this.sprite.body.setVelocityY(boostVel);
-                this.isOnGround = false;
-                this.stateMachine.setState('jump');
             } else {
+                this.sprite.body.setVelocityY(this.jumpForce);
+            }
+
+            if (!this.stateMachine.is('jump')) {
                 this.stateMachine.setState('jump');
             }
         }
@@ -952,6 +973,9 @@ export default class Fighter {
         // Ground check — physics world bottom is at GROUND_Y,
         // so collideWorldBounds handles floor collision natively
         this.isOnGround = this.sprite.body.blocked.down || this.sprite.body.touching.down;
+        if (this.isOnGround) {
+            this.jumpCount = 0;
+        }
 
         // Reset aerial combo state when landing on ground
         if (this.isOnGround && this.aerialComboActive) {

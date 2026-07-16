@@ -33,7 +33,7 @@ import HUD from '../ui/HUD.js';
 import DamageNumbers from '../ui/DamageNumbers.js';
 import ScreenEffects from '../ui/ScreenEffects.js';
 import AIManager from '../systems/AIManager.js';
-import { GAME_WIDTH, GAME_HEIGHT, PHYSICS, DOMAIN } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, PHYSICS, DOMAIN, CHARACTERS } from '../config.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -42,8 +42,16 @@ export default class GameScene extends Phaser.Scene {
 
     init(data) {
         this.p1Key = data.p1 || 'GOJO';
+        this.p1TagKey = data.p1Tag || null;
         this.p2Key = data.p2 || 'SUKUNA';
+        this.p2TagKey = data.p2Tag || null;
         this.mapKey = data.mapKey || null;
+
+        this.p1TagUsed = false;
+        this.p2TagUsed = false;
+
+        this.mahoraga = null;
+        this.npcs = [];
     }
 
     create() {
@@ -809,15 +817,18 @@ export default class GameScene extends Phaser.Scene {
         cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetScrollX, lerpSpeed);
         cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetScrollY, lerpSpeed);
 
-        // ── Sync HTML background to camera ──
+        // ── Sync HTML background to camera (constant scale prevents black borders) ──
         const bgImg = document.getElementById('game-bg-img');
         if (bgImg) {
-            // Scale the background image to match the camera zoom
-            const scaleX = cam.zoom;
-            // Pan the background proportional to camera scroll within the world
-            const panX = -(cam.scrollX / (this.worldWidth - viewW || 1)) * (this.worldWidth * scaleX - GAME_WIDTH);
-            const panY = -(cam.scrollY / (this.worldHeight - viewH || 1)) * 50; // Subtle vertical parallax
-            bgImg.style.transform = `scale(${scaleX * 1.15}) translate(${panX / scaleX}px, ${panY / scaleX}px)`;
+            const bgScale = 1.25; // Always larger than the viewport
+            const maxScrollX = Math.max(1, this.worldWidth - viewW);
+            const maxScrollY = Math.max(1, (PHYSICS.GROUND_Y + 200) - viewH);
+            
+            // Pan background by up to 100px horizontally and 40px vertically
+            const panX = -(cam.scrollX / maxScrollX) * 100;
+            const panY = -(cam.scrollY / maxScrollY) * 40;
+            
+            bgImg.style.transform = `scale(${bgScale}) translate(${panX}px, ${panY}px)`;
             bgImg.style.transformOrigin = 'center center';
         }
     }
@@ -832,6 +843,12 @@ export default class GameScene extends Phaser.Scene {
         
         // Game Over Condition Check — use currentState (not .state)
         if (this.p1.hp <= 0 && !this.p1.isDead) {
+            // Tag team: swap in partner if available
+            if (this.p1TagKey && !this.p1TagUsed) {
+                this.p1TagUsed = true;
+                this.triggerPlayerTag(0);
+                return;
+            }
             this.p1.hp = 0;
             this.p1.isDead = true;
             this.p1.stateMachine.unlock();
@@ -840,6 +857,12 @@ export default class GameScene extends Phaser.Scene {
             return;
         }
         if (this.p2.hp <= 0 && !this.p2.isDead) {
+            // Tag team: swap in partner if available
+            if (this.p2TagKey && !this.p2TagUsed) {
+                this.p2TagUsed = true;
+                this.triggerPlayerTag(1);
+                return;
+            }
             this.p2.hp = 0;
             this.p2.isDead = true;
             this.p2.stateMachine.unlock();
@@ -874,7 +897,7 @@ export default class GameScene extends Phaser.Scene {
             if (!p.isAlive()) return false;
             
             // Collision check
-            const target = p.owner === this.p1 ? this.p2 : (p.owner === this.p2 ? this.p1 : p.owner.target);
+            const target = (p.owner && p.owner.playerIndex === 0) ? this.p2 : this.p1;
             let hitTarget = null;
             
             if (this.physics.overlap(p.getBody(), target.sprite)) {
@@ -934,7 +957,7 @@ export default class GameScene extends Phaser.Scene {
             while (this.sureHitTimer >= 1000 && this.domainActive && ticksThisFrame < 3) {
                 this.sureHitTimer -= 1000;
                 ticksThisFrame++;
-                const target = (this.domainOwner === this.p1) ? this.p2 : this.p1;
+                const target = (this.domainOwner.playerIndex === 0) ? this.p2 : this.p1;
                 if (this.domainOwner.applySureHitTick) {
                     this.domainOwner.applySureHitTick(target);
                 }
@@ -955,7 +978,7 @@ export default class GameScene extends Phaser.Scene {
         // Freeze both beams
         beamA.sprite.body.setVelocityX(0); beamB.sprite.body.setVelocityX(0);
         // Determine which is P1's beam
-        this.clashP1Beam = (beamA.owner === this.p1) ? 'A' : 'B';
+        this.clashP1Beam = (beamA.owner && beamA.owner.playerIndex === 0) ? 'A' : 'B';
         // Create UI
         const cx = GAME_WIDTH / 2; const cy = 80;
         this.clashBg = this.add.graphics().setDepth(100).setScrollFactor(0);
@@ -1018,5 +1041,92 @@ export default class GameScene extends Phaser.Scene {
         if (this.clashIndicator) { this.clashIndicator.destroy(); this.clashIndicator = null; }
         if (this.clashText) { this.clashText.destroy(); this.clashText = null; }
         this.beamClashActive = false;
+    }
+
+    // ════════════════════════════════════════════════════════
+    // TAG TEAM — Swap in partner when primary fighter dies
+    // ════════════════════════════════════════════════════════
+
+    triggerPlayerTag(playerIndex) {
+        const isP1 = (playerIndex === 0);
+        const oldPlayer = isP1 ? this.p1 : this.p2;
+        const partnerKey = isP1 ? this.p1TagKey : this.p2TagKey;
+        const opponent = isP1 ? this.p2 : this.p1;
+
+        // Mark old player as dead
+        oldPlayer.hp = 0;
+        oldPlayer.isDead = true;
+        oldPlayer.stateMachine.unlock();
+        oldPlayer.stateMachine.setState('dead');
+
+        // Visual effects
+        if (this.screenEffects) {
+            this.screenEffects.flash(isP1 ? 0x4488FF : 0xFF4444, 500, 0.5);
+            this.screenEffects.shake(0.03, 500);
+        }
+
+        // Dramatic "TAG IN" text
+        const px = oldPlayer.sprite.x;
+        const py = oldPlayer.sprite.y - 120;
+        const charName = (CHARACTERS[partnerKey] || {}).name || partnerKey;
+        const txt = this.add.text(px, py, `TAG IN: ${charName.toUpperCase()}`, {
+            fontFamily: 'Arial Black, Impact, sans-serif', fontSize: '22px',
+            color: isP1 ? '#4488FF' : '#FF4444',
+            stroke: '#000000', strokeThickness: 5
+        }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
+        this.tweens.add({ targets: txt, y: py - 50, alpha: 0, duration: 2500, onComplete: () => txt.destroy() });
+
+        // Delayed spawn of partner
+        this.time.delayedCall(800, () => {
+            // Destroy old player
+            oldPlayer.destroy();
+
+            // Spawn partner at edge of screen
+            const spawnX = isP1 ? 200 : this.worldWidth - 200;
+            const newPlayer = this.createFighter(partnerKey, spawnX, PHYSICS.GROUND_Y - 50, playerIndex);
+
+            // Link opponent references
+            newPlayer.opponent = opponent;
+            opponent.opponent = newPlayer;
+
+            // Assign to p1/p2
+            if (isP1) {
+                this.p1 = newPlayer;
+                this.p1Key = partnerKey;
+            } else {
+                this.p2 = newPlayer;
+                this.p2Key = partnerKey;
+            }
+
+            // Re-establish hitbox collisions
+            this.physics.add.overlap(this.p1.hitbox, this.p2.sprite, () => {
+                this.p1.onHitOpponent(this.p2);
+            });
+            this.physics.add.overlap(this.p2.hitbox, this.p1.sprite, () => {
+                this.p2.onHitOpponent(this.p1);
+            });
+
+            // Update AI if it exists (re-target the new fighter)
+            if (this.aiManager) {
+                if (isP1) {
+                    this.aiManager.opponent = newPlayer;
+                } else {
+                    this.aiManager.fighter = newPlayer;
+                    this.aiManager.opponent = this.p1;
+                }
+            }
+
+            // Update HUD
+            this.hud.setNames(this.p1.fighterName, this.p2.fighterName);
+            this.hud.setPortraits(this.p1Key, this.p2Key);
+
+            // Entry dash
+            newPlayer.sprite.body.setVelocityX(isP1 ? 600 : -600);
+            newPlayer.stateMachine.lock(400);
+            this.time.delayedCall(400, () => {
+                newPlayer.stateMachine.unlock();
+                newPlayer.stateMachine.setState('idle');
+            });
+        });
     }
 }

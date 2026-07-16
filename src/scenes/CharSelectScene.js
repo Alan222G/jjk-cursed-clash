@@ -90,6 +90,12 @@ export default class CharSelectScene extends Phaser.Scene {
         this.p2Confirmed = false;
         this.hoveredChar = null;
 
+        // ── Tag Team: each player selects primary + partner ──
+        this.p1Primary = null;   // First pick (primary fighter)
+        this.p1Partner = null;   // Second pick (tag partner)
+        this.p2Primary = null;
+        this.p2Partner = null;
+
         // ── Sukuna 20 availability — from admin panel ──
         this.sukuna20Available = window.gameSettings?.sukuna20Unlocked || false;
         this.sukuna20TakenBy = null; // null, 'p1', or 'p2'
@@ -193,13 +199,25 @@ export default class CharSelectScene extends Phaser.Scene {
                         this.p1Row = slotRow;
                         this.p1Col = slotCol;
                         if (clickedKey === 'SUKUNA_20') this.sukuna20TakenBy = 'p1';
-                        this.p1Confirmed = true;
+
+                        if (!this.p1Primary) {
+                            this.p1Primary = clickedKey;
+                        } else if (!this.p1Partner) {
+                            this.p1Partner = clickedKey;
+                            this.p1Confirmed = true;
+                        }
                     } else if (!this.p2Confirmed) {
                         if (clickedKey === 'SUKUNA_20' && this.sukuna20TakenBy) return;
                         this.p2Row = slotRow;
                         this.p2Col = slotCol;
                         if (clickedKey === 'SUKUNA_20') this.sukuna20TakenBy = 'p2';
-                        this.p2Confirmed = true;
+
+                        if (!this.p2Primary) {
+                            this.p2Primary = clickedKey;
+                        } else if (!this.p2Partner) {
+                            this.p2Partner = clickedKey;
+                            this.p2Confirmed = true;
+                        }
                     }
                 });
 
@@ -499,7 +517,15 @@ export default class CharSelectScene extends Phaser.Scene {
                     // Don't confirm
                 } else {
                     if (this.p1Selection === 'SUKUNA_20') this.sukuna20TakenBy = 'p1';
-                    this.p1Confirmed = true;
+
+                    if (!this.p1Primary) {
+                        // First confirm: pick primary fighter
+                        this.p1Primary = this.p1Selection;
+                    } else if (!this.p1Partner) {
+                        // Second confirm: pick tag partner
+                        this.p1Partner = this.p1Selection;
+                        this.p1Confirmed = true;
+                    }
                 }
             }
         }
@@ -530,13 +556,47 @@ export default class CharSelectScene extends Phaser.Scene {
                     // Don't confirm
                 } else {
                     if (this.p2Selection === 'SUKUNA_20') this.sukuna20TakenBy = 'p2';
-                    this.p2Confirmed = true;
+
+                    if (!this.p2Primary) {
+                        // First confirm: pick primary fighter
+                        this.p2Primary = this.p2Selection;
+                    } else if (!this.p2Partner) {
+                        // Second confirm: pick tag partner
+                        this.p2Partner = this.p2Selection;
+                        this.p2Confirmed = true;
+                    }
                 }
             }
         }
 
         // ── Draw Stats Panels ──
         this.drawAllPanels();
+
+        // ── Tag Team Status Labels (dynamic) ──
+        if (this._tagLabels) this._tagLabels.forEach(t => t.destroy());
+        this._tagLabels = [];
+
+        const drawTagLabel = (px, py, primary, partner, confirmed, color) => {
+            let statusText;
+            if (confirmed) {
+                const pName = (CHARACTERS[primary]?.name || primary).split(' ')[0].toUpperCase();
+                const tName = (CHARACTERS[partner]?.name || partner).split(' ')[0].toUpperCase();
+                statusText = `${pName} + ${tName} ✓`;
+            } else if (primary) {
+                const pName = (CHARACTERS[primary]?.name || primary).split(' ')[0].toUpperCase();
+                statusText = `${pName} + ???  ◀ SELECT PARTNER`;
+            } else {
+                statusText = `◀ SELECT PRIMARY`;
+            }
+            const t = this.add.text(px, py, statusText, {
+                fontFamily: 'Arial Black, sans-serif', fontSize: '12px', color: color,
+                stroke: '#000000', strokeThickness: 3
+            }).setOrigin(0.5).setDepth(25);
+            this._tagLabels.push(t);
+        };
+
+        drawTagLabel(160, GAME_HEIGHT - 68, this.p1Primary, this.p1Partner, this.p1Confirmed, '#88BBFF');
+        drawTagLabel(GAME_WIDTH - 160, GAME_HEIGHT - 68, this.p2Primary, this.p2Partner, this.p2Confirmed, '#FF8888');
 
         // ── Draw Grid ──
         this.gridGraphics.clear();
@@ -617,11 +677,13 @@ export default class CharSelectScene extends Phaser.Scene {
         if (this.p1Confirmed && this.p2Confirmed && !this.transitioning) {
             this.transitioning = true;
 
-            // Store final selections BEFORE any transition logic
-            const finalP1 = this.p1Selection;
-            const finalP2 = this.p2Selection;
+            // Store final tag team selections
+            const finalP1 = this.p1Primary;
+            const finalP1Tag = this.p1Partner;
+            const finalP2 = this.p2Primary;
+            const finalP2Tag = this.p2Partner;
 
-            console.log(`[CharSelect] Fight starting: P1="${finalP1}" vs P2="${finalP2}"`);
+            console.log(`[CharSelect] Fight starting: P1="${finalP1}" + "${finalP1Tag}" vs P2="${finalP2}" + "${finalP2Tag}"`);
 
             this.readyText.setText('FIGHT!');
             this.readyText.setAlpha(1);
@@ -638,7 +700,9 @@ export default class CharSelectScene extends Phaser.Scene {
                 this.time.delayedCall(400, () => {
                     this.scene.start('MapSelectScene', {
                         p1: finalP1,
+                        p1Tag: finalP1Tag,
                         p2: finalP2,
+                        p2Tag: finalP2Tag,
                     });
                 });
             });

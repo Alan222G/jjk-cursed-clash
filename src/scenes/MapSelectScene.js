@@ -27,7 +27,9 @@ export default class MapSelectScene extends Phaser.Scene {
 
     init(data) {
         this.p1Selection = data.p1;
+        this.p1TagSelection = data.p1Tag || null;
         this.p2Selection = data.p2;
+        this.p2TagSelection = data.p2Tag || null;
     }
 
     create() {
@@ -318,7 +320,9 @@ export default class MapSelectScene extends Phaser.Scene {
             this.time.delayedCall(400, () => {
                 this.scene.start('GameScene', {
                     p1: this.p1Selection,
+                    p1Tag: this.p1TagSelection,
                     p2: this.p2Selection,
+                    p2Tag: this.p2TagSelection,
                     mapKey: finalMapId
                 });
             });

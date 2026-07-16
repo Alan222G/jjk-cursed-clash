@@ -1182,7 +1182,7 @@ export default class Yuta extends Fighter {
         this.isGojoForm = true;
         this.fighterId = 'gojo'; // Allows generic Gojo mechanics to work on Yuta (like Block = Infinity, Infinity CE drain)
         this.power *= 1.4; // Boost power by 40%
-        this.speed = this._baseSpeed * 1.25; // 25% faster movement
+        this.speed = this.charData.stats.speed * 1.25; // 25% faster movement
 
         // Stop any current attack or casting
         this.isCasting = false;
@@ -1282,17 +1282,17 @@ export default class Yuta extends Fighter {
         this.spawnBlueEffect();
 
         this.isCasting = true;
-        this.stateMachine.lock(99999);
+        this.stateMachine.lock(500);
         this.sprite.body.setVelocityX(0);
 
         try {
             const snd = this.scene.sound.add('sfx_blue', {
-                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 3.0
+                volume: ((window.gameSettings?.sfx ?? 50) / 100) * 1.5
             });
             snd.play();
         } catch(e) {}
 
-        this.scene.time.delayedCall(5000, () => {
+        this.scene.time.delayedCall(500, () => {
             this.blueAuraActive = true;
             this.blueAuraTimer = 4000;
             this.blueTickTimer = 0;
@@ -1372,7 +1372,7 @@ export default class Yuta extends Fighter {
 
         if (this.scene.screenEffects) {
             this.scene.screenEffects.domainFlash(0xAA00FF);
-            this.scene.screenEffects.slowMotion(0.3, 2000);
+            this.scene.screenEffects.slowMotion(0.3, 1000);
         }
 
         const cx = this.sprite.x + 30 * this.facing;
@@ -1383,32 +1383,32 @@ export default class Yuta extends Fighter {
         this.scene.tweens.add({
             targets: redC,
             x: cx + 40, y: cy - 30,
-            duration: 2000,
+            duration: 400,
             ease: 'Sine.easeInOut',
             yoyo: true,
-            repeat: 2,
+            repeat: 1,
         });
         this.scene.tweens.add({
             targets: blueC,
             x: cx - 40, y: cy + 30,
-            duration: 2000,
+            duration: 400,
             ease: 'Sine.easeInOut',
             yoyo: true,
-            repeat: 2,
+            repeat: 1,
         });
 
         const purpleGlow = this.scene.add.circle(cx, cy, 5, 0x9922FF, 0.3).setDepth(14);
         this.scene.tweens.add({
             targets: purpleGlow,
             scaleX: 8, scaleY: 8, alpha: 0.7,
-            duration: 8000,
+            duration: 1000,
             ease: 'Quad.easeIn',
         });
 
         const target = (this === this.scene.p1) ? this.scene.p2 : this.scene.p1;
         if (target && !target.isDead) {
             target.stateMachine.unlock();
-            target.stateMachine.lock(99999);
+            target.stateMachine.lock(1500);
             target.sprite.body.setVelocity(0, 0);
         }
 
@@ -1444,7 +1444,7 @@ export default class Yuta extends Fighter {
             }
 
             this.stateMachine.setState('idle');
-        }, 15000);
+        }, 1500);
     }
 
     spawnBlueEffect() {
