@@ -94,16 +94,21 @@ export default class Fighter {
         // ── Visual Graphics ──
         this.graphics = scene.add.graphics();
         this.graphics.setDepth(10);
+        this.setupMatrixStack(this.graphics);
 
         // ── Energy Aura Graphics ──
         this.auraGraphics = scene.add.graphics();
         this.auraGraphics.setDepth(9);
+        this.setupMatrixStack(this.auraGraphics);
 
         // ── Systems ──
         this.input = new InputManager(scene, playerIndex);
         this.ceSystem = new CursedEnergySystem(this);
         this.comboSystem = new ComboSystem(this);
         this.stateMachine = new StateMachine(this, 'idle');
+
+        // Double jump count setup
+        this.maxJumps = (this.fighterId === 'toji') ? 3 : 2;
 
         // ── Setup State Machine ──
         this.setupStates();
@@ -112,6 +117,192 @@ export default class Fighter {
         // Store ref on sprite for collision callbacks
         this.sprite.fighterRef = this;
         this.hitbox.fighterRef = this;
+    }
+
+    setupMatrixStack(g) {
+        g.matrixStack = [];
+        g.currentMatrix = [1, 0, 0, 1, 0, 0];
+
+        g.save = () => {
+            g.matrixStack.push([...g.currentMatrix]);
+            return g;
+        };
+
+        g.restore = () => {
+            if (g.matrixStack.length > 0) {
+                g.currentMatrix = g.matrixStack.pop();
+            }
+            return g;
+        };
+
+        g.translate = (x, y) => {
+            const m = g.currentMatrix;
+            const tx = m[0] * x + m[2] * y + m[4];
+            const ty = m[1] * x + m[3] * y + m[5];
+            m[4] = tx;
+            m[5] = ty;
+            return g;
+        };
+
+        g.rotate = (angle) => {
+            const m = g.currentMatrix;
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            const a = m[0] * cos + m[2] * sin;
+            const b = m[1] * cos + m[3] * sin;
+            const c = m[0] * -sin + m[2] * cos;
+            const d = m[1] * -sin + m[3] * cos;
+            m[0] = a; m[1] = b; m[2] = c; m[3] = d;
+            return g;
+        };
+
+        const transformPoint = (px, py) => {
+            const m = g.currentMatrix;
+            return {
+                x: m[0] * px + m[2] * py + m[4],
+                y: m[1] * px + m[3] * py + m[5]
+            };
+        };
+
+        const origFillRect = g.fillRect.bind(g);
+        g.fillRect = (x, y, w, h) => {
+            const m = g.currentMatrix;
+            if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
+                return origFillRect(x, y, w, h);
+            }
+            const c1 = transformPoint(x, y);
+            const c2 = transformPoint(x + w, y);
+            const c3 = transformPoint(x + w, y + h);
+            const c4 = transformPoint(x, y + h);
+            g.beginPath();
+            g.moveTo(c1.x, c1.y);
+            g.lineTo(c2.x, c2.y);
+            g.lineTo(c3.x, c3.y);
+            g.lineTo(c4.x, c4.y);
+            g.closePath();
+            g.fillPath();
+            return g;
+        };
+
+        const origStrokeRect = g.strokeRect.bind(g);
+        g.strokeRect = (x, y, w, h) => {
+            const m = g.currentMatrix;
+            if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
+                return origStrokeRect(x, y, w, h);
+            }
+            const c1 = transformPoint(x, y);
+            const c2 = transformPoint(x + w, y);
+            const c3 = transformPoint(x + w, y + h);
+            const c4 = transformPoint(x, y + h);
+            g.beginPath();
+            g.moveTo(c1.x, c1.y);
+            g.lineTo(c2.x, c2.y);
+            g.lineTo(c3.x, c3.y);
+            g.lineTo(c4.x, c4.y);
+            g.closePath();
+            g.strokePath();
+            return g;
+        };
+
+        const origFillCircle = g.fillCircle.bind(g);
+        g.fillCircle = (x, y, r) => {
+            const m = g.currentMatrix;
+            if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
+                return origFillCircle(x, y, r);
+            }
+            const c = transformPoint(x, y);
+            const scale = Math.sqrt(m[0]*m[0] + m[1]*m[1]);
+            origFillCircle(c.x, c.y, r * scale);
+            return g;
+        };
+
+        const origStrokeCircle = g.strokeCircle.bind(g);
+        g.strokeCircle = (x, y, r) => {
+            const m = g.currentMatrix;
+            if (m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0) {
+                return origStrokeCircle(x, y, r);
+            }
+            const c = transformPoint(x, y);
+            const scale = Math.sqrt(m[0]*m[0] + m[1]*m[1]);
+            origStrokeCircle(c.x, c.y, r * scale);
+            return g;
+        };
+
+        const origMoveTo = g.moveTo.bind(g);
+        g.moveTo = (x, y) => {
+            const c = transformPoint(x, y);
+            origMoveTo(c.x, c.y);
+            return g;
+        };
+
+        const origLineTo = g.lineTo.bind(g);
+        g.lineTo = (x, y) => {
+            const c = transformPoint(x, y);
+            origLineTo(c.x, c.y);
+            return g;
+        };
+
+        const origArc = g.arc.bind(g);
+        g.arc = (x, y, radius, startAngle, endAngle, anticlockwise) => {
+            const m = g.currentMatrix;
+            const c = transformPoint(x, y);
+            const rot = Math.atan2(m[1], m[0]);
+            const scale = Math.sqrt(m[0]*m[0] + m[1]*m[1]);
+            origArc(c.x, c.y, radius * scale, startAngle + rot, endAngle + rot, anticlockwise);
+            return g;
+        };
+
+        const origLineBetween = g.lineBetween.bind(g);
+        g.lineBetween = (x1, y1, x2, y2) => {
+            const c1 = transformPoint(x1, y1);
+            const c2 = transformPoint(x2, y2);
+            origLineBetween(c1.x, c1.y, c2.x, c2.y);
+            return g;
+        };
+
+        const origFillEllipse = g.fillEllipse.bind(g);
+        g.fillEllipse = (x, y, w, h) => {
+            const m = g.currentMatrix;
+            const c = transformPoint(x, y);
+            const scale = Math.sqrt(m[0]*m[0] + m[1]*m[1]);
+            origFillEllipse(c.x, c.y, w * scale, h * scale);
+            return g;
+        };
+
+        const origStrokeEllipse = g.strokeEllipse.bind(g);
+        g.strokeEllipse = (x, y, w, h) => {
+            const m = g.currentMatrix;
+            const c = transformPoint(x, y);
+            const scale = Math.sqrt(m[0]*m[0] + m[1]*m[1]);
+            origStrokeEllipse(c.x, c.y, w * scale, h * scale);
+            return g;
+        };
+
+        const origFillTriangle = g.fillTriangle.bind(g);
+        g.fillTriangle = (x1, y1, x2, y2, x3, y3) => {
+            const c1 = transformPoint(x1, y1);
+            const c2 = transformPoint(x2, y2);
+            const c3 = transformPoint(x3, y3);
+            origFillTriangle(c1.x, c1.y, c2.x, c2.y, c3.x, c3.y);
+            return g;
+        };
+
+        const origStrokeTriangle = g.strokeTriangle.bind(g);
+        g.strokeTriangle = (x1, y1, x2, y2, x3, y3) => {
+            const c1 = transformPoint(x1, y1);
+            const c2 = transformPoint(x2, y2);
+            const c3 = transformPoint(x3, y3);
+            origStrokeTriangle(c1.x, c1.y, c2.x, c2.y, c3.x, c3.y);
+            return g;
+        };
+
+        const origClear = g.clear.bind(g);
+        g.clear = () => {
+            g.matrixStack = [];
+            g.currentMatrix = [1, 0, 0, 1, 0, 0];
+            origClear();
+            return g;
+        };
     }
 
     setupStates() {
@@ -411,10 +602,26 @@ export default class Fighter {
         }
 
         // Jump
-        const canJump = this.isOnGround || (this.jumpCount < 2);
+        const canJump = this.isOnGround || (this.jumpCount < this.maxJumps);
         if (this.input.justPressed('UP') && canJump) {
             this.jumpCount++;
             this.isOnGround = false;
+
+            if (this.jumpCount > 1) {
+                // Expanding puff ring visual
+                const ring = this.scene.add.circle(this.sprite.x, this.sprite.y + 40, 10, 0xFFFFFF, 0.4).setDepth(8);
+                this.scene.tweens.add({
+                    targets: ring,
+                    scaleX: 4,
+                    scaleY: 4,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => ring.destroy()
+                });
+                try {
+                    this.scene.sound.play('sfx_slash', { volume: 0.2, pitch: 1.5 });
+                } catch(e) {}
+            }
 
             if (this.aerialComboActive && this._launchTarget) {
                 // Aerial boost: launch attacker to opponent's height
@@ -880,6 +1087,10 @@ export default class Fighter {
             if (isBlackFlash) {
                 this.scene.screenEffects.triggerImpactFrame('black_flash');
                 this.spawnBlackFlashEffect(this.hitbox.x, this.hitbox.y);
+                try {
+                    let rawVol = (window.gameSettings?.sfx ?? 50) / 100;
+                    this.scene.sound.play('black_flash_sfx', { volume: rawVol * 1.5 });
+                } catch (e) {}
             } else if (atk.type === 'HEAVY') {
                 this.scene.screenEffects.shake(0.005, 200);
                 this.scene.screenEffects.hitFreeze(80);
@@ -986,6 +1197,15 @@ export default class Fighter {
         // Re-enable gravity if it was disabled and fighter is back on ground
         if (this.isOnGround && !this.sprite.body.allowGravity) {
             this.sprite.body.setAllowGravity(true);
+        }
+
+        // Gravity scaling for faster fall / heavy fall
+        if (this.sprite.body.allowGravity) {
+            if (this.sprite.body.velocity.y > 50) {
+                this.sprite.body.setGravityY(PHYSICS.GRAVITY * 1.85);
+            } else {
+                this.sprite.body.setGravityY(PHYSICS.GRAVITY);
+            }
         }
 
         // Fall detection

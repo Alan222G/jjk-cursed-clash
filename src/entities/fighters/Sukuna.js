@@ -84,14 +84,39 @@ export default class Sukuna extends Fighter {
             this.drawLine(g, ox + 10, oy - 25, ox, oy - 10, 3, collarColor);
         }
 
-        // ── Arms (exposed skin) ──
-        this.drawRect(g, ox - 14, oy - 11, 6, 22, skinColor, rotArmSup - 5);
-        if (!isFlashing) this.drawLine(g, ox - 17, oy - 11, ox - 11, oy - 11, 1.5, 0x000000);
-        this.drawRect(g, ox - 14, oy + 10, 5, 20, skinColor, rotArmInf);
+        let leftArm1Angle = rotArmSup - 5;
+        let leftArm2Angle = rotArmInf;
+        let leftArm2X = ox - 14;
+        let leftArm2Y = oy + 10;
 
-        this.drawRect(g, ox + 14, oy - 11, 6, 22, skinColor, -rotArmSup + 5);
+        let rightArm1Angle = -rotArmSup + 5;
+        let rightArm2Angle = -rotArmInf;
+        let rightArm2X = ox + 14;
+        let rightArm2Y = oy + 10;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArm1Angle = -85 * swing;
+                rightArm2Angle = -15 * swing;
+                rightArm2X = ox + 14 + 16 * swing;
+                rightArm2Y = oy - 11 + 2 * swing;
+            } else {
+                leftArm1Angle = 85 * swing;
+                leftArm2Angle = 15 * swing;
+                leftArm2X = ox - 14 - 16 * swing;
+                leftArm2Y = oy - 11 + 2 * swing;
+            }
+        }
+
+        // ── Arms (exposed skin) ──
+        this.drawRect(g, ox - 14, oy - 11, 6, 22, skinColor, leftArm1Angle);
+        if (!isFlashing) this.drawLine(g, ox - 17, oy - 11, ox - 11, oy - 11, 1.5, 0x000000);
+        this.drawRect(g, leftArm2X, leftArm2Y, 5, 20, skinColor, leftArm2Angle);
+
+        this.drawRect(g, ox + 14, oy - 11, 6, 22, skinColor, rightArm1Angle);
         if (!isFlashing) this.drawLine(g, ox + 11, oy - 11, ox + 17, oy - 11, 1.5, 0x000000);
-        this.drawRect(g, ox + 14, oy + 10, 5, 20, skinColor, -rotArmInf);
+        this.drawRect(g, rightArm2X, rightArm2Y, 5, 20, skinColor, rightArm2Angle);
 
         // ── Head ──
         this.drawCircle(g, ox, oy - 40, 13, skinColor);

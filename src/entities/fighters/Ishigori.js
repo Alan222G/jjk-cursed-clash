@@ -547,13 +547,11 @@ export default class Ishigori extends Fighter {
 
         // === THE HORIZONTAL CANNON POMPADOUR ===
         // Rectangular cannon extending horizontally in facing direction
-        g.fillStyle(pompadourColor, 1);
-        g.fillRect(hx + 7 * f, hy - 20, 28 * Math.abs(f), 12);
+        this.drawRect(g, hx + 21, hy - 14, 28, 12, pompadourColor);
         // Rounded tip at end of cannon
-        g.fillCircle(hx + 28 * f, hy - 14, 6);
+        this.drawCircle(g, hx + 28, hy - 14, 6, pompadourColor);
         // Golden energy dot at very tip
-        g.fillStyle(goldColor, 1);
-        g.fillCircle(hx + 29 * f, hy - 14, 2.5);
+        this.drawCircle(g, hx + 29, hy - 14, 2.5, goldColor);
 
         // Eyes
         g.fillStyle(0xFFFFFF, 1);

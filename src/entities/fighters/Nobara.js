@@ -386,13 +386,33 @@ export default class Nobara extends Fighter {
         this.drawRect(g, ox, oy + 3, 21, 5, beltColor);
         this.drawRect(g, ox - 7, oy + 9, 5, 8, isFlashing ? 0xFFFFFF : 0x3e2723);
 
+        let leftArmAngle = rotArmSup - 10;
+        let rightArmAngle = -rotArmSup + 10;
+        let leftHandX = ox - 17;
+        let leftHandY = oy + 8;
+        let rightHandX = ox + 17;
+        let rightHandY = oy + 8;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArmAngle = -85 * swing;
+                rightHandX = ox + 17 + 15 * swing;
+                rightHandY = oy - 13;
+            } else {
+                leftArmAngle = 85 * swing;
+                leftHandX = ox - 17 - 15 * swing;
+                leftHandY = oy - 13;
+            }
+        }
+
         // ── Arms (jacket sleeves) ──
-        this.drawRect(g, ox - 13, oy - 13, 7, 28, jacketColor, rotArmSup - 10);
-        this.drawRect(g, ox + 13, oy - 13, 7, 28, jacketColor, -rotArmSup + 10);
+        this.drawRect(g, ox - 13, oy - 13, 7, 28, jacketColor, leftArmAngle);
+        this.drawRect(g, ox + 13, oy - 13, 7, 28, jacketColor, rightArmAngle);
 
         // ── Hands ──
-        this.drawCircle(g, ox - 17, oy + 8, 4, skinColor);
-        this.drawCircle(g, ox + 17, oy + 8, 4, skinColor);
+        this.drawCircle(g, leftHandX, leftHandY, 4, skinColor);
+        this.drawCircle(g, rightHandX, rightHandY, 4, skinColor);
 
         // ── Head ──
         this.drawCircle(g, ox, oy - 42, 12, skinColor);

@@ -68,12 +68,37 @@ export default class Gojo extends Fighter {
         this.drawRect(g, ox, oy - 10, 22, 38, suitColor);
         this.drawRect(g, ox, oy - 32, 10, 12, suitColor);
 
-        // Arms (using the rotation angles)
-        this.drawRect(g, ox - 14, oy - 13, 6, 22, suitColor, rotArmSup - 10);
-        this.drawRect(g, ox - 14 - (rotArmSup * 0.1), oy + 8, 5, 20, suitColor, rotArmInf - 5);
+        let leftArm1Angle = rotArmSup - 10;
+        let leftArm2Angle = rotArmInf - 5;
+        let leftArm2Y = oy + 8;
+        let leftArm2X = ox - 14 - (rotArmSup * 0.1);
 
-        this.drawRect(g, ox + 14, oy - 13, 6, 22, suitColor, -rotArmSup + 10);
-        this.drawRect(g, ox + 14 + (rotArmSup * 0.1), oy + 8, 5, 20, suitColor, -rotArmInf + 5);
+        let rightArm1Angle = -rotArmSup + 10;
+        let rightArm2Angle = -rotArmInf + 5;
+        let rightArm2Y = oy + 8;
+        let rightArm2X = ox + 14 + (rotArmSup * 0.1);
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArm1Angle = -85 * swing;
+                rightArm2Angle = -15 * swing;
+                rightArm2X = ox + 14 + 16 * swing;
+                rightArm2Y = oy - 13 + 2 * swing;
+            } else {
+                leftArm1Angle = 85 * swing;
+                leftArm2Angle = 15 * swing;
+                leftArm2X = ox - 14 - 16 * swing;
+                leftArm2Y = oy - 13 + 2 * swing;
+            }
+        }
+
+        // Arms
+        this.drawRect(g, ox - 14, oy - 13, 6, 22, suitColor, leftArm1Angle);
+        this.drawRect(g, leftArm2X, leftArm2Y, 5, 20, suitColor, leftArm2Angle);
+
+        this.drawRect(g, ox + 14, oy - 13, 6, 22, suitColor, rightArm1Angle);
+        this.drawRect(g, rightArm2X, rightArm2Y, 5, 20, suitColor, rightArm2Angle);
 
         // Head
         this.drawCircle(g, ox, oy - 45, 13, skinColor);

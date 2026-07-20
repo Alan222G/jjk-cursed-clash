@@ -347,14 +347,47 @@ export default class Yuji extends Fighter {
         this.drawRect(g, ox, oy - 31, 12, 10, uniformColor);
         this.drawCircle(g, ox + 4, oy - 30, 2.5, buttonColor);
 
-        // ── Arms (uniform sleeves) ──
-        this.drawRect(g, ox - 15, oy - 12, 8.5, 22, uniformColor, rotArmSup);
-        this.drawRect(g, ox - 15, oy + 8, 7, 18, uniformColor, rotArmInf);
-        this.drawCircle(g, ox - 15, oy + 20, 4.5, skinColor); // Hand
+        let leftArm1Angle = rotArmSup;
+        let leftArm2Angle = rotArmInf;
+        let leftHandX = ox - 15;
+        let leftHandY = oy + 20;
+        let leftArm2X = ox - 15;
+        let leftArm2Y = oy + 8;
 
-        this.drawRect(g, ox + 15, oy - 12, 8.5, 22, uniformColor, -rotArmSup);
-        this.drawRect(g, ox + 15, oy + 8, 7, 18, uniformColor, -rotArmInf);
-        this.drawCircle(g, ox + 15, oy + 20, 4.5, skinColor); // Hand
+        let rightArm1Angle = -rotArmSup;
+        let rightArm2Angle = -rotArmInf;
+        let rightHandX = ox + 15;
+        let rightHandY = oy + 20;
+        let rightArm2X = ox + 15;
+        let rightArm2Y = oy + 8;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArm1Angle = -85 * swing;
+                rightArm2Angle = -15 * swing;
+                rightArm2X = ox + 15 + 16 * swing;
+                rightArm2Y = oy - 12 + 2 * swing;
+                rightHandX = ox + 15 + 32 * swing;
+                rightHandY = oy - 10;
+            } else {
+                leftArm1Angle = 85 * swing;
+                leftArm2Angle = 15 * swing;
+                leftArm2X = ox - 15 - 16 * swing;
+                leftArm2Y = oy - 12 + 2 * swing;
+                leftHandX = ox - 15 - 32 * swing;
+                leftHandY = oy - 10;
+            }
+        }
+
+        // ── Arms (uniform sleeves) ──
+        this.drawRect(g, ox - 15, oy - 12, 8.5, 22, uniformColor, leftArm1Angle);
+        this.drawRect(g, leftArm2X, leftArm2Y, 7, 18, uniformColor, leftArm2Angle);
+        this.drawCircle(g, leftHandX, leftHandY, 4.5, skinColor); // Hand
+
+        this.drawRect(g, ox + 15, oy - 12, 8.5, 22, uniformColor, rightArm1Angle);
+        this.drawRect(g, rightArm2X, rightArm2Y, 7, 18, uniformColor, rightArm2Angle);
+        this.drawCircle(g, rightHandX, rightHandY, 4.5, skinColor); // Hand
 
         // ── Head ──
         const hx = ox;

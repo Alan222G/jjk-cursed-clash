@@ -1300,6 +1300,10 @@ export default class Yuta extends Fighter {
         this.power *= 1.4; // Boost power by 40%
         this.speed = this.charData.stats.speed * 1.25; // 25% faster movement
 
+        // Re-enable physics and gravity
+        this.sprite.body.setAllowGravity(true);
+        this.sprite.body.setVelocity(0, 0);
+
         // Stop any current attack or casting
         this.isCasting = false;
         this.stateMachine.unlock();

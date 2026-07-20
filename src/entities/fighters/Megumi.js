@@ -69,13 +69,33 @@ export default class Megumi extends Fighter {
         this.drawCircle(g, ox + 5, oy - 6, 2, buttonColor);
         this.drawCircle(g, ox + 6, oy + 6, 2, buttonColor);
 
+        let leftArmAngle = rotArmSup + 10;
+        let rightArmAngle = -rotArmSup - 10;
+        let leftHandX = ox - 15;
+        let leftHandY = oy + 12;
+        let rightHandX = ox + 15;
+        let rightHandY = oy + 12;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArmAngle = -85 * swing;
+                rightHandX = ox + 15 + 15 * swing;
+                rightHandY = oy - 3;
+            } else {
+                leftArmAngle = 85 * swing;
+                leftHandX = ox - 15 - 15 * swing;
+                leftHandY = oy - 3;
+            }
+        }
+
         // ── Arms (dark uniform sleeves) ──
-        this.drawRect(g, ox - 13, oy - 3, 7, 24, uniformColor, rotArmSup + 10);
-        this.drawRect(g, ox + 13, oy - 3, 7, 24, uniformColor, -rotArmSup - 10);
+        this.drawRect(g, ox - 13, oy - 3, 7, 24, uniformColor, leftArmAngle);
+        this.drawRect(g, ox + 13, oy - 3, 7, 24, uniformColor, rightArmAngle);
 
         // ── Hands ──
-        this.drawCircle(g, ox - 15, oy + 12, 4, skinColor);
-        this.drawCircle(g, ox + 15, oy + 12, 4, skinColor);
+        this.drawCircle(g, leftHandX, leftHandY, 4, skinColor);
+        this.drawCircle(g, rightHandX, rightHandY, 4, skinColor);
 
         // ── High collar ──
         this.drawRect(g, ox, oy - 18, 12, 8, uniformColor);

@@ -587,8 +587,20 @@ export default class Naoya extends Fighter {
                 g.restore();
             };
 
-            drawNaoyaArm(-1, armAngleL); // Left Arm
-            drawNaoyaArm(1, armAngleR);  // Right Arm
+            let leftArmAngle = armAngleL;
+            let rightArmAngle = armAngleR;
+
+            if (this.attackSwing > 0) {
+                const swing = this.attackSwing;
+                if (f > 0) {
+                    rightArmAngle = -85 * swing;
+                } else {
+                    leftArmAngle = 85 * swing;
+                }
+            }
+
+            drawNaoyaArm(-1, leftArmAngle); // Left Arm
+            drawNaoyaArm(1, rightArmAngle);  // Right Arm
 
             // 4. HEAD
             const hx = ox;

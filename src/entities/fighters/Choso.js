@@ -73,13 +73,33 @@ export default class Choso extends Fighter {
         this.drawRect(g, ox, oy - 18, 18, 11, scarfDark);
         this.drawRect(g, ox, oy - 23, 16, 6, scarfDarker);
 
+        let leftArmAngle = rotArmSup - 15;
+        let rightArmAngle = -rotArmSup + 15;
+        let leftHandX = ox - 20;
+        let leftHandY = oy + 11;
+        let rightHandX = ox + 20;
+        let rightHandY = oy + 11;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArmAngle = -85 * swing;
+                rightHandX = ox + 20 + 15 * swing;
+                rightHandY = oy - 5;
+            } else {
+                leftArmAngle = 85 * swing;
+                leftHandX = ox - 20 - 15 * swing;
+                leftHandY = oy - 5;
+            }
+        }
+
         // ── Arms (wide white sleeves) ──
-        this.drawRect(g, ox - 14, oy - 5, 10, 24, whiteCloth, rotArmSup - 15);
-        this.drawRect(g, ox + 14, oy - 5, 10, 24, whiteCloth, -rotArmSup + 15);
+        this.drawRect(g, ox - 14, oy - 5, 10, 24, whiteCloth, leftArmAngle);
+        this.drawRect(g, ox + 14, oy - 5, 10, 24, whiteCloth, rightArmAngle);
 
         // ── Hands ──
-        this.drawCircle(g, ox - 20, oy + 11, 4.5, skinColor);
-        this.drawCircle(g, ox + 20, oy + 11, 4.5, skinColor);
+        this.drawCircle(g, leftHandX, leftHandY, 4.5, skinColor);
+        this.drawCircle(g, rightHandX, rightHandY, 4.5, skinColor);
 
         // ── Head ──
         this.drawCircle(g, ox, oy - 35, 11, skinColor);
