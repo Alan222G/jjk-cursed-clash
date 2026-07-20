@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Naoya & Hakari (Proporciones Corregidas)</title>
+    <style>
+        :root {
+            --bg-color: #08090c;
+            --card-bg: #12141c;
+            --text-color: #f1f5f9;
+            --accent-naoya: #4f46e5;
+            --accent-hakari: #e11d48;
+            --border-color: #222533;
+            --code-bg: #050608;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #818cf8, #fb7185);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #181a24;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #94a3b8;
+            padding: 12px 24px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-naoya);
+            padding-top: 10px;
+        }
+
+        .tab-btn.active.hakari-tab {
+            border-top-color: var(--accent-hakari);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #11131c 0%, #030406 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #1e1d2b;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 520px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 420px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #a5f3fc;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rediseño Stickman: Proporciones de Combate Perfeccionadas</h1>
+        <p>Brazos de Naoya con longitud natural. Hakari rediseñado con musculatura masiva nivel Aoi Todo y brazos compactos.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-naoya" onclick="switchCharacter('naoya')">Naoya Zen'in</button>
+            <button class="tab-btn" id="btn-hakari" onclick="switchCharacter('hakari')">Kinji Hakari</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-naoya);"></span>
+                    <span id="char-title">Previsualización: Naoya Zen'in</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-naoya">
+                        <h3>Opciones de Naoya</h3>
+                        <div class="control-group">
+                            <label for="color-naoya-pelo">Rubio Sucio:</label>
+                            <input type="color" id="color-naoya-pelo" value="#c3be5a" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-naoya-haori">Haori (Kimono):</label>
+                            <input type="color" id="color-naoya-haori" value="#1c2536" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-hakari">
+                        <h3>Opciones de Hakari</h3>
+                        <div class="control-group">
+                            <label for="color-hakari-pelo">Cabello Wavy:</label>
+                            <input type="color" id="color-hakari-pelo" value="#dda15e" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-hakari-piel">Tono de Piel:</label>
+                            <input type="color" id="color-hakari-piel" value="#c68a4c" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Física</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Contornos Negros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Movimiento Suave:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-naoya">
+                    <div class="code-header">
+                        <h2>Código de Naoya Zen'in (Brazos Corregidos)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-naoya')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-naoya"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-todo">
+                    <div class="code-header">
+                        <h2>Código de Kinji Hakari (Musculatura Pesada)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-hakari')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-hakari"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'naoya';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            naoya: { pelo: '#c3be5a', haori: '#1c2536', hakama: '#d1d5db', piel: '#ffe4e6' },
+            hakari: { pelo: '#dda15e', piel: '#c68a4c', pants: '#222530' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-naoya').classList.toggle('active', char === 'naoya');
+            document.getElementById('btn-hakari').classList.toggle('active', char === 'hakari');
+            if(char === 'hakari') document.getElementById('btn-hakari').classList.add('hakari-tab');
+            else document.getElementById('btn-hakari').classList.remove('hakari-tab');
+            
+            document.getElementById('ctrl-naoya').classList.toggle('hidden', char !== 'naoya');
+            document.getElementById('ctrl-hakari').classList.toggle('hidden', char !== 'hakari');
+            
+            document.getElementById('code-naoya').classList.toggle('hidden', char !== 'naoya');
+            document.getElementById('code-todo').classList.toggle('hidden', char !== 'hakari');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'naoya') {
+                badge.style.backgroundColor = 'var(--accent-naoya)';
+                title.innerText = 'Previsualización: Naoya Zen\'in';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-hakari)';
+                title.innerText = 'Previsualización: Kinji Hakari';
+            }
+        }
+
+        function updateColors() {
+            colors.naoya.pelo = document.getElementById('color-naoya-pelo').value;
+            colors.naoya.haori = document.getElementById('color-naoya-haori').value;
+            colors.hakari.pelo = document.getElementById('color-hakari-pelo').value;
+            colors.hakari.piel = document.getElementById('color-hakari-piel').value;
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.8);' : '';
+
+            const codeNaoya = `// === STICKMAN ALTO: NAOYA ZEN'IN (BRAZOS PROPORCIONALES) ===` + strokeCode + `
+
+// 1. Cabeza y rostro (Rostro visible, flequillo sobre frente)
+dibujarCirculo(cabeza_base, radio: 10, color: "${colors.naoya.piel}");
+// Flequillo rubio lacio en capas (Sin tapar ojos)
+dibujarTriangulo(flequillo_izq, x: -5, y: -4, base: 4, altura: 10, color: "${colors.naoya.pelo}", rotacion: 15);
+dibujarTriangulo(flequillo_der, x: 5, y: -4, base: 4, altura: 10, color: "${colors.naoya.pelo}", rotacion: -15);
+
+// 2. Torso Alto Elegante (Haori con cuello cruzado blanco)
+dibujarRectangulo(cuello_interno_blanco, ancho: 7, alto: 14, color: "#ffffff");
+dibujarRectangulo(haori_pecho, ancho: 18, alto: 34, color: "${colors.naoya.haori}");
+
+// 3. Brazos Largos Proporcionales (Manga holgada + puño extendido)
+dibujarRectangulo(manga_superior, ancho: 11, alto: 24, color: "${colors.naoya.haori}");
+dibujarRectangulo(puno_blanco, ancho: 7.5, alto: 14, color: "#ffffff");
+dibujarCirculo(mano, radio: 4, color: "${colors.naoya.piel}");`;
+
+            const codeHakari = `// === STICKMAN ALTO: KINJI HAKARI (AOI TODO BULK) ===` + strokeCode + `
+
+// 1. Rostro con peinado Pompadour ondulado
+dibujarCirculo(cabeza_base, radio: 10, color: "${colors.hakari.piel}");
+dibujarCirculo(pelo_copete, x: 0, y: -14, radio: 8.5, color: "${colors.hakari.pelo}");
+
+// 2. Torso de Musculatura Pesada (Ancho de 22 para físico de Aoi Todo)
+dibujarRectangulo(torso_tirantes, ancho: 22, alto: 36, color: "#f3f4f6");
+
+// 3. Deltoides (Hombros Gigantes)
+dibujarCirculo(hombro_izq, radio: 6.5, color: "${colors.hakari.piel}");
+dibujarCirculo(hombro_der, radio: 6.5, color: "${colors.hakari.piel}");
+
+// 4. Brazos Cortos y Súper Musculosos (Grosor: 11)
+dibujarRectangulo(biceps_ancho, ancho: 11, alto: 18, color: "${colors.hakari.piel}");
+dibujarRectangulo(antebrazo_ancho, ancho: 9, alto: 16, color: "${colors.hakari.piel}");
+dibujarCirculo(mano_puño, radio: 5, color: "${colors.hakari.piel}");`;
+
+            document.getElementById('code-block-naoya').textContent = codeNaoya;
+            document.getElementById('code-block-hakari').textContent = codeHakari;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.04;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 10;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const breathe = isMoving ? Math.sin(time) * 1.5 : 0;
+
+            if (currentCharacter === 'naoya') {
+                // === NAOYA ZEN'IN REALISTA ===
+                const ox = renderX;
+                const oy = renderY - 15;
+
+                // 1. PIERNAS - Hakama Plisada Ancha
+                const legAngle = isMoving ? Math.sin(time) * 6 : 0;
+                
+                // Pierna Izquierda
+                ctx.save();
+                ctx.translate(ox - 6, oy + 28);
+                ctx.rotate(legAngle * Math.PI / 180);
+                drawRect(0, 22, 12, 46, colors.naoya.hakama);
+                drawLine(-3, 4, -3, 42, 1, '#9ca3af');
+                drawRect(0, 48, 9, 6, '#374151');
+                drawRect(0, 52, 11, 3, '#78716c');
+                ctx.restore();
+
+                // Pierna Derecha
+                ctx.save();
+                ctx.translate(ox + 6, oy + 28);
+                ctx.rotate(-legAngle * Math.PI / 180);
+                drawRect(0, 22, 12, 46, colors.naoya.hakama);
+                drawLine(3, 4, 3, 42, 1, '#9ca3af');
+                drawRect(0, 48, 9, 6, '#374151');
+                drawRect(0, 52, 11, 3, '#78716c');
+                ctx.restore();
+
+                // 2. TORSO ALTO
+                drawRect(ox, oy + 25, 20, 6, '#9ca3af'); // Obi
+                drawRect(ox, oy + 5 + breathe * 0.3, 18, 34, colors.naoya.haori);
+                drawRect(ox, oy - 13 + breathe * 0.3, 6, 10, '#f8fafc');
+                drawLine(ox - 4, oy - 11, ox + 3, oy - 2, 1, '#cbd5e1');
+
+                // 3. BRAZOS NATURALES Y LARGOS (CORREGIDOS)
+                // Ajustados en escala vertical para un look estético y fluido
+                const armAngleL = isMoving ? Math.sin(time) * 12 : 10;
+                const armAngleR = isMoving ? -Math.sin(time) * 12 : -10;
+
+                // Brazo Izquierdo
+                ctx.save();
+                ctx.translate(ox - 9, oy - 10 + breathe * 0.3);
+                ctx.rotate(armAngleL * Math.PI / 180);
+                drawRect(0, 12, 11, 24, colors.naoya.haori); // Manga superior alargada de 18 a 24
+                drawRect(0, 26, 7.5, 14, '#ffffff'); // Puño alargado de 12 a 14
+                drawCircle(0, 35, 4, colors.naoya.piel); // Mano más grande y visible
+                ctx.restore();
+
+                // Brazo Derecho
+                ctx.save();
+                ctx.translate(ox + 9, oy - 10 + breathe * 0.3);
+                ctx.rotate(armAngleR * Math.PI / 180);
+                drawRect(0, 12, 11, 24, colors.naoya.haori);
+                drawRect(0, 26, 7.5, 14, '#ffffff');
+                drawCircle(0, 35, 4, colors.naoya.piel);
+                ctx.restore();
+
+                // 4. CABEZA Y ROSTRO
+                const hx = ox;
+                const hy = oy - 22 + breathe * 0.3;
+
+                drawCircle(hx, hy - 2, 11.5, '#1e293b');
+                drawCircle(hx, hy, 10, colors.naoya.piel);
+
+                drawLine(hx - 5, hy - 2, hx - 1, hy - 1, 1.5, '#000000');
+                drawLine(hx + 1, hy - 1, hx + 5, hy - 2, 1.5, '#000000');
+                drawCircle(hx - 3, hy + 0.5, 1.2, '#1e3a8a');
+                drawCircle(hx + 3, hy + 0.5, 1.2, '#1e3a8a');
+
+                drawLine(hx - 2.5, hy + 5, hx + 2.5, hy + 4.5, 1.5, '#000000');
+
+                drawCircle(hx, hy - 6, 9.5, colors.naoya.pelo);
+
+                drawTriangle(hx - 5, hy - 3, 3.5, 8, colors.naoya.pelo, 15);
+                drawTriangle(hx - 2, hy - 3, 4, 10, colors.naoya.pelo, 5);
+                drawTriangle(hx + 2, hy - 3, 4, 10, colors.naoya.pelo, -5);
+                drawTriangle(hx + 5, hy - 3, 3.5, 8, colors.naoya.pelo, -15);
+
+            } else {
+                // === KINJI HAKARI (AOI TODO BULK - BRAZOS CORTOS Y MUSCULOSOS) ===
+                const ox = renderX;
+                const oy = renderY - 15;
+
+                // 1. PIERNAS ROBUSTAS (Para sostener el torso masivo)
+                const legAngle = isMoving ? Math.sin(time) * 8 : 0;
+
+                // Pierna Izquierda
+                ctx.save();
+                ctx.translate(ox - 6, oy + 24);
+                ctx.rotate(legAngle * Math.PI / 180);
+                drawRect(0, 14, 10, 24, colors.hakari.pants); // Muslo más grueso (ancho 10)
+                drawCircle(0, 25, 5, '#111827');
+                drawRect(0, 36, 8, 22, colors.hakari.pants); // Pantorrilla más gruesa (ancho 8)
+                drawRect(0, 48, 10, 6, '#ffffff'); // Tenis más masivos
+                ctx.restore();
+
+                // Pierna Derecha
+                ctx.save();
+                ctx.translate(ox + 6, oy + 24);
+                ctx.rotate(-legAngle * Math.PI / 180);
+                drawRect(0, 14, 10, 24, colors.hakari.pants);
+                drawCircle(0, 25, 5, '#111827');
+                drawRect(0, 36, 8, 22, colors.hakari.pants);
+                drawRect(0, 48, 10, 6, '#ffffff');
+                ctx.restore();
+
+                // 2. TORSO DE MUSCULATURA PESADA (Físico nivel Todo)
+                // Aumentado a un ancho masivo de 22 para simular espalda/pecho gigante
+                drawRect(ox, oy + 5 + breathe * 0.3, 22, 36, '#f3f4f6'); 
+                
+                // Definición abdominal y pectoral musculoso
+                drawLine(ox - 8, oy - 8 + breathe * 0.3, ox + 8, oy - 8 + breathe * 0.3, 1.5, '#cbd5e1'); // Línea pectoral
+                drawLine(ox - 6, oy + 4 + breathe * 0.3, ox + 6, oy + 4 + breathe * 0.3, 1.2, '#cbd5e1'); // Abdomen alto
+                drawLine(ox, oy - 12 + breathe * 0.3, ox, oy + 18 + breathe * 0.3, 1.2, '#cbd5e1');
+
+                // 3. DELTOIDES GIGANTES (Hombros de físico-culturista)
+                drawCircle(ox - 11, oy - 8 + breathe * 0.3, 6.5, colors.hakari.piel);
+                drawCircle(ox + 11, oy - 8 + breathe * 0.3, 6.5, colors.hakari.piel);
+
+                // 4. BRAZOS COMPACTOS Y ULTRA MUSCULOSOS (CORREGIDOS)
+                // Reducidos en altura y aumentados drásticamente en anchura
+                const armAngleL = isMoving ? Math.sin(time) * 15 : 12;
+                const armAngleR = isMoving ? -Math.sin(time) * 15 : -12;
+
+                // Brazo Izquierdo
+                ctx.save();
+                ctx.translate(ox - 11, oy - 8 + breathe * 0.3);
+                ctx.rotate(armAngleL * Math.PI / 180);
+                drawRect(0, 8, 11, 18, colors.hakari.piel); // Bíceps masivo (Grosor 11, longitud reducida a 18)
+                drawCircle(0, 17, 5, '#78350f'); // Codo robusto
+                drawRect(0, 26, 9, 16, colors.hakari.piel); // Antebrazo grueso (Grosor 9, longitud reducida a 16)
+                drawCircle(0, 36, 5, colors.hakari.piel); // Puño masivo (Radio 5)
+                ctx.restore();
+
+                // Brazo Derecho
+                ctx.save();
+                ctx.translate(ox + 11, oy - 8 + breathe * 0.3);
+                ctx.rotate(armAngleR * Math.PI / 180);
+                drawRect(0, 8, 11, 18, colors.hakari.piel);
+                drawCircle(0, 17, 5, '#78350f');
+                drawRect(0, 26, 9, 16, colors.hakari.piel);
+                drawCircle(0, 36, 5, colors.hakari.piel);
+                ctx.restore();
+
+                // 5. CABEZA Y PEINADO POMPADOUR
+                const hx = ox;
+                const hy = oy - 20 + breathe * 0.3;
+
+                drawCircle(hx, hy, 10, colors.hakari.piel);
+
+                drawLine(hx - 5, hy - 2, hx - 1, hy - 1, 2, '#000000');
+                drawLine(hx + 1, hy - 1, hx + 5, hy - 2, 2, '#000000');
+                drawCircle(hx - 3, hy + 0.5, 1, '#000000');
+                drawCircle(hx + 3, hy + 0.5, 1, '#000000');
+
+                drawLine(hx - 3.5, hy + 3.8, hx + 3.5, hy + 3.8, 1.5, '#451a03');
+                drawLine(hx - 3, hy + 6, hx + 3, hy + 5.5, 1.8, '#000000');
+
+                drawCircle(hx - 5, hy - 9, 6, colors.hakari.pelo);
+                drawCircle(hx + 5, hy - 9, 6, colors.hakari.pelo);
+                drawCircle(hx, hy - 13, 8.5, colors.hakari.pelo);
+                drawCircle(hx - 2, hy - 10, 5, colors.hakari.pelo);
+                drawCircle(hx + 2, hy - 10, 5, colors.hakari.pelo);
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const isNaoya = (elementId === 'code-block-naoya');
+                const btn = document.querySelector(`#${isNaoya ? 'code-naoya' : 'code-todo'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

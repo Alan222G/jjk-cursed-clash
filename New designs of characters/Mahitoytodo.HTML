@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Mahito (Trenzas) & Aoi Todo (Musculado & Celeste)</title>
+    <style>
+        :root {
+            --bg-color: #08090c;
+            --card-bg: #12141c;
+            --text-color: #f1f5f9;
+            --accent-mahito: #38bdf8;
+            --accent-todo: #06b6d4;
+            --border-color: #222533;
+            --code-bg: #050608;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #38bdf8, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #181a24;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #94a3b8;
+            padding: 12px 24px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-mahito);
+            padding-top: 10px;
+        }
+
+        .tab-btn.active.todo-tab {
+            border-top-color: var(--accent-todo);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #13121f 0%, #030306 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #1e1d2b;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 480px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 380px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #a5f3fc;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Stickman Showcase: Mahito (Trenzas) & Aoi Todo (Musculado & Celeste)</h1>
+        <p>Ajuste de fidelidad visual: Todo es de tez blanca con musculatura ensanchada y ráfagas Boogie Woogie en cian celeste. Mahito cuenta con trenzas segmentadas.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-mahito" onclick="switchCharacter('mahito')">Mahito (Trenzas)</button>
+            <button class="tab-btn" id="btn-todo" onclick="switchCharacter('todo')">Aoi Todo (Boogie Celeste)</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-mahito);"></span>
+                    <span id="char-title">Previsualización: Mahito</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-mahito">
+                        <h3>Opciones de Mahito</h3>
+                        <div class="control-group">
+                            <label for="color-mahito-pelo">Color de Pelo:</label>
+                            <input type="color" id="color-mahito-pelo" value="#7dd3fc" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-mahito-ropa">Color de Túnica:</label>
+                            <input type="color" id="color-mahito-ropa" value="#273142" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-todo">
+                        <h3>Opciones de Todo</h3>
+                        <div class="control-group">
+                            <label for="color-todo-piel">Tono de Piel:</label>
+                            <input type="color" id="color-todo-piel" value="#ffd3ba" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-todo-pants">Pantalón de Combate:</label>
+                            <input type="color" id="color-todo-pants" value="#16171d" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Configuración</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Contornos Negros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Activar Movimiento:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-mahito">
+                    <div class="code-header">
+                        <h2>Código de Mahito</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-mahito')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-mahito"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-todo">
+                    <div class="code-header">
+                        <h2>Código de Aoi Todo</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-todo')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-todo"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'mahito';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            mahito: { pelo: '#7dd3fc', ropa: '#273142', piel: '#d1eae2' },
+            todo: { piel: '#ffd3ba', pants: '#16171d' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-mahito').classList.toggle('active', char === 'mahito');
+            document.getElementById('btn-todo').classList.toggle('active', char === 'todo');
+            if(char === 'todo') document.getElementById('btn-todo').classList.add('todo-tab');
+            else document.getElementById('btn-todo').classList.remove('todo-tab');
+            
+            document.getElementById('ctrl-mahito').classList.toggle('hidden', char !== 'mahito');
+            document.getElementById('ctrl-todo').classList.toggle('hidden', char !== 'todo');
+            
+            document.getElementById('code-mahito').classList.toggle('hidden', char !== 'mahito');
+            document.getElementById('code-todo').classList.toggle('hidden', char !== 'todo');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'mahito') {
+                badge.style.backgroundColor = 'var(--accent-mahito)';
+                title.innerText = 'Previsualización: Mahito';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-todo)';
+                title.innerText = 'Previsualización: Aoi Todo';
+            }
+        }
+
+        function updateColors() {
+            colors.mahito.pelo = document.getElementById('color-mahito-pelo').value;
+            colors.mahito.ropa = document.getElementById('color-mahito-ropa').value;
+            colors.todo.piel = document.getElementById('color-todo-piel').value;
+            colors.todo.pants = document.getElementById('color-todo-pants').value;
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.5);' : '';
+
+            const codeMahito = `// === DISEÑO: MAHITO (TRENZAS LARGAS SEGMENTADAS) ===` + strokeCode + `
+
+// Capa 1: Túnica / Ropa de parches oscura
+dibujarRectangulo(tunica_torso, ancho: 26, alto: 38, color: "${colors.mahito.ropa}");
+
+// Capa 2: Brazos cosidos por partes (Izquierdo y Derecho)
+dibujarRectangulo(brazo_izq_seccion1, ancho: 7, alto: 16, color: "${colors.mahito.piel}");
+dibujarCirculo(articulacion_cosida, radio: 4, color: "#111827");
+dibujarRectangulo(brazo_izq_seccion2, ancho: 6, alto: 16, color: "#9ca3af");
+
+// === ROSTRO COSIDO Y CABELLO EN TRENZAS ===
+dibujarCirculo(cabeza_piel, radio: 12, color: "${colors.mahito.piel}");
+dibujarLinea(costura_cara, x1: -12, y1: 1, x2: 12, y2: 1, grosor: 1.5, color: "#1e293b");
+
+// Trenzas caídas en los hombros (Segmentos encadenados)
+dibujarCirculo(trenza_izq_seg1, x: -10, y: 5, radio: 4, color: "${colors.mahito.pelo}");
+dibujarCirculo(trenza_izq_seg2, x: -11, y: 11, radio: 3.5, color: "${colors.mahito.pelo}");
+dibujarTriangulo(trenza_izq_punta, x: -12, y: 18, base: 5, altura: 8, color: "${colors.mahito.pelo}");
+
+dibujarCirculo(trenza_der_seg1, x: 10, y: 5, radio: 4, color: "${colors.mahito.pelo}");
+dibujarCirculo(trenza_der_seg2, x: 11, y: 11, radio: 3.5, color: "${colors.mahito.pelo}");
+dibujarTriangulo(trenza_der_punta, x: 12, y: 18, base: 5, altura: 8, color: "${colors.mahito.pelo}");`;
+
+            const codeTodo = `// === DISEÑO: AOI TODO (BOXER MUSCULADO & CELESTE) ===` + strokeCode + `
+
+// Capa 1: Físico Blanco Enorme (Torso Ensanchado y Hombros/Trapecios)
+dibujarCirculo(trapecio_izq, x: -13, y: -20, radio: 6, color: "${colors.todo.piel}");
+dibujarCirculo(trapecio_der, x: 13, y: -20, radio: 6, color: "${colors.todo.piel}");
+dibujarRectangulo(pecho_musculoso_ancho, ancho: 34, alto: 24, color: "${colors.todo.piel}");
+dibujarRectangulo(abs_abdominales_ancho, ancho: 28, alto: 20, color: "${colors.todo.piel}");
+
+// Capa 2: Extremidades Superiores Robustas
+dibujarRectangulo(biceps_izq, ancho: 11, alto: 24, color: "${colors.todo.piel}");
+dibujarRectangulo(antebrazo_izq, ancho: 9, alto: 20, color: "${colors.todo.piel}");
+
+// Capa 3: Energía Maldita Celeste (Boogie Woogie)
+// Activación en colisión de aplauso
+dibujarCirculo(aura_celeste_flash, radio: 13, color: "#38bdf8");
+dibujarCirculo(onda_expansion_cian, radio: 26, color: "#06b6d4");`;
+
+            document.getElementById('code-block-kuro' ? 'code-block-mahito' : 'code-block-todo').textContent = codeMahito;
+            document.getElementById('code-block-todo').textContent = codeTodo;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.05;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 25;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const floatOffset = isMoving ? Math.sin(time * 1.5) * 4 : 0;
+
+            if (currentCharacter === 'mahito') {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Capa 0: Almas orbitando (Efecto)
+                if (isMoving) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.3;
+                    const soulX1 = ox + Math.sin(time * 2) * 35;
+                    const soulY1 = oy - 10 + Math.cos(time * 2) * 15;
+                    const soulX2 = ox - Math.sin(time * 2) * 35;
+                    const soulY2 = oy - 10 - Math.cos(time * 2) * 15;
+
+                    drawCircle(soulX1, soulY1, 6, '#38bdf8');
+                    drawTriangle(soulX1, soulY1 + 5, 4, 10, '#38bdf8', 45);
+                    drawCircle(soulX2, soulY2, 7, '#06b6d4');
+                    drawTriangle(soulX2, soulY2 - 5, 5, 12, '#06b6d4', -45);
+                    ctx.restore();
+                }
+
+                // Capa 1: Piernas de la Túnica
+                const legSwing = isMoving ? Math.sin(time * 1.5) * 6 : 0;
+                drawRect(ox - 6, oy + 36, 9, 24, colors.mahito.ropa, legSwing);
+                drawRect(ox + 6, oy + 36, 9, 24, colors.mahito.ropa, -legSwing);
+                drawRect(ox - 6, oy + 48, 7, 6, colors.mahito.piel, legSwing);
+                drawRect(ox + 6, oy + 48, 7, 6, colors.mahito.piel, -legSwing);
+
+                // Capa 2: Torso con Costuras Cruzadas
+                drawRect(ox, oy, 26, 38, colors.mahito.ropa);
+                drawLine(ox - 8, oy - 10, ox + 8, oy + 6, 1, '#64748b');
+                drawLine(ox + 8, oy - 10, ox - 8, oy + 6, 1, '#64748b');
+
+                // Capa 3: Brazos Cosidos (Secciones de parches)
+                const armSwingL = isMoving ? Math.sin(time * 1.5) * 12 : 20;
+                const armSwingR = isMoving ? -Math.sin(time * 1.5) * 12 : -20;
+
+                // Brazo Izquierdo (Múltiples Secciones Cosidas)
+                ctx.save();
+                ctx.translate(ox - 15, oy - 12);
+                ctx.rotate(armSwingL * Math.PI / 180);
+                drawRect(0, 8, 7, 16, colors.mahito.piel); 
+                drawCircle(0, 16, 4, '#111827'); 
+                drawRect(0, 24, 5.5, 14, '#94a3b8'); 
+                drawCircle(0, 31, 4, colors.mahito.piel); 
+                ctx.restore();
+
+                // Brazo Derecho
+                ctx.save();
+                ctx.translate(ox + 15, oy - 12);
+                ctx.rotate(armSwingR * Math.PI / 180);
+                drawRect(0, 8, 7, 16, '#94a3b8'); 
+                drawCircle(0, 16, 4, '#111827'); 
+                drawRect(0, 24, 5.5, 14, colors.mahito.piel); 
+                drawCircle(0, 31, 4, colors.mahito.piel); 
+                ctx.restore();
+
+                // Capa 4: CABEZA Y ROSTRO COSIDO
+                const hx = ox;
+                const hy = oy - 32;
+
+                // Base pelo oscuro
+                drawCircle(hx, hy - 1, 14, '#0f172a');
+
+                // Rostro Piel
+                drawCircle(hx, hy, 12, colors.mahito.piel);
+
+                // Costura Transversal del Rostro
+                drawLine(hx - 12, hy + 1, hx + 12, hy + 1, 1.5, '#1e293b');
+                drawLine(hx - 7, hy - 1.5, hx - 7, hy + 3.5, 1, '#000000');
+                drawLine(hx - 2, hy - 1, hx - 2, hy + 3, 1, '#000000');
+                drawLine(hx + 3, hy - 1.5, hx + 3, hy + 3.5, 1, '#000000');
+                drawLine(hx + 8, hy - 2, hx + 8, hy + 3, 1, '#000000');
+
+                // Ojos locos (Heterocromía)
+                drawCircle(hx - 4.5, hy - 2, 2.2, '#f8fafc'); 
+                drawCircle(hx + 4.5, hy - 2, 2.2, '#f8fafc'); 
+                drawCircle(hx - 4.2, hy - 2, 1, '#64748b'); 
+                drawCircle(hx + 4.2, hy - 2, 1, '#eab308'); 
+
+                // Pestañas desquiciadas
+                drawLine(hx - 7, hy - 4, hx - 2, hy - 3.5, 1.5, '#000000');
+                drawLine(hx + 7, hy - 4, hx + 2, hy - 3.5, 1.5, '#000000');
+
+                // Sonrisa sádica
+                ctx.beginPath();
+                ctx.arc(hx, hy + 4, 4, 0, Math.PI);
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#000000';
+                ctx.stroke();
+
+                // Flequillos locos sobre su frente
+                drawTriangle(hx - 5, hy - 8, 4, 12, colors.mahito.pelo, 15);
+                drawTriangle(hx, hy - 9, 5, 15, colors.mahito.pelo, 0);
+                drawTriangle(hx + 5, hy - 8, 4, 12, colors.mahito.pelo, -15);
+
+                // === NUEVAS TRENZAS SEGMENTADAS DE MAHITO ===
+                // Trenza caída izquierda
+                drawCircle(hx - 10, hy + 5, 4, colors.mahito.pelo);
+                drawCircle(hx - 11, hy + 11, 3.5, colors.mahito.pelo);
+                drawTriangle(hx - 12, hy + 18, 5, 8, colors.mahito.pelo, 15);
+
+                // Trenza caída derecha
+                drawCircle(hx + 10, hy + 5, 4, colors.mahito.pelo);
+                drawCircle(hx + 11, hy + 11, 3.5, colors.mahito.pelo);
+                drawTriangle(hx + 12, hy + 18, 5, 8, colors.mahito.pelo, -15);
+
+            } else {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Capa 1: Piernas con Pantalón Negro de Combate (Robustas)
+                const legSwing = isMoving ? Math.sin(time * 1.5) * 8 : 0;
+                
+                // Pierna Izquierda
+                drawRect(ox - 8, oy + 38, 14, 32, colors.todo.pants, legSwing);
+                drawCircle(ox - 8, oy + 53, 6.5, '#0a0a0d');
+                drawRect(ox - 8, oy + 65, 12, 20, colors.todo.pants, legSwing * 0.5);
+                drawRect(ox - 8, oy + 76, 14, 5, colors.todo.piel); 
+
+                // Pierna Derecha
+                drawRect(ox + 8, oy + 38, 14, 32, colors.todo.pants, -legSwing);
+                drawCircle(ox + 8, oy + 53, 6.5, '#0a0a0d');
+                drawRect(ox + 8, oy + 65, 12, 20, colors.todo.pants, -legSwing * 0.5);
+                drawRect(ox + 8, oy + 76, 14, 5, colors.todo.piel);
+
+                // === FISICO IMPONENTE ULTRA MUSCULOSO (SÚPER TODO BLANCO/CLARO) ===
+                // Músculos de los Hombros / Trapecios (Redondeados e inflamados tras la cabeza)
+                drawCircle(ox - 13, oy - 20, 6, colors.todo.piel);
+                drawCircle(ox + 13, oy - 20, 6, colors.todo.piel);
+
+                // Torso Ensanchado (Ajustado a proporciones masivas)
+                drawRect(ox, oy - 12, 34, 24, colors.todo.piel); 
+                drawRect(ox, oy + 8, 28, 20, colors.todo.piel);  
+                
+                // Líneas de sombras y abdominales sumamente definidos
+                drawLine(ox - 1, oy - 12, ox - 1, oy + 15, 1, '#ca8a04'); 
+                drawLine(ox - 10, oy - 2, ox + 10, oy - 2, 1, '#ca8a04');  // Pecho bajo
+                drawLine(ox - 8, oy + 4, ox + 8, oy + 4, 1, '#ca8a04');   // Abs superior
+                drawLine(ox - 6, oy + 10, ox + 6, oy + 10, 1, '#ca8a04');  // Abs medio
+
+                // Capa 3: Brazos Gruesos Clapping (Boogie Woogie!)
+                const clapCycle = isMoving ? Math.sin(time * 3) : -0.5; 
+                const isClapping = isMoving && (Math.abs(clapCycle) > 0.85);
+
+                // Brazo Izquierdo Ensanchado (bíceps de 11, antebrazo de 9)
+                ctx.save();
+                ctx.translate(ox - 18, oy - 14);
+                const armRotL = isClapping ? 52 : (-20 + Math.sin(time * 1.5) * 10);
+                ctx.rotate(armRotL * Math.PI / 180);
+                drawRect(0, 12, 11, 24, colors.todo.piel); 
+                drawCircle(0, 23, 6, '#ca8a04'); 
+                drawRect(0, 32, 9, 20, colors.todo.piel); 
+                drawCircle(0, 41, 6, colors.todo.piel); 
+                ctx.restore();
+
+                // Brazo Derecho Ensanchado
+                ctx.save();
+                ctx.translate(ox + 18, oy - 14);
+                const armRotR = isClapping ? -52 : (20 - Math.sin(time * 1.5) * 10);
+                ctx.rotate(armRotR * Math.PI / 180);
+                drawRect(0, 12, 11, 24, colors.todo.piel); 
+                drawCircle(0, 23, 6, '#ca8a04'); 
+                drawRect(0, 32, 9, 20, colors.todo.piel); 
+                drawCircle(0, 41, 6, colors.todo.piel); 
+                ctx.restore();
+
+                // === NUEVA ENERGÍA CELESTE / CIAN (Boogie Woogie) ===
+                if (isClapping) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.85;
+                    // Chispas y ráfagas celestes
+                    drawCircle(ox, oy + 14, 13 + Math.sin(time * 15) * 5, '#38bdf8');
+                    ctx.globalAlpha = 0.35;
+                    drawCircle(ox, oy + 14, 26, '#06b6d4');
+                    ctx.restore();
+                }
+
+                // Capa 4: CABEZA DE TODO
+                const hx = ox;
+                const hy = oy - 34;
+
+                drawCircle(hx, hy, 14, '#111827');
+                drawCircle(hx, hy + 1, 12.5, colors.todo.piel);
+
+                // Moño Samurai (Top-knot)
+                drawCircle(hx, hy - 14, 4.5, '#111827');
+                drawTriangle(hx, hy - 17, 8, 10, '#111827', 180);
+
+                // Gran Cicatriz del Ojo Izquierdo
+                drawLine(hx + 5, hy - 9, hx + 3.8, hy + 7, 1.8, '#7f1d1d');
+                drawLine(hx + 4.6, hy - 4, hx + 4.2, hy + 2, 0.8, '#f87171');
+
+                // Ojos decididos
+                drawLine(hx - 7, hy - 4, hx - 2, hy - 3, 2, '#000000'); 
+                drawLine(hx + 2, hy - 3.2, hx + 7, hy - 3.8, 2, '#000000'); 
+                
+                drawCircle(hx - 4.5, hy - 1, 1.8, '#ffffff'); 
+                drawCircle(hx + 4.5, hy - 1, 1.8, '#ffffff'); 
+                drawCircle(hx - 4.5, hy - 1, 1, '#000000'); 
+                drawCircle(hx + 4.5, hy - 1, 1, '#000000');
+
+                // Boca / Sonrisa retadora
+                drawLine(hx - 4, hy + 5, hx + 4, hy + 4, 2, '#000000');
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const isMahito = (elementId === 'code-block-mahito');
+                const btn = document.querySelector(`#${isMahito ? 'code-mahito' : 'code-todo'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

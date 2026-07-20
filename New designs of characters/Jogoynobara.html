@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Personajes - JJS Style</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #06070d;
+            color: #94a3b8;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Pestañas de Selección de Personajes */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background-color: #111322;
+            color: #94a3b8;
+            border: 1px solid #1e2235;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #f1f5f9;
+            background-color: #171a2e;
+        }
+
+        .tab-btn.active {
+            background-color: #1b1e36;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        /* Layout Grid Principal */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Paneles */
+        .panel {
+            background-color: #0c0e17;
+            border: 1px solid #1a1d30;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .panel-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #5865f2;
+            border-radius: 50%;
+        }
+
+        /* Contenedor del Lienzo */
+        .canvas-wrapper {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Ajustes de Configuración (Opciones y Estética) */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .settings-box {
+            background-color: #090a10;
+            border: 1px dashed #1e2237;
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .settings-box-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+            border-bottom: 1px dotted #1e2237;
+            padding-bottom: 6px;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Controles Estilizados */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 18px;
+            border-radius: 3px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #2e3456;
+            border-radius: 3px;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #3b82f6;
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Editor de Código de la Derecha */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .code-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .copy-btn {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .copy-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .code-container {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            padding: 16px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 480px;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #a7f3d0; /* Tono verdoso de código */
+            white-space: pre-wrap;
+        }
+
+        .comment { color: #4b5563; }
+        .keyword { color: #f472b6; }
+        .string { color: #fbbf24; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Selector de Pestañas Principal -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-nobara" onclick="switchCharacter('nobara')">Nobara Kugisaki</button>
+            <button class="tab-btn" id="tab-jogo" onclick="switchCharacter('jogo')">Jogo</button>
+        </div>
+
+        <div class="workspace">
+            <!-- PANEL IZQUIERDO: PREVISUALIZACIÓN Y CONTROLES -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span class="panel-dot"></span>
+                    <span id="preview-header-text">Previsualización: Nobara Kugisaki</span>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="editorCanvas" width="560" height="360"></canvas>
+                </div>
+
+                <!-- Configuración dinámica de opciones -->
+                <div class="settings-grid">
+                    <!-- Opciones de Personaje (Cambian dinámicamente) -->
+                    <div class="settings-box">
+                        <div class="settings-box-title" id="character-options-title">Opciones de Nobara</div>
+                        <div id="dynamic-options-container">
+                            <!-- Inyectado mediante JS -->
+                        </div>
+                    </div>
+
+                    <!-- Estética Global -->
+                    <div class="settings-box">
+                        <div class="settings-box-title">Estética</div>
+                        <div class="option-row">
+                            <span>Contornos Claros:</span>
+                            <input type="checkbox" id="opt-contornos" checked onchange="draw()">
+                        </div>
+                        <div class="option-row">
+                            <span>Postura (Respiración):</span>
+                            <input type="checkbox" id="opt-respiracion" checked onchange="toggleBreathing()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DERECHO: DETALLES DE CÓDIGO VECTORIAL -->
+            <div class="panel">
+                <div class="code-header">
+                    <span class="code-title" id="code-box-title">Código de Nobara Kugisaki</span>
+                    <button class="copy-btn" onclick="copyCode()">Copiar Código</button>
+                </div>
+                <div class="code-container">
+                    <pre id="code-display"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentCharacter = 'nobara';
+        let animationFrameId = null;
+        let breatheAngle = 0;
+
+        // Variables de estado de opciones dinámicas
+        let config = {
+            nobara: {
+                colorChaqueta: '#1b263b',
+                colorEnergia: '#00d2ff',
+                mostrarClavo: true
+            },
+            jogo: {
+                colorHaori: '#cbd924', // Verde-limón preciso de Jogo
+                colorLava: '#e74c3c',
+                brilloActivo: true
+            }
+        };
+
+        // --- RENDERIZADO DINÁMICO DE OPCIONES EN EL PANEL ---
+        function renderOptionsUI() {
+            const container = document.getElementById('dynamic-options-container');
+            const title = document.getElementById('character-options-title');
+
+            if (currentCharacter === 'nobara') {
+                title.textContent = "Opciones de Nobara";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Chaqueta de Colegio:</span>
+                        <input type="color" value="${config.nobara.colorChaqueta}" oninput="config.nobara.colorChaqueta = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Energía Celeste:</span>
+                        <input type="color" value="${config.nobara.colorEnergia}" oninput="config.nobara.colorEnergia = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Clavo Volador:</span>
+                        <input type="checkbox" ${config.nobara.mostrarClavo ? 'checked' : ''} onchange="config.nobara.mostrarClavo = this.checked; draw();">
+                    </div>
+                `;
+            } else {
+                title.textContent = "Opciones de Jogo";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Haori Verde-Limón:</span>
+                        <input type="color" value="${config.jogo.colorHaori}" oninput="config.jogo.colorHaori = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Lava del Cráter:</span>
+                        <input type="color" value="${config.jogo.colorLava}" oninput="config.jogo.colorLava = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Aura de Fuego:</span>
+                        <input type="checkbox" ${config.jogo.brilloActivo ? 'checked' : ''} onchange="config.jogo.brilloActivo = this.checked; draw();">
+                    </div>
+                `;
+            }
+        }
+
+        // --- SISTEMA DE DIBUJO GEOMÉTRICO ---
+        function getStrokeParams() {
+            const contornosClaros = document.getElementById('opt-contornos').checked;
+            return {
+                color: contornosClaros ? '#1e293b' : '#000000',
+                width: contornosClaros ? 2.2 : 3.5
+            };
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.strokeRect(-w/2, -h/2, w, h);
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            const stroke = getStrokeParams();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, -height/2);
+            ctx.lineTo(-base/2, height/2);
+            ctx.lineTo(base/2, height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawTrapezoid(x, y, topW, bottomW, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(-topW / 2, -h / 2);
+            ctx.lineTo(topW / 2, -h / 2);
+            ctx.lineTo(bottomW / 2, h / 2);
+            ctx.lineTo(-bottomW / 2, h / 2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // --- PROCESO DE DIBUJO ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 15;
+
+            const respiracionActiva = document.getElementById('opt-respiracion').checked;
+            // Cálculo suave de respiración
+            const bob = respiracionActiva ? Math.sin(breatheAngle) * 2.2 : 0;
+            const scaleY = respiracionActiva ? 1 + Math.sin(breatheAngle) * 0.012 : 1;
+
+            if (currentCharacter === 'nobara') {
+                // ==========================================
+                // NOBARA KUGISAKI (ZOOM ALTO Y DETALLADO)
+                // ==========================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.9, 1.9); // ¡Acercamiento masivo!
+
+                // --- 1. PIERNAS (Fijas en el suelo, sin bob) ---
+                drawRect(-12, 45, 7, 45, '#111111'); // Pierna Izq
+                drawRect(-12, 68, 10, 6, '#5c3a21'); // Zapato Izq
+                drawRect(12, 45, 7, 45, '#111111');  // Pierna Der
+                drawRect(12, 68, 10, 6, '#5c3a21');  // Zapato Der
+
+                // --- 2. PARTE SUPERIOR (Afectada por Bob / Respiración) ---
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Falda Plisada
+                drawTrapezoid(0, 18, 18, 30, 22, config.nobara.colorChaqueta);
+                drawLine(-7, 8, -10, 28, 1.8, '#0d131f');
+                drawLine(0, 8, 0, 28, 1.8, '#0d131f');
+                drawLine(7, 8, 10, 28, 1.8, '#0d131f');
+
+                // Torso / Chaqueta de Colegio
+                drawTrapezoid(0, -10, 15, 19, 32, config.nobara.colorChaqueta);
+                drawTriangle(0, -22, 7, 7, '#ffffff'); // Cuello blanco de la camisa
+                drawCircle(0, -14, 2, '#f1c40f'); // Botón 1
+                drawCircle(0, -6, 2, '#f1c40f');  // Botón 2
+
+                // Cinturón Café con Bolsita
+                drawRect(0, 7, 21, 5, '#5c3a21');
+                drawRect(-7, 13, 5, 8, '#3e2723');
+
+                // Brazo Izquierdo con Martillo de Metal
+                ctx.save();
+                ctx.translate(-10, -22);
+                ctx.rotate(-30 * Math.PI / 180);
+                drawRect(0, 14, 7, 28, config.nobara.colorChaqueta); // Manga
+                drawCircle(0, 28, 4, '#fcd0a1'); // Mano
+
+                // Martillo con Brillo Estilizado
+                ctx.save();
+                ctx.translate(0, 28);
+                ctx.rotate(-40 * Math.PI / 180);
+                drawLine(0, 8, 0, -22, 3, '#5c3a21'); // Mango
+                drawRect(0, -24, 14, 18, '#7f8c8d'); // Mazo
+                drawLine(-4, -29, 4, -19, 1.5, '#ffffff'); // Brillo en diagonal
+                ctx.restore();
+                ctx.restore();
+
+                // Brazo Derecho en ángulo de ataque
+                ctx.save();
+                ctx.translate(10, -22);
+                ctx.rotate(45 * Math.PI / 180);
+                drawRect(0, 14, 7, 28, config.nobara.colorChaqueta);
+                drawCircle(0, 28, 4, '#fcd0a1');
+                ctx.restore();
+
+                // Cabeza y Cabello Bob
+                drawCircle(0, -38, 12, '#fcd0a1'); // Piel
+                // Rostro (Ojos enojados anime)
+                drawLine(-5, -37, -1, -37, 2, '#3e2723');
+                drawLine(1, -37, 5, -37, 2, '#3e2723');
+                drawLine(-2, -32, 2, -32, 1.5, '#000000'); // Boca
+
+                // Cabello Bob Naranja
+                drawCircle(0, -43, 12, '#d35400'); // Corona
+                drawTriangle(-7, -39, 4.5, 11, '#d35400', 15); // Mechón Izq
+                drawTriangle(0, -39, 5.5, 13, '#d35400', 0);   // Mechón Centro
+                drawTriangle(7, -39, 4.5, 11, '#d35400', -15); // Mechón Der
+
+                ctx.restore(); // Fin Bob superior
+
+                // Clavo Volador (Afectado por Brillo Mágico Celeste de Energía Maldita)
+                if (config.nobara.mostrarClavo) {
+                    ctx.save();
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = config.nobara.colorEnergia;
+                    drawTriangle(45, 10, 3.5, 10, '#bdc3c7', 90);
+                    ctx.restore();
+                }
+
+                ctx.restore(); // Restaurar escala general
+
+            } else if (currentCharacter === 'jogo') {
+                // ==========================================
+                // JOGO (REDISEÑO CON TEZ BLANCA Y ULTRA DETALLES)
+                // ==========================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.9, 1.9); // ¡Acercamiento masivo!
+
+                // --- 1. PIERNAS ---
+                drawRect(-9, 45, 8, 45, '#151922'); // Pantalón oscuro
+                drawRect(-9, 68, 11, 6, '#08080a'); // Pies oscuros
+                drawRect(9, 45, 8, 45, '#151922');
+                drawRect(9, 68, 11, 6, '#08080a');
+
+                // --- 2. CUERPO (Afectado por Bob / Respiración) ---
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Haori de Ceniza (Verde-Limón de Jogo)
+                drawTrapezoid(0, -5, 18, 30, 62, config.jogo.colorHaori);
+                // Manchas orgánicas de ceniza / hollín
+                drawCircle(-6, -18, 3.5, '#1e2417');
+                drawCircle(7, -5, 2.5, '#1e2417');
+                drawCircle(-5, 10, 4, '#1e2417');
+                drawCircle(5, -24, 3, '#1e2417');
+
+                // --- CUELLO ESPONJOSO DE ALGODÓN (Fluffy Collar) ---
+                // Dibujado con círculos blancos/celestes pálidos superpuestos para volumen
+                drawCircle(-11, -21, 11, '#f0f5fa'); // Izquierda
+                drawCircle(11, -21, 11, '#f0f5fa');  // Derecha
+                drawCircle(0, -20, 12, '#f0f5fa');   // Centro
+                // Costuras negras verticales características del centro del cuello de Jogo
+                drawLine(0, -22, 0, -10, 3.5, '#000000'); // Eje costura
+                drawLine(-3, -18, 3, -18, 1.8, '#000000'); // Puntada 1
+                drawLine(-3, -14, 3, -14, 1.8, '#000000'); // Puntada 2
+                drawLine(-3, -10, 3, -10, 1.8, '#000000'); // Puntada 3
+
+                // Brazo Izquierdo (Sosteniendo el Bastón Calavera)
+                ctx.save();
+                ctx.translate(-11, -18);
+                ctx.rotate(-15 * Math.PI / 180);
+                drawRect(0, 14, 8, 28, '#1e222b'); // Manga azul/negra debajo de la capa
+                drawCircle(0, 28, 4, '#dce8f5'); // Mano pálida de cíclope
+
+                // Bastón Calavera
+                ctx.save();
+                ctx.translate(0, 28);
+                ctx.rotate(-10 * Math.PI / 180);
+                drawLine(0, 20, -5, -45, 3.5, '#5c3a21'); // Bastón
+
+                // Calavera arriba del bastón
+                ctx.save();
+                if (config.jogo.brilloActivo) {
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = config.jogo.colorLava;
+                }
+                drawCircle(-5, -47, 7, '#eaeded'); // Cráneo
+                drawCircle(-7, -47, 1.5, '#000000'); // Ojo Izq
+                drawCircle(-3, -47, 1.5, '#000000'); // Ojo Der
+                ctx.restore();
+
+                ctx.restore();
+                ctx.restore();
+
+                // Brazo Derecho alzado
+                ctx.save();
+                ctx.translate(11, -18);
+                ctx.rotate(40 * Math.PI / 180);
+                drawRect(0, 14, 8, 28, '#1e222b');
+                drawCircle(0, 28, 4, '#dce8f5');
+                ctx.restore();
+
+                // --- CABEZA DE CÍCLOPE (Tez Blanca / Celeste Pálido) ---
+                drawCircle(0, -38, 13, '#dce8f5'); // Cabeza base pálida
+
+                // Orejas de Corcho de Madera (Protrusiones laterales)
+                drawRect(-14, -38, 5, 8, '#ab794b', -10); // Oreja Izq
+                drawRect(14, -38, 5, 8, '#ab794b', 10);  // Oreja Der
+
+                // Cráter de Volcán Detallado
+                // Capa 1: Trazado inferior de ceniza quemada oscura
+                drawTrapezoid(0, -48, 10, 14, 10, '#3a2010');
+                // Capa 2: Corona de piedra beige/marrón claro
+                drawTrapezoid(0, -52, 11, 11, 6, '#d9b47e');
+
+                // Cráter de Lava Hirviente
+                ctx.save();
+                if (config.jogo.brilloActivo) {
+                    ctx.shadowBlur = 14;
+                    ctx.shadowColor = config.jogo.colorLava;
+                }
+                ctx.fillStyle = config.jogo.colorLava;
+                ctx.beginPath();
+                ctx.ellipse(0, -55, 5, 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                const stroke = getStrokeParams();
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.stroke();
+                ctx.restore();
+
+                // Ojo Cíclope Gigante
+                drawCircle(0, -39, 6.2, '#ffffff'); // Esclerótica
+                drawCircle(0, -39, 2.5, config.jogo.colorLava); // Iris volcánico
+                drawCircle(0, -39, 0.9, '#000000'); // Pupila
+                drawLine(-6, -43, 6, -42, 2.2, '#000000'); // Ceja enfurecida
+
+                // Dientes expuestos cosidos en rejilla
+                drawLine(-5, -31, 5, -31, 1.8, '#000000'); // Línea de labios
+                drawLine(-3, -33, -3, -29, 1, '#000000');
+                drawLine(0, -33, 0, -29, 1, '#000000');
+                drawLine(3, -33, 3, -29, 1, '#000000');
+
+                ctx.restore(); // Fin Bob superior
+                ctx.restore(); // Restaurar escala general
+            }
+        }
+
+        // --- SISTEMA DE ANIMACIÓN (LOOP) ---
+        function animate() {
+            breatheAngle += 0.045; // Velocidad de respiración
+            draw();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function toggleBreathing() {
+            const isChecked = document.getElementById('opt-respiracion').checked;
+            if (isChecked) {
+                if (!animationFrameId) animate();
+            } else {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                draw(); // Redibujar en pose estática
+            }
+        }
+
+        // --- ACTUALIZACIÓN DE TEXTO DE CÓDIGO (PANEL DERECHO) ---
+        function updateCodeDisplay() {
+            const codeDisplay = document.getElementById('code-display');
+            const codeTitle = document.getElementById('code-box-title');
+            const strokeVal = document.getElementById('opt-contornos').checked ? "1.8" : "3.5";
+
+            if (currentCharacter === 'nobara') {
+                codeTitle.textContent = "Código de Nobara (Chaqueta, Martillo y Clavo)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === STICKMAN MEJORADO: NOBARA KUGISAKI ===</span>
+setStroke(color: <span class="string">"#000000"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Rostro con Bob Naranja y Expresión de Batalla</span>
+dibujarCirculo(cabeza_base, radio: 12, color: <span class="string">"#fcd0a1"</span>);
+dibujarTriangulo(flequillo_frontal, x: 0, y: -39, base: 5.5, altura: 13, color: <span class="string">"#d35400"</span>);
+
+<span class="comment">// 2. Brazos y Martillo Clásico con Brillo Metálico</span>
+dibujarRectangulo(manga_izq, x: -10, y: 14, ancho: 7, alto: 28, color: <span class="string">"${config.nobara.colorChaqueta}"</span>);
+dibujarRectangulo(cabeza_martillo, x: 0, y: -24, ancho: 14, alto: 18, color: <span class="string">"#7f8c8d"</span>);
+
+<span class="comment">// 3. Uniforme del Colegio de Hechicería de Tokio</span>
+dibujarTrapezoide(chaqueta, x: 0, y: -10, ancho_sup: 15, ancho_inf: 19, alto: 32, color: <span class="string">"${config.nobara.colorChaqueta}"</span>);
+dibujarTrapezoide(falda, x: 0, y: 18, ancho_sup: 18, ancho_inf: 30, alto: 22, color: <span class="string">"${config.nobara.colorChaqueta}"</span>);
+
+<span class="comment">// 4. Clavo Cargado con Energía Maldita Celeste</span>
+setAuraMaldita(color: <span class="string">"${config.nobara.colorEnergia}"</span>, intensidad: 15);
+dibujarTriangulo(clavo_volador, x: 45, y: 10, base: 3.5, altura: 10, color: <span class="string">"#bdc3c7"</span>);
+`;
+            } else {
+                codeTitle.textContent = "Código de Jogo (Capa, Cabeza Volcán y Bastón)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === STICKMAN MEJORADO: JOGO (TEZ BLANCA & DETALLADO) ===</span>
+setStroke(color: <span class="string">"#000000"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Rostro de Cíclope y Orejas de Corcho</span>
+dibujarCirculo(cabeza_paled, radio: 13, color: <span class="string">"#dce8f5"</span>);
+dibujarRectangulo(oreja_izq, x: -14, y: -38, ancho: 5, alto: 8, color: <span class="string">"#ab794b"</span>);
+
+<span class="comment">// 2. Cabeza de Volcán Activa (Ceniza + Corona + Lava)</span>
+dibujarTrapezoide(ceniza_quemada, x: 0, y: -48, ancho_sup: 10, ancho_inf: 14, alto: 10, color: <span class="string">"#3a2010"</span>);
+dibujarTrapezoide(corona_piedra, x: 0, y: -52, ancho_sup: 11, ancho_inf: 11, alto: 6, color: <span class="string">"#d9b47e"</span>);
+setAuraCalor(color: <span class="string">"${config.jogo.colorLava}"</span>, radio: 14);
+dibujarElipse(crater_lava, x: 0, y: -55, rx: 5, ry: 2, color: <span class="string">"${config.jogo.colorLava}"</span>);
+
+<span class="comment">// 3. Cuello Esponjoso de Algodón con Costuras</span>
+dibujarCirculo(cuello_esponja_centro, x: 0, y: -20, radio: 12, color: <span class="string">"#f0f5fa"</span>);
+dibujarCosturasNegras(x: 0, y_inicio: -22, y_fin: -10);
+
+<span class="comment">// 4. Haori de Cenizas Verde-Limón con Manchas</span>
+dibujarTrapezoide(haori, x: 0, y: -5, ancho_sup: 18, ancho_inf: 30, alto: 62, color: <span class="string">"${config.jogo.colorHaori}"</span>);
+`;
+            }
+        }
+
+        // Intercambiar pestañas de personajes
+        function switchCharacter(charName) {
+            currentCharacter = charName;
+
+            // Actualizar interfaz
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${charName}`).classList.add('active');
+            document.getElementById('preview-header-text').textContent = `Previsualización: ${charName === 'nobara' ? 'Nobara Kugisaki' : 'Jogo'}`;
+
+            renderOptionsUI();
+            updateCodeDisplay();
+            draw();
+        }
+
+        // Copiar Código al portapapeles
+        function copyCode() {
+            const codeText = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = "¡Copiado!";
+                copyBtn.style.backgroundColor = "#10b981"; // Verde éxito
+                setTimeout(() => {
+                    copyBtn.textContent = "Copiar Código";
+                    copyBtn.style.backgroundColor = "#2563eb";
+                }, 1500);
+            });
+        }
+
+        // Sobrescribir función draw para que también actualice el cuadro de texto
+        const originalDraw = draw;
+        draw = function() {
+            originalDraw();
+            updateCodeDisplay();
+        };
+
+        // --- INICIALIZACIÓN ---
+        renderOptionsUI();
+        toggleBreathing(); // Inicia loop con animación por defecto
+    </script>
+</body>
+</html>

@@ -442,72 +442,128 @@ export default class Ishigori extends Fighter {
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
 
-        const uniformColor = isFlashing ? 0xFFFFFF : colors.primary; // Dark delinquent jacket
-        const pantColor = isFlashing ? 0xFFFFFF : 0x221105;
-        const skinColor = isFlashing ? 0xFFFFFF : colors.skin;
-        const pompadourColor = isFlashing ? 0xFFFFFF : colors.hair;
+        const jacketColor = isFlashing ? 0xFFFFFF : 0x2b1f1d;
+        const pantColor = isFlashing ? 0xFFFFFF : 0x1a1a24;
+        const skinColor = isFlashing ? 0xFFFFFF : 0xebd0c5;
+        const pompadourColor = isFlashing ? 0xFFFFFF : 0x0d0d10;
+        const beltColor = isFlashing ? 0xFFFFFF : 0x111115;
+        const goldColor = isFlashing ? 0xFFFFFF : 0xf59e0b;
+        const greenJoint = isFlashing ? 0xFFFFFF : 0x22c55e;
+        const fluffColor = isFlashing ? 0xFFFFFF : 0xe2e8f0;
 
         const armExtend = this.attackSwing * 40;
+        const hx = x;
+        const hy = masterY - 49;
 
-        // ── 1. LEGS (Loose Pants) ──
+        // ── 1. LEGS (Dark pants with green knee joints) ──
         const legY = masterY + 5;
-        let leftLeg = 35, rightLeg = 35;
+        let leftLegLen = 28, rightLegLen = 28;
+        let leftShinLen = 25, rightShinLen = 25;
         if (this.stateMachine.is('walk')) {
-            leftLeg += this.walkCycle * 1.5;
-            rightLeg -= this.walkCycle * 1.5;
-        } else if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-            leftLeg = 20; rightLeg = 20;
+            leftLegLen += this.walkCycle * 1.2;
+            rightLegLen -= this.walkCycle * 1.2;
+        } else if (this.stateMachine.isAny('jump', 'fall')) {
+            leftLegLen = 18; rightLegLen = 18;
         }
 
-        g.lineStyle(6, pantColor, 1);
-        g.beginPath();
-        g.moveTo(x - 8, legY); g.lineTo(x - 12 - (f*10), legY + leftLeg); // Back leg
-        g.moveTo(x + 8, legY); g.lineTo(x + 12 + (f*10), legY + rightLeg); // Front leg
-        g.strokePath();
+        // Left leg: thigh → knee → shin
+        g.fillStyle(pantColor, 1);
+        g.fillRect(x - 7 - 3, legY, 10, leftLegLen);
+        g.fillStyle(greenJoint, 1);
+        g.fillCircle(x - 7, legY + leftLegLen, 4);
+        g.fillStyle(pantColor, 1);
+        g.fillRect(x - 7 - 4, legY + leftLegLen + 2, 8.5, leftShinLen);
 
-        // ── 2. TORSO (Open Jacket) ──
-        g.fillStyle(uniformColor, 1);
-        g.fillRect(x - 15, masterY - 35, 30, 45); // Open jacket body
-        
+        // Right leg: thigh → knee → shin
+        g.fillStyle(pantColor, 1);
+        g.fillRect(x + 7 - 3, legY, 10, rightLegLen);
+        g.fillStyle(greenJoint, 1);
+        g.fillCircle(x + 7, legY + rightLegLen, 4);
+        g.fillStyle(pantColor, 1);
+        g.fillRect(x + 7 - 4, legY + rightLegLen + 2, 8.5, rightShinLen);
+
+        // ── 2. FLUFFY COLLAR (behind neck, drawn BEFORE torso) ──
+        g.fillStyle(fluffColor, 1);
+        g.fillCircle(x - 9, masterY - 27, 6);
+        g.fillCircle(x + 9, masterY - 27, 6);
+        g.fillCircle(x - 13, masterY - 18, 5);
+        g.fillCircle(x + 13, masterY - 18, 5);
+
+        // ── 3. TORSO (Exposed chest + jacket side panels) ──
+        // Exposed chest/skin center
         g.fillStyle(skinColor, 1);
-        g.fillRect(x - 5, masterY - 30, 10, 35); // Exposed chest
+        g.fillRect(x - 12.5, masterY - 29, 25, 38);
+        // Jacket left panel
+        g.fillStyle(jacketColor, 1);
+        g.fillRect(x - 16, masterY - 29, 7, 38);
+        // Jacket right panel
+        g.fillStyle(jacketColor, 1);
+        g.fillRect(x + 9, masterY - 29, 7, 38);
+        // Belt
+        g.fillStyle(beltColor, 1);
+        g.fillRect(x - 13, masterY + 7, 26, 6);
 
-        // ── 3. BACK ARM ──
-        const armY = masterY - 30;
-        g.lineStyle(10, uniformColor, 0.8);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY + 2);
-        g.lineTo(x - 22 * f, armY + 18);
-        g.strokePath();
+        // Musculature lines on exposed chest
+        g.lineStyle(1.5, 0x9e7365, 0.5);
+        g.lineBetween(x - 6, masterY - 22, x + 6, masterY - 22);
+        g.lineBetween(x, masterY - 16, x, masterY + 2);
 
-        // ── 4. HEAD & POMPADOUR ──
-        const hx = x;
-        const hy = masterY - 50;
-
-        // Head Base
+        // ── 4. NECK CONNECTOR ──
         g.fillStyle(skinColor, 1);
-        g.fillCircle(hx, hy, 12);
+        g.fillRect(x - 5, masterY - 39, 10, 12);
 
-        // Pompadour Hair
+        // ── 5. BACK ARM (jacket sleeve + gold elbow + skin forearm + bracelet + hand) ──
+        const armY = masterY - 25;
+        // Upper arm (jacket sleeve)
+        g.lineStyle(9, jacketColor, 0.85);
+        g.beginPath();
+        g.moveTo(x - 14 * f, armY);
+        g.lineTo(x - 20 * f, armY + 16);
+        g.strokePath();
+        // Gold elbow joint
+        g.fillStyle(goldColor, 1);
+        g.fillCircle(x - 20 * f, armY + 16, 4);
+        // Skin forearm
+        g.lineStyle(7, skinColor, 0.85);
+        g.beginPath();
+        g.moveTo(x - 20 * f, armY + 16);
+        g.lineTo(x - 22 * f, armY + 32);
+        g.strokePath();
+        // Gold bracelet
+        g.fillStyle(goldColor, 0.9);
+        g.fillRect(x - 22 * f - 4, armY + 22, 8.5, 6);
+        // Hand
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(x - 22 * f, armY + 35, 4);
+
+        // ── 6. HEAD & POMPADOUR ──
+        // Head base
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(hx, hy, 13);
+
+        // Hair base cranium
         g.fillStyle(pompadourColor, 1);
-        // Main slick back
-        g.fillEllipse(hx - 5 * f, hy - 5, 20, 15);
-        // The Pompadour Extrusion (points forward)
-        g.beginPath();
-        g.moveTo(hx - 2 * f, hy - 14);
-        g.lineTo(hx + 12 * f, hy - 6);
-        g.lineTo(hx + 28 * f, hy - 15); // The tip!
-        g.lineTo(hx + 8 * f, hy - 22);
-        g.fillPath();
+        g.fillCircle(hx, hy - 9, 14);
 
-        // Face details
-        g.fillStyle(0x000000, 1);
-        g.fillCircle(hx + 5 * f, hy - 2, 2); // Eye
+        // === THE HORIZONTAL CANNON POMPADOUR ===
+        // Rectangular cannon extending horizontally in facing direction
+        g.fillStyle(pompadourColor, 1);
+        g.fillRect(hx + 7 * f, hy - 20, 28 * Math.abs(f), 12);
+        // Rounded tip at end of cannon
+        g.fillCircle(hx + 28 * f, hy - 14, 6);
+        // Golden energy dot at very tip
+        g.fillStyle(goldColor, 1);
+        g.fillCircle(hx + 29 * f, hy - 14, 2.5);
+
+        // Eyes
+        g.fillStyle(0xFFFFFF, 1);
+        g.fillCircle(hx + 4 * f - 1, hy - 1, 2);
+        g.fillCircle(hx + 4 * f + 3, hy - 1, 2);
 
         // ── CHARGING VFX ON POMPADOUR TIP ──
         if (this.stateMachine.is('charge_granite') && this.chargeLevel > 0) {
-            const tipX = hx + 28 * f;
-            const tipY = hy - 15;
+            const tipX = hx + 29 * f;
+            const tipY = hy - 14;
             const chargeT = this.chargeLevel / 2500;
             const radius = 4 + chargeT * 16;
             const pulse = Math.sin(this.scene.time.now * 0.015) * 3;
@@ -541,26 +597,71 @@ export default class Ishigori extends Fighter {
             }
         }
 
-        // ── 5. FRONT ARM ──
-        g.lineStyle(10, uniformColor, 1);
+        // ── 7. FRONT ARM (jacket sleeve + gold elbow + skin forearm + bracelet + hand) ──
+        // Upper arm (jacket sleeve)
+        const frontArmRot = this.stateMachine.is('walk') ? Math.sin((this.walkCycle || 0) * 0.05) * 5 : 0;
+        g.lineStyle(9, jacketColor, 1);
         g.beginPath();
-        g.moveTo(hx + 10 * f, armY + 2);
+        g.moveTo(x + 14 * f, armY);
 
         if (this.stateMachine.is('block')) {
-            g.lineTo(hx + 20 * f, armY - 5);
-            g.lineTo(hx + 5 * f, armY - 15);
+            g.lineTo(hx + 20 * f, armY - 8);
+            g.strokePath();
+            // Guard position forearm
+            g.lineStyle(7, skinColor, 1);
+            g.beginPath();
+            g.moveTo(hx + 20 * f, armY - 8);
+            g.lineTo(hx + 5 * f, armY - 18);
+            g.strokePath();
         } else if (this.stateMachine.is('charge_granite')) {
             // Arm raised towards pompadour
-            g.lineTo(hx + 20 * f, armY - 15);
-            g.lineTo(hx + 25 * f, hy - 10);
+            g.lineTo(hx + 20 * f, armY - 12);
+            g.strokePath();
+            g.fillStyle(goldColor, 1);
+            g.fillCircle(hx + 20 * f, armY - 12, 4);
+            g.lineStyle(7, skinColor, 1);
+            g.beginPath();
+            g.moveTo(hx + 20 * f, armY - 12);
+            g.lineTo(hx + 25 * f, hy - 5);
+            g.strokePath();
         } else if (this.attackSwing > 0) {
-            g.lineTo(hx + (25 + armExtend) * f, armY - 5);
+            g.lineTo(x + (20 + armExtend * 0.5) * f, armY + 2);
+            g.strokePath();
+            // Gold elbow
+            g.fillStyle(goldColor, 1);
+            g.fillCircle(x + (20 + armExtend * 0.5) * f, armY + 2, 4);
+            // Forearm extended
+            g.lineStyle(7, skinColor, 1);
+            g.beginPath();
+            g.moveTo(x + (20 + armExtend * 0.5) * f, armY + 2);
+            g.lineTo(x + (28 + armExtend) * f, armY - 3);
+            g.strokePath();
+            // Gold bracelet
+            g.fillStyle(goldColor, 0.9);
+            g.fillRect(x + (24 + armExtend * 0.7) * f - 4, armY - 2, 8.5, 5);
+            // Fist
             g.fillStyle(skinColor, 1);
-            g.fillCircle(hx + (28 + armExtend) * f, armY - 5, 6);
+            g.fillCircle(x + (30 + armExtend) * f, armY - 4, 5);
         } else {
-            g.lineTo(hx + 16 * f, armY + 20);
+            // Idle arm down
+            g.lineTo(x + 18 * f, armY + 14);
+            g.strokePath();
+            // Gold elbow
+            g.fillStyle(goldColor, 1);
+            g.fillCircle(x + 18 * f, armY + 14, 4);
+            // Forearm down
+            g.lineStyle(7, skinColor, 1);
+            g.beginPath();
+            g.moveTo(x + 18 * f, armY + 14);
+            g.lineTo(x + 20 * f, armY + 30);
+            g.strokePath();
+            // Gold bracelet
+            g.fillStyle(goldColor, 0.9);
+            g.fillRect(x + 19 * f - 4, armY + 22, 8.5, 5);
+            // Hand
+            g.fillStyle(skinColor, 1);
+            g.fillCircle(x + 20 * f, armY + 33, 4);
         }
-        g.strokePath();
 
         // ── HITSTUN STARS ──
         if (this.stateMachine.is('hitstun')) {

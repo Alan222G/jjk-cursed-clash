@@ -105,70 +105,120 @@ export default class Toji extends Fighter {
         g.strokePath();
     }
 
-    /** Override drawBody to add the Inventory Curse and active weapon during basic attacks */
+    /** Override drawBody — Toji's unique muscular design + Inventory Curse + weapons */
     drawBody(dt) {
-        super.drawBody(dt); // Draws base torso, limbs, and face
-
         const g = this.graphics;
-        const f = this.facing;
+        g.clear();
         const x = this.sprite.x;
         const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
 
-        // Draw Storage Curse (Purple Blob) on shoulder/back
-        const curseX = x - 12 * f;
-        const curseY = y - 40; // Hombro/Espalda Alta
-        // Body of curse
-        g.fillStyle(0x331144, 1);
-        g.fillEllipse(curseX, curseY + 10, 18, 25);
-        // Head / eyes of curse
-        g.fillEllipse(curseX + 5 * f, curseY, 12, 10);
-        g.fillStyle(0x000000, 1);
-        g.fillCircle(curseX + 8 * f, curseY - 2, 2);
-        g.fillCircle(curseX + 2 * f, curseY - 2, 2);
-        // Mouth
-        g.lineStyle(2, 0x110011, 1);
-        g.beginPath();
-        g.moveTo(curseX + 3 * f, curseY + 3);
-        g.lineTo(curseX + 7 * f, curseY + 3);
-        g.strokePath();
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
 
-        // Weapon indicator in HAND when idle
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xeec7b8;
+        const clothesColor = isFlashing ? 0xFFFFFF : 0x111113;
+        const pantsColor = isFlashing ? 0xFFFFFF : 0xe5e7eb;
+        const wormColor = isFlashing ? 0xFFFFFF : 0x6b327a;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x000000;
+        const jointColor = isFlashing ? 0xFFFFFF : 0x22c55e;
+
+        const ox = x;
+        const oy = masterY;
+
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotLegSup = isMoving ? Math.cos(time) * 4 : 0;
+        const rotLegInf = isMoving ? Math.cos(time + 0.5) * 3 : 0;
+
+        // ── Legs (white/grey baggy pants) ──
+        this.drawRect(g, ox - 7, oy + 41, 9, 28, pantsColor, rotLegSup);
+        this.drawCircle(g, ox - 7, oy + 54, 4, jointColor); // Green knee
+        this.drawRect(g, ox - 7, oy + 67, 8, 25, pantsColor, rotLegInf);
+
+        this.drawRect(g, ox + 7, oy + 41, 9, 28, pantsColor, -rotLegSup);
+        this.drawCircle(g, ox + 7, oy + 54, 4, jointColor); // Green knee
+        this.drawRect(g, ox + 7, oy + 67, 8, 25, pantsColor, -rotLegInf);
+
+        // ── Inventory Curse (behind shoulder) ──
+        if (!isFlashing) {
+            this.drawCircle(g, ox - 15, oy - 18, 11, wormColor);
+            this.drawCircle(g, ox - 18, oy - 21, 1.5, 0x000000);
+            this.drawCircle(g, ox - 13, oy - 19, 1.5, 0x000000);
+            this.drawCircle(g, ox - 12, oy - 2, 7, wormColor);
+            this.drawCircle(g, ox + 12, oy + 18, 6.5, wormColor);
+        }
+
+        // ── Torso (black tight shirt — wider/muscular) ──
+        this.drawRect(g, ox, oy + 18, 26, 18, clothesColor);
+        this.drawRect(g, ox, oy - 10, 27, 38, clothesColor);
+        this.drawRect(g, ox, oy - 31, 12, 10, skinColor); // Neck
+
+        // ── Abs detail lines ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 7, oy - 5, ox - 2, oy - 5, 1.5, 0x222226);
+            this.drawLine(g, ox + 2, oy - 5, ox + 7, oy - 5, 1.5, 0x222226);
+            this.drawLine(g, ox, oy + 2, ox, oy + 14, 1.5, 0x222226);
+        }
+
+        // ── Arms (muscular, thicker) ──
+        this.drawRect(g, ox - 16, oy - 13, 8.5, 22, clothesColor, rotArmSup);
+        this.drawCircle(g, ox - 17, oy - 2, 4, jointColor); // Green elbow
+        this.drawRect(g, ox - 16, oy + 9, 7, 20, skinColor, 5);
+
+        this.drawRect(g, ox + 16, oy - 13, 8.5, 22, clothesColor, -rotArmSup);
+        this.drawCircle(g, ox + 17, oy - 2, 4, jointColor); // Green elbow
+        this.drawRect(g, ox + 16, oy + 9, 7, 20, skinColor, -5);
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 45, 13, skinColor);
+
+        // ── Eyes (serious brows) ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 5, oy - 46, ox - 1, oy - 46, 1.5, 0x000000);
+            this.drawLine(g, ox + 1, oy - 46, ox + 5, oy - 46, 1.5, 0x000000);
+            // Mouth scar
+            this.drawLine(g, ox - 4, oy - 40, ox - 1, oy - 41, 1.5, 0x7f1d1d);
+        }
+
+        // ── Hair (black bangs falling down) ──
+        this.drawRect(g, ox, oy - 56, 26, 6, hairColor);
+        this.drawTriangle(g, ox - 6, oy - 50, 6, 10, hairColor, 15);
+        this.drawTriangle(g, ox, oy - 49, 7, 12, hairColor, 2);
+        this.drawTriangle(g, ox + 6, oy - 50, 6, 10, hairColor, -15);
+
+        // ── Weapon in hand (idle) ──
         const armX = x + 15 * f;
         const armY = y - 40;
         if (!this.stateMachine.is('attack')) {
             g.fillStyle(this.currentWeapon.color, 0.8);
             g.fillRect(armX - 2, armY - 10, 4, 30);
         } else {
-            // Draw active weapon during attack swing
-            const swing = this.attackSwing; // 0 to 1
-            
-            // Re-calculate Hand Position matching Fighter.js extension
+            const swing = this.attackSwing;
             const armExtend = swing * 40;
             const handX = x + (34 + armExtend) * f;
             const handY = y - 36;
-            
+
             if (this.currentWeapon.key === 'spear' && this.spearChainMode) {
-                // Chain of a Thousand Miles
                 const reach = this.currentAttack?.range || 300;
                 const endX = handX + (swing * reach * f);
                 const endY = handY;
-                
-                // Draw linked chain
                 g.lineStyle(3, 0x555555, 1);
-                // Draw ~16 links
                 const links = 16;
-                for(let i=0; i<links; i++) {
-                    const cx = Phaser.Math.Interpolation.Linear([handX, endX], i/(links-1));
-                    const cy = Phaser.Math.Interpolation.Linear([handY, endY], i/(links-1));
-                    // Alternate link rotation by drawing horizontal/vertical pulses
-                    if (i % 2 === 0) {
-                        g.strokeEllipse(cx, cy, 6, 3);
-                    } else {
-                        g.strokeEllipse(cx, cy, 3, 6);
-                    }
+                for (let i = 0; i < links; i++) {
+                    const cx = Phaser.Math.Interpolation.Linear([handX, endX], i / (links - 1));
+                    const cy = Phaser.Math.Interpolation.Linear([handY, endY], i / (links - 1));
+                    if (i % 2 === 0) g.strokeEllipse(cx, cy, 6, 3);
+                    else g.strokeEllipse(cx, cy, 3, 6);
                 }
-                
-                // Draw Spear Tip
                 g.fillStyle(0x88CCFF, 1);
                 g.beginPath();
                 g.moveTo(endX, endY - 6);
@@ -176,29 +226,36 @@ export default class Toji extends Fighter {
                 g.lineTo(endX, endY + 6);
                 g.fillPath();
             } else {
-                // Normal weapon swing (Katana, Cloud, or unchained Spear)
                 g.lineStyle(6, this.currentWeapon.color, 1);
                 g.beginPath();
                 g.moveTo(handX, handY);
-                // Swing arc calculation
                 let angle;
-                if (f > 0) {
-                    angle = (swing * Math.PI) - Math.PI/2;
-                } else {
-                    angle = Math.PI + Math.PI/2 - (swing * Math.PI);
-                }
+                if (f > 0) angle = (swing * Math.PI) - Math.PI / 2;
+                else angle = Math.PI + Math.PI / 2 - (swing * Math.PI);
                 const len = 70;
-                g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
+                g.lineTo(handX + Math.cos(angle) * len, handY + Math.sin(angle) * len);
                 g.strokePath();
-                
-                // Draw blade/tip variations
                 if (this.currentWeapon.key === 'katana') {
                     g.lineStyle(2, 0xFFFFFF, 0.5);
                     g.beginPath();
                     g.moveTo(handX, handY);
-                    g.lineTo(handX + Math.cos(angle)*len, handY + Math.sin(angle)*len);
+                    g.lineTo(handX + Math.cos(angle) * len, handY + Math.sin(angle) * len);
                     g.strokePath();
                 }
+            }
+        }
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.3) * 16, y - 60 + Math.sin(angle + 0.3) * 6,
+                    x + Math.cos(angle - 0.3) * 16, y - 60 + Math.sin(angle - 0.3) * 6
+                );
             }
         }
     }

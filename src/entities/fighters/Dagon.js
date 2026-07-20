@@ -330,44 +330,150 @@ export default class Dagon extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0xAA2222;
-        const markingsColor = 0x111111;
-        const armExtend = this.attackSwing * 30;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        // LEGS (Muscular)
-        const legY = masterY + 15;
-        let leftLeg = 25, rightLeg = 25;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        g.lineStyle(10, skinColor, 1);
-        g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 15 - (f * 5), legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 15 + (f * 5), legY + rightLeg); g.strokePath();
+        const colorRojo = isFlashing ? 0xFFFFFF : 0x8a1a1a;
+        const colorCrema = isFlashing ? 0xFFFFFF : 0xe3d0ae;
+        const colorCoraza = isFlashing ? 0xFFFFFF : 0x111111;
 
-        // BODY (Tall and muscular)
-        g.fillStyle(skinColor, 1);
-        g.fillRoundedRect(x - 18, masterY - 35, 36, 55, 10);
-        // Black markings on chest
-        g.fillStyle(markingsColor, 0.8);
-        g.fillCircle(x, masterY - 20, 8);
-        g.fillCircle(x, masterY - 5, 6);
+        const ox = x;
+        const oy = masterY - 15;
 
-        // HEAD (Squid-like humanoid)
-        const hx = x; const hy = masterY - 45;
-        g.fillStyle(skinColor, 1);
-        g.fillCircle(hx, hy, 16);
-        // Head wings/tentacles hanging down
-        g.lineStyle(8, skinColor, 1);
-        g.beginPath(); g.moveTo(hx, hy - 10); g.lineTo(hx - 25, hy + 10); g.strokePath();
-        g.beginPath(); g.moveTo(hx, hy - 10); g.lineTo(hx + 25, hy + 10); g.strokePath();
-        
-        this.drawFace(g, hx, hy, f);
+        // Helper drawing methods
+        const drawRelRect = (dx, dy, w, h, color, rotDeg = 0) => {
+            g.save();
+            g.translate(ox + dx * f, oy + dy);
+            g.rotate(rotDeg * f * Math.PI / 180);
+            g.fillStyle(color, 1);
+            g.fillRect(-w/2, -h/2, w, h);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeRect(-w/2, -h/2, w, h);
+            g.restore();
+        };
 
-        // ARMS (Muscular)
-        const armY = masterY - 25;
-        g.lineStyle(10, skinColor, 1);
+        const drawRelCircle = (dx, dy, r, color) => {
+            const rx = ox + dx * f;
+            const ry = oy + dy;
+            g.fillStyle(color, 1);
+            g.fillCircle(rx, ry, r);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeCircle(rx, ry, r);
+        };
+
+        const drawRelLine = (dx1, dy1, dx2, dy2, width, color) => {
+            const rx1 = ox + dx1 * f;
+            const ry1 = oy + dy1;
+            const rx2 = ox + dx2 * f;
+            const ry2 = oy + dy2;
+            g.lineStyle(width, color, 1);
+            g.lineBetween(rx1, ry1, rx2, ry2);
+        };
+
+        const drawRelTriangle = (dx, dy, base, height, color, rotDeg = 0) => {
+            g.save();
+            g.translate(ox + dx * f, oy + dy);
+            g.rotate(rotDeg * f * Math.PI / 180);
+            g.fillStyle(color, 1);
+            g.beginPath();
+            g.moveTo(0, -height/2);
+            g.lineTo(-base/2, height/2);
+            g.lineTo(base/2, height/2);
+            g.closePath();
+            g.fillPath();
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokePath();
+            g.restore();
+        };
+
+        const drawRelTrapezoid = (dx, dy, topW, bottomW, h, color, rotDeg = 0) => {
+            g.save();
+            g.translate(ox + dx * f, oy + dy);
+            g.rotate(rotDeg * f * Math.PI / 180);
+            g.fillStyle(color, 1);
+            g.beginPath();
+            g.moveTo(-topW / 2, -h / 2);
+            g.lineTo(topW / 2, -h / 2);
+            g.lineTo(bottomW / 2, h / 2);
+            g.lineTo(-bottomW / 2, h / 2);
+            g.closePath();
+            g.fillPath();
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokePath();
+            g.restore();
+        };
+
+        // 1. LEGS (Muscular red legs with cream armor plates)
+        const legAngle = isMoving ? Math.sin(time) * 12 : 0;
+        drawRelRect(-11, 45, 9, 32, colorRojo, 10 + legAngle);
+        drawRelRect(-11, 40, 5, 20, colorCrema, 10 + legAngle);
+        drawRelRect(-13, 62, 11, 6, colorRojo, legAngle); // Left foot
+
+        drawRelRect(11, 45, 9, 32, colorRojo, -10 - legAngle);
+        drawRelRect(11, 40, 5, 20, colorCrema, -10 - legAngle);
+        drawRelRect(13, 62, 11, 6, colorRojo, -legAngle); // Right foot
+
+        // 2. TORSO
+        drawRelTrapezoid(0, 10, 21, 25, 42, colorCrema); // Cream chest background
+        if (!isFlashing) {
+            drawRelLine(-8, 2, 8, 2, 1.5, 0x73614c);
+            drawRelLine(-10, 12, 10, 12, 1.5, 0x73614c);
+            drawRelLine(-9, 22, 9, 22, 1.5, 0x73614c);
+        }
+
+        // Central black armor plate
+        drawRelTrapezoid(0, 6, 21, 10, 30, colorCoraza);
+        drawRelTriangle(0, 18, 14, 10, colorCoraza, 180);
+
+        // Muscle hood (shoulders/back)
+        drawRelTrapezoid(0, -10, 26, 20, 14, colorRojo);
+
+        // 3. ARMS
+        const drawDagonArm = (sideSign, angle, extend = 0) => {
+            g.save();
+            g.translate(ox + (sideSign * 13) * f, oy - 10);
+            g.rotate(angle * f * Math.PI / 180);
+            
+            const armLen = 26 + extend;
+            g.fillStyle(colorRojo, 1);
+            g.fillRect(-9/2, 14 + extend/2 - armLen/2, 9, armLen);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeRect(-9/2, 14 + extend/2 - armLen/2, 9, armLen);
+            
+            g.fillStyle(colorRojo, 1);
+            g.fillCircle(0, 26 + extend, 5);
+            g.strokeCircle(0, 26 + extend, 5);
+            
+            g.restore();
+        };
+
+        let rightArmAngle = 20;
+        let rightArmExtend = 0;
         if (this.attackSwing > 0) {
-            g.beginPath(); g.moveTo(x + 10 * f, armY); g.lineTo(x + (35 + armExtend) * f, armY); g.strokePath();
-        } else {
-            g.beginPath(); g.moveTo(x + 10, armY); g.lineTo(x + 15 * f, armY + 25); g.strokePath();
+            rightArmAngle = 90;
+            rightArmExtend = this.attackSwing * 30;
+        }
+
+        drawDagonArm(-1, -20, 0); // Left Arm
+        drawDagonArm(1, rightArmAngle, rightArmExtend); // Right Arm (Front)
+
+        // 4. HEAD (Big red Cthulhu head with tentacles)
+        drawRelCircle(0, -25, 14, colorRojo);
+
+        if (!isFlashing) {
+            // Spots on top of head
+            drawRelCircle(-4, -34, 1.5, 0x111111);
+            drawRelCircle(0, -36, 2, 0x111111);
+            drawRelCircle(5, -33, 1.5, 0x111111);
+
+            // Bright white lateral eye
+            drawRelCircle(-7, -25, 3.2, 0xffffffff);
+            drawRelCircle(-7, -25, 1, 0x111111);
+
+            // Facial tentacles
+            drawRelRect(-4, -13, 3, 11, colorRojo, 8);
+            drawRelRect(0, -11, 3.2, 13, colorRojo);
+            drawRelRect(4, -13, 3, 11, colorRojo, -8);
         }
     }
 

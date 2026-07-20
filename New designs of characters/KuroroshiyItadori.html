@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Kurourushi & Yuji Itadori (Rostro Detallado)</title>
+    <style>
+        :root {
+            --bg-color: #0c0d12;
+            --card-bg: #151722;
+            --text-color: #e2e8f0;
+            --accent-kuro: #a855f7;
+            --accent-yuji: #ef4444;
+            --border-color: #26293b;
+            --code-bg: #08090d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #a855f7, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #1e2130;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #94a3b8;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-kuro);
+            padding-top: 8px;
+        }
+
+        .tab-btn.active.yuji-tab {
+            border-top-color: var(--accent-yuji);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #1a1525 0%, #06050a 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2d243a;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 480px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 380px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #d8b4fe;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Stickman Sandbox: Kurourushi & Yuji Itadori (Rostro Perfeccionado)</h1>
+        <p>Modelo de Itadori rediseñado sin sudadera, con su icónico uniforme de cuello alto y una cara de batalla sumamente expresiva y detallada con sus dos cicatrices.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-kuro" onclick="switchCharacter('kuro')">Kurourushi (Maldición Cucaracha)</button>
+            <button class="tab-btn" id="btn-yuji" onclick="switchCharacter('yuji')">Yuji Itadori (Cara de Batalla)</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-kuro);"></span>
+                    <span id="char-title">Previsualización: Kurourushi</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-kuro">
+                        <h3>Opciones de Kurourushi</h3>
+                        <div class="control-group">
+                            <label for="color-kuro-cuerpo">Color Quitina/Cuerpo:</label>
+                            <input type="color" id="color-kuro-cuerpo" value="#30231d" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-kuro-ojos">Color de Ojos:</label>
+                            <input type="color" id="color-kuro-ojos" value="#ef4444" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-yuji">
+                        <h3>Opciones de Itadori</h3>
+                        <div class="control-group">
+                            <label for="color-yuji-uniforme">Color Uniforme:</label>
+                            <input type="color" id="color-yuji-uniforme" value="#161824" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-yuji-cabello">Color de Cabello:</label>
+                            <input type="color" id="color-yuji-cabello" value="#fda4af" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Configuración</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Contornos Negros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Activar Movimiento:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-kuro">
+                    <div class="code-header">
+                        <h2>Código de Kurourushi</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-kuro')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-kuro"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-yuji">
+                    <div class="code-header">
+                        <h2>Código de Yuji Itadori</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-yuji')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-yuji"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'kuro';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            kuro: { cuerpo: '#30231d', ojos: '#ef4444', alas: '#1a120e' },
+            yuji: { uniforme: '#161824', cabello: '#fda4af', piel: '#ffe4d6' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-kuro').classList.toggle('active', char === 'kuro');
+            document.getElementById('btn-yuji').classList.toggle('active', char === 'yuji');
+            if(char === 'yuji') document.getElementById('btn-yuji').classList.add('yuji-tab');
+            else document.getElementById('btn-yuji').classList.remove('yuji-tab');
+            
+            document.getElementById('ctrl-kuro').classList.toggle('hidden', char !== 'kuro');
+            document.getElementById('ctrl-yuji').classList.toggle('hidden', char !== 'yuji');
+            
+            document.getElementById('code-kuro').classList.toggle('hidden', char !== 'kuro');
+            document.getElementById('code-yuji').classList.toggle('hidden', char !== 'yuji');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'kuro') {
+                badge.style.backgroundColor = 'var(--accent-kuro)';
+                title.innerText = 'Previsualización: Kurourushi';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-yuji)';
+                title.innerText = 'Previsualización: Yuji Itadori';
+            }
+        }
+
+        function updateColors() {
+            colors.kuro.cuerpo = document.getElementById('color-kuro-cuerpo').value;
+            colors.kuro.ojos = document.getElementById('color-kuro-ojos').value;
+
+            colors.yuji.uniforme = document.getElementById('color-yuji-uniforme').value;
+            colors.yuji.cabello = document.getElementById('color-yuji-cabello').value;
+
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.5);' : '';
+
+            const codeKuro = `// === DISEÑO: KURIOURUSHI (MALDICIÓN DE GRADO ESPECIAL) ===` + strokeCode + `
+
+// Capa 1: Élitros/Alas en la espalda
+dibujarRectangulo(ala_izq, ancho: 12, alto: 38, rotacion: -20, color: "#1a120e");
+dibujarRectangulo(ala_der, ancho: 12, alto: 38, rotacion: 20, color: "#1a120e");
+
+// Capa 2: Tórax y Abdomen Segmentado (Quitina)
+dibujarRectangulo(abdomen_inf, ancho: 20, alto: 16, color: "#1c1410");
+dibujarRectangulo(abdomen_med, ancho: 24, alto: 14, color: "#160e0a");
+dibujarRectangulo(torax, ancho: 32, alto: 26, color: "${colors.kuro.cuerpo}");
+
+// Capa 3: Patas Insectoides Articuladas (6 Extremidades inferiores)
+dibujarRectangulo(pata_izq_1, ancho: 6, alto: 22, rotacion: -60, color: "${colors.kuro.cuerpo}");
+dibujarRectangulo(tibia_izq_1, ancho: 4.5, alto: 24, rotacion: -15, color: "#160e0a");
+
+// Capa 4: Brazos/Garras superiores (Espada en mano derecha)
+dibujarRectangulo(mango_espada, ancho: 4, alto: 12, color: "#2d2e2e");
+dibujarRectangulo(hoja_cortante, ancho: 12, alto: 38, color: "#454d52");
+
+// Capa 5: Cabeza y Mandíbulas
+dibujarCirculo(cabeza, radio: 11, color: "${colors.kuro.cuerpo}");
+dibujarCirculo(ojo_izq, radio: 3.5, color: "${colors.kuro.ojos}");`;
+
+            const codeYuji = `// === DISEÑO: YUJI ITADORI (MIRADA DE BATALLA Y CUELLO ALTO) ===` + strokeCode + `
+
+// Capa 1: Torso Escolar (Chaqueta del Uniforme sin Sudadera)
+dibujarRectangulo(torso_chaqueta, ancho: 24, alto: 38, color: "${colors.yuji.uniforme}");
+
+// Cuello Alto Oficial y Botón Dorado
+dibujarRectangulo(cuello_alto, ancho: 12, alto: 10, color: "${colors.yuji.uniforme}");
+dibujarCirculo(boton_dorado, radio: 2.5, color: "#fbbf24");
+
+// Capa 2: Brazos y Piernas del Uniforme
+dibujarRectangulo(muslo_izq, ancho: 9.5, alto: 28, color: "${colors.yuji.uniforme}");
+dibujarRectangulo(tenis_rojo_izq, ancho: 11, alto: 6, color: "#dc2626");
+
+// === ENFOQUE ROSTRO Y CABEZA (JERARQUÍA CORREGIDA) ===
+
+// Capa 3: Base del Cabello Rapado (Undercut Negro) - Detrás de la piel
+dibujarCirculo(cabello_base_rapado, radio: 15, color: "#111827");
+
+// Capa 4: Orejas y Piel del Rostro (Peach/Beige)
+dibujarCirculo(oreja_izq, radio: 3.5, color: "${colors.yuji.piel}");
+dibujarCirculo(oreja_der, radio: 3.5, color: "${colors.yuji.piel}");
+dibujarCirculo(rostro_piel, radio: 13, color: "${colors.yuji.piel}");
+
+// Capa 5: Rasgos Faciales Detallados (Ojos Intensos)
+dibujarRectangulo(ojo_izq_blanco, ancho: 5, alto: 2.5, color: "#ffffff");
+dibujarCirculo(pupila_izq_hazel, radio: 1.2, color: "#7c2d12");
+dibujarLinea(ceja_izq_angry, x1: -8, y1: -6, x2: -2, y2: -3.5, grosor: 2, color: "#000000");
+
+// Cicatrices icónicas (Frente y Mejilla)
+dibujarLinea(cicatriz_mejilla, x1: -6, y1: 2.5, x2: -3, y2: 4.5, grosor: 1.5, color: "#991b1b");
+dibujarLinea(cicatriz_frente, x1: -2, y1: -8, x2: -4, y2: -13, grosor: 1.5, color: "#991b1b");
+
+// Capa 6: Cabello Superior y Flequillo Rosa
+dibujarTriangulo(pelo_up_izq, base: 6, altura: 14, rotacion: 155, color: "${colors.yuji.cabello}");
+dibujarTriangulo(flequillo_bangs_izq, base: 4.5, altura: 11, rotacion: 25, color: "${colors.yuji.cabello}");`;
+
+            document.getElementById('code-block-kuro').textContent = codeKuro;
+            document.getElementById('code-block-yuji').textContent = codeYuji;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.05;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 25;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const floatOffset = isMoving ? Math.sin(time * 1.5) * 4 : 0;
+
+            if (currentCharacter === 'kuro') {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Capa 1: Élitros/Alas grandes en la espalda
+                const alaRotL = -20 + (isMoving ? Math.sin(time * 2.5) * 8 : 0);
+                const alaRotR = 20 - (isMoving ? Math.sin(time * 2.5) * 8 : 0);
+                drawRect(ox - 10, oy - 15, 12, 38, colors.kuro.alas, alaRotL);
+                drawRect(ox + 10, oy - 15, 12, 38, colors.kuro.alas, alaRotR);
+
+                // Capa 2: Tórax y Abdomen Segmentado
+                drawRect(ox, oy + 25, 20, 16, '#1c1410'); 
+                drawRect(ox, oy + 12, 24, 14, '#160e0a'); 
+                drawRect(ox, oy - 4, 32, 26, colors.kuro.cuerpo); 
+
+                // Capa 3: 6 Patas Insectoides Articuladas
+                const legSwing = isMoving ? Math.sin(time * 2) * 12 : 0;
+                
+                // Patas Izquierdas
+                ctx.save();
+                ctx.translate(ox - 14, oy);
+                drawRect(-8, 4, 6, 22, colors.kuro.cuerpo, -60 + legSwing);
+                drawRect(-18, 14, 4.5, 24, '#160e0a', -15 + legSwing);
+                drawRect(-8, 14, 6, 22, colors.kuro.cuerpo, -45 - legSwing);
+                drawRect(-16, 24, 4.5, 24, '#160e0a', 0 - legSwing);
+                drawRect(-6, 24, 6, 22, colors.kuro.cuerpo, -30 + legSwing);
+                drawRect(-12, 32, 4.5, 24, '#160e0a', 15 + legSwing);
+                ctx.restore();
+
+                // Patas Derechas
+                ctx.save();
+                ctx.translate(ox + 14, oy);
+                drawRect(8, 4, 6, 22, colors.kuro.cuerpo, 60 - legSwing);
+                drawRect(18, 14, 4.5, 24, '#160e0a', 15 - legSwing);
+                drawRect(8, 14, 6, 22, colors.kuro.cuerpo, 45 + legSwing);
+                drawRect(16, 24, 4.5, 24, '#160e0a', 0 + legSwing);
+                drawRect(6, 24, 6, 22, colors.kuro.cuerpo, 30 - legSwing);
+                drawRect(12, 32, 4.5, 24, '#160e0a', -15 - legSwing);
+                ctx.restore();
+
+                // Capa 4: Brazos garras de ataque superiores
+                const armSwing = isMoving ? Math.sin(time * 1.8) * 15 : 0;
+                
+                // Brazo Izquierdo
+                ctx.save();
+                ctx.translate(ox - 16, oy - 12);
+                ctx.rotate((-20 + armSwing) * Math.PI / 180);
+                drawRect(0, 10, 8, 20, colors.kuro.cuerpo);
+                drawCircle(0, 20, 4.5, '#160e0a');
+                drawTriangle(-2, 28, 4, 10, '#110b08', -30);
+                drawTriangle(2, 28, 4, 10, '#110b08', 30);
+                ctx.restore();
+
+                // Brazo Derecho (Sostiene la Espada)
+                ctx.save();
+                ctx.translate(ox + 16, oy - 12);
+                ctx.rotate((15 - armSwing) * Math.PI / 180);
+                drawRect(0, 10, 8, 20, colors.kuro.cuerpo);
+                drawCircle(0, 20, 4.5, '#160e0a');
+                ctx.translate(0, 20);
+                ctx.rotate(45 * Math.PI / 180);
+                drawRect(0, 4, 4, 12, '#2d2e2e'); 
+                drawRect(0, -20, 12, 38, '#454d52'); 
+                drawCircle(-2, -30, 2, '#000000');
+                drawCircle(2, -20, 2, '#000000');
+                drawCircle(-2, -10, 2, '#000000');
+                ctx.restore();
+
+                // Capa 5: Cabeza y Ojos
+                drawCircle(ox, oy - 27, 11, colors.kuro.cuerpo);
+                drawCircle(ox - 4.5, oy - 27, 3.5, colors.kuro.ojos);
+                drawCircle(ox + 4.5, oy - 27, 3.5, colors.kuro.ojos);
+                drawCircle(ox - 4.5, oy - 27, 1.5, '#fb923c');
+                drawCircle(ox + 4.5, oy - 27, 1.5, '#fb923c');
+
+                // Antenas
+                drawLine(ox - 3, oy - 35, ox - 10, oy - 48, 2, '#000000');
+                drawLine(ox - 10, oy - 48, ox - 18, oy - 58, 1.5, '#000000');
+                drawLine(ox + 3, oy - 35, ox + 10, oy - 48, 2, '#000000');
+                drawLine(ox + 10, oy - 48, ox + 18, oy - 58, 1.5, '#000000');
+
+                drawTriangle(ox - 3, oy - 19, 3, 8, '#110b08', -45);
+                drawTriangle(ox + 3, oy - 19, 3, 8, '#110b08', 45);
+
+            } else {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Capa 3: Piernas de Itadori (Pantalón Azul Oscuro y Tenis Rojos)
+                const legSwing = isMoving ? Math.sin(time * 1.5) * 8 : 0;
+                
+                // Pierna Izquierda
+                drawRect(ox - 7, oy + 41, 9.5, 28, colors.yuji.uniforme, legSwing);
+                drawCircle(ox - 7, oy + 54, 4, '#000000');
+                drawRect(ox - 7, oy + 67, 8, 24, colors.yuji.uniforme, legSwing * 0.5);
+                drawRect(ox - 8, oy + 80, 11, 6, '#dc2626');
+
+                // Pierna Derecha
+                drawRect(ox + 7, oy + 41, 9.5, 28, colors.yuji.uniforme, -legSwing);
+                drawCircle(ox + 7, oy + 54, 4, '#000000');
+                drawRect(ox + 7, oy + 67, 8, 24, colors.yuji.uniforme, -legSwing * 0.5);
+                drawRect(ox + 8, oy + 80, 11, 6, '#dc2626');
+
+                // Capa 1: Torso Escolar Completo (Sin sudadera, chaqueta corrida)
+                drawRect(ox, oy - 10, 24, 38, colors.yuji.uniforme);
+                drawRect(ox, oy + 18, 23, 18, colors.yuji.uniforme);
+
+                // Cuello Alto Oficial y Botón de Latón Dorado (Lado Izquierdo)
+                drawRect(ox, oy - 31, 12, 10, colors.yuji.uniforme);
+                drawCircle(ox + 4, oy - 30, 2.5, '#fbbf24');
+
+                // Capa 2: Brazos del Uniforme con Energía Maldita en los Puños
+                const armRotL = isMoving ? Math.sin(time * 1.5) * 10 : 15;
+                const armRotR = isMoving ? -Math.sin(time * 1.5) * 10 : -15;
+
+                // Brazo Izquierdo
+                drawRect(ox - 15, oy - 12, 8.5, 22, colors.yuji.uniforme, armRotL);
+                ctx.save();
+                ctx.translate(ox - 15, oy - 12);
+                ctx.rotate(armRotL * Math.PI / 180);
+                drawCircle(-1, 11, 4, colors.yuji.uniforme);
+                drawRect(-1, 20, 7, 18, colors.yuji.uniforme, 0);
+                drawCircle(-1, 29, 4.5, '#f3e8ee');
+                
+                if (isMoving) {
+                    ctx.save();
+                    ctx.translate(-1, 29);
+                    ctx.globalAlpha = 0.4;
+                    drawCircle(0, 0, 11 + Math.sin(time * 5) * 3, '#3b82f6');
+                    ctx.globalAlpha = 1.0;
+                    drawLine(0, 0, -8 + Math.sin(time*10)*4, 8 + Math.cos(time*10)*4, 2, '#ef4444');
+                    drawLine(0, 0, 6, -8, 1.5, '#000000');
+                    ctx.restore();
+                }
+                ctx.restore();
+
+                // Brazo Derecho
+                drawRect(ox + 15, oy - 12, 8.5, 22, colors.yuji.uniforme, armRotR);
+                ctx.save();
+                ctx.translate(ox + 15, oy - 12);
+                ctx.rotate(armRotR * Math.PI / 180);
+                drawCircle(1, 11, 4, colors.yuji.uniforme);
+                drawRect(1, 20, 7, 18, colors.yuji.uniforme, 0);
+                drawCircle(1, 29, 4.5, '#f3e8ee');
+
+                if (isMoving) {
+                    ctx.save();
+                    ctx.translate(1, 29);
+                    ctx.globalAlpha = 0.4;
+                    drawCircle(0, 0, 11 + Math.cos(time * 5) * 3, '#3b82f6');
+                    ctx.globalAlpha = 1.0;
+                    drawLine(0, 0, 8 + Math.cos(time*10)*4, 8 + Math.sin(time*10)*4, 2, '#ef4444');
+                    drawLine(0, 0, -6, -8, 1.5, '#000000');
+                    ctx.restore();
+                }
+                ctx.restore();
+
+                // ==========================================
+                // === ENFOQUE EN SU CARA (JERARQUÍA CORREGIDA) ===
+                // ==========================================
+                const hx = ox;
+                const hy = oy - 48; // Centro de la cabeza
+
+                // 1. Base del cabello rapado (Undercut Negro) - Detrás de la cabeza
+                drawCircle(hx, hy - 2, 15, '#111827');
+
+                // 2. Orejas de Yuji
+                drawCircle(hx - 13, hy + 1, 3.5, colors.yuji.piel);
+                drawCircle(hx + 13, hy + 1, 3.5, colors.yuji.piel);
+
+                // 3. Piel del Rostro (Por encima de la base oscura)
+                drawCircle(hx, hy, 13, colors.yuji.piel);
+
+                // 4. Ojos de Batalla e Intelectuales (Cejas + Esclerótica Blanca + Pupila + Pestañas)
+                // Cejas enojadas/determinadas
+                drawLine(hx - 8, hy - 6, hx - 2, hy - 3.5, 2, '#000000'); // Ceja Izquierda
+                drawLine(hx + 8, hy - 6, hx + 2, hy - 3.5, 2, '#000000'); // Ceja Derecha
+
+                // Blanco de los ojos
+                drawRect(hx - 5, hy - 1, 5, 2.5, '#ffffff');
+                drawRect(hx + 5, hy - 1, 5, 2.5, '#ffffff');
+
+                // Pupilas (color café/hazel de Itadori)
+                drawCircle(hx - 4, hy - 1, 1.2, '#7c2d12');
+                drawCircle(hx + 4, hy - 1, 1.2, '#7c2d12');
+
+                // Pestañas / Párpados superiores determined
+                drawLine(hx - 8, hy - 2, hx - 2, hy - 1, 2, '#000000');
+                drawLine(hx + 8, hy - 2, hx + 2, hy - 1, 2, '#000000');
+
+                // 5. Boca determinada (Línea firme)
+                drawLine(hx - 3, hy + 6, hx + 3, hy + 6, 1.5, '#000000');
+
+                // 6. Cicatrices características de Yuji
+                // Cicatriz en la mejilla (debajo de su ojo izquierdo)
+                drawLine(hx - 6, hy + 2.5, hx - 3, hy + 4.5, 1.5, '#991b1b');
+                // Cicatriz en la frente (cerca de la raíz del pelo)
+                drawLine(hx - 2, hy - 8, hx - 4, hy - 13, 1.5, '#991b1b');
+
+                // 7. Picos del cabello rosa superior (Apuntando hacia ARRIBA)
+                drawTriangle(hx - 8, hy - 12, 6, 14, colors.yuji.cabello, 155);
+                drawTriangle(hx - 3, hy - 14, 6, 16, colors.yuji.cabello, 170);
+                drawTriangle(hx + 3, hy - 14, 6, 16, colors.yuji.cabello, 190);
+                drawTriangle(hx + 8, hy - 12, 6, 14, colors.yuji.cabello, 205);
+
+                // 8. Flequillo cayendo sobre la frente (Apuntando hacia ABAJO)
+                drawTriangle(hx - 7, hy - 8, 4.5, 11, colors.yuji.cabello, 25);
+                drawTriangle(hx - 2.5, hy - 9, 4.5, 13, colors.yuji.cabello, 10);
+                drawTriangle(hx + 2.5, hy - 9, 4.5, 13, colors.yuji.cabello, -10);
+                drawTriangle(hx + 7, hy - 8, 4.5, 11, colors.yuji.cabello, -25);
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const isKuro = (elementId === 'code-block-kuro');
+                const btn = document.querySelector(`#${isKuro ? 'code-kuro' : 'code-yuji'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

@@ -934,12 +934,12 @@ export default class Yuta extends Fighter {
             return;
         }
 
-        super.drawBody(dt); // Calls base to draw everything
+        g.clear();
         // UI Cooldown "Mini Clock" Indicators
         if (this.copyActive && !this.isDead) {
             const renderClock = (xOffset, cd, maxCd, color) => {
                 if (cd <= 0) return;
-                const progress = cd / maxCd; // 0 to 1
+                const progress = cd / maxCd;
                 const cx = x + xOffset;
                 const cy = masterY - 85;
                 const radius = 6;
@@ -957,149 +957,263 @@ export default class Yuta extends Fighter {
                 g.strokeCircle(cx, cy, radius);
             };
 
-            renderClock(-15, this.copyCdLight, 2000, 0x00FF00); // Light (Green)
-            renderClock(0, this.copyCdHeavy, 3000, 0xFFCC00); // Heavy (Yellow)
-            renderClock(15, this.copyCdUlt, 5000, 0xFF0000); // Ult (Red)
+            renderClock(-15, this.copyCdLight, 2000, 0x00FF00);
+            renderClock(0, this.copyCdHeavy, 3000, 0xFFCC00);
+            renderClock(15, this.copyCdUlt, 5000, 0xFF0000);
         }
 
         if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
-        const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
-        const uniformColor = isFlashing ? 0xFFFFFF : 0x111133;
-        const hairColor = isFlashing ? 0xFFFFFF : 0x222244;
+        const skinColor = isFlashing ? 0xFFFFFF : 0xf3e8ee;
+        const uniformColor = isFlashing ? 0xFFFFFF : 0xFFFFFF;
+        const pantColor = isFlashing ? 0xFFFFFF : 0x181820;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x000000;
         const armExtend = this.attackSwing * 40;
 
-        // ── RIKA (monstrous form behind Yuta) ──
+        // ════════════════════════════════════════════
+        // RIKA — Spectral Nightmare Form (from Rika.html standalone)
+        // ════════════════════════════════════════════
         const rikaAlpha = this.copyActive
             ? (0.35 + Math.sin((this.animTimer || 0) * 0.003) * 0.1)
             : (0.12 + Math.sin((this.animTimer || 0) * 0.003) * 0.06);
-        const rkx = x - 25 * f;
-        const rky = masterY - 55;
         const rt = (this.animTimer || 0) * 0.003;
+        const rkx = x - 28 * f;
+        const rky = masterY - 55;
+        const rikaFloat = Math.sin(rt * 0.8) * 4;
+        const rkBaseY = rky + rikaFloat;
 
-        // Large dark body mass
-        g.fillStyle(0x1A0A22, rikaAlpha);
-        g.fillEllipse(rkx, rky + 10, 55, 70);
-        // Armored torso ridges
-        g.fillStyle(0x2A1533, rikaAlpha * 0.8);
-        g.fillEllipse(rkx, rky + 5, 45, 55);
-        g.lineStyle(1, 0x441155, rikaAlpha * 0.5);
-        g.strokeEllipse(rkx, rky + 5, 45, 55);
+        // ── Rika's Radial Hair (10 strands flowing downward with gravity) ──
+        const rkHeadX = rkx;
+        const rkHeadY = rkBaseY - 18;
+        const rkHeadR = 14;
+        const strandCount = 8;
+        for (let i = 0; i < strandCount; i++) {
+            const t = i / (strandCount - 1);
+            const baseAngle = Math.PI * 1.05 + t * (Math.PI * 0.9);
+            const wave = Math.sin(rt * 2.5 + i * 0.6) * 0.06;
+            const angle = baseAngle + wave;
+            const startX = rkHeadX + rkHeadR * Math.cos(angle);
+            const startY = rkHeadY + rkHeadR * Math.sin(angle);
+            const length = 35 + Math.sin(t * Math.PI) * 10;
+            const endX = startX + Math.cos(angle) * length * 0.6;
+            const endY = startY + length * 0.8;
 
-        // Head — large, slightly pointed
-        g.fillStyle(0x1A0A22, rikaAlpha * 1.2);
-        g.beginPath();
-        g.moveTo(rkx - 18, rky - 5);
-        g.lineTo(rkx - 14, rky - 28);
-        g.lineTo(rkx - 5, rky - 35);
-        g.lineTo(rkx + 5, rky - 35);
-        g.lineTo(rkx + 14, rky - 28);
-        g.lineTo(rkx + 18, rky - 5);
-        g.fillPath();
-        // Pointed ears
-        g.fillStyle(0x1A0A22, rikaAlpha);
-        g.beginPath(); g.moveTo(rkx - 16, rky - 22); g.lineTo(rkx - 25, rky - 38); g.lineTo(rkx - 10, rky - 25); g.fillPath();
-        g.beginPath(); g.moveTo(rkx + 16, rky - 22); g.lineTo(rkx + 25, rky - 38); g.lineTo(rkx + 10, rky - 25); g.fillPath();
-
-        // SINGLE CYCLOPS EYE (large, glowing)
-        g.fillStyle(0x000000, rikaAlpha * 1.5);
-        g.fillEllipse(rkx, rky - 16, 10, 12);
-        const eyeGlow = 0.5 + Math.sin(rt * 3) * 0.3;
-        g.fillStyle(0xFF2288, rikaAlpha * eyeGlow * 2);
-        g.fillCircle(rkx, rky - 16, 4);
-        g.fillStyle(0xFFFFFF, rikaAlpha * eyeGlow);
-        g.fillCircle(rkx - 1, rky - 17, 1.5);
-
-        // Wide mouth with fangs
-        g.fillStyle(0x000000, rikaAlpha * 0.8);
-        g.beginPath();
-        g.moveTo(rkx - 10, rky - 5); g.lineTo(rkx + 10, rky - 5);
-        g.lineTo(rkx + 7, rky - 1); g.lineTo(rkx - 7, rky - 1);
-        g.fillPath();
-        // Fangs
-        g.fillStyle(0xDDCCDD, rikaAlpha);
-        g.fillTriangle(rkx - 7, rky - 5, rkx - 5, rky - 5, rkx - 6, rky - 1);
-        g.fillTriangle(rkx + 5, rky - 5, rkx + 7, rky - 5, rkx + 6, rky - 1);
-        g.fillTriangle(rkx - 2, rky - 5, rkx + 2, rky - 5, rkx, rky - 2);
-
-        // CLAWS reaching forward (toward Yuta's front)
-        const clawAlpha = rikaAlpha * (this.copyActive ? 1.2 : 0.6);
-        g.lineStyle(3, 0x1A0A22, clawAlpha);
-        // Left claw arm
-        g.beginPath(); g.moveTo(rkx - 20, rky + 15);
-        g.lineTo(x - 10, masterY - 20); g.strokePath();
-        g.fillStyle(0x1A0A22, clawAlpha);
-        for (let c = 0; c < 3; c++) {
-            const cx = x - 15 + c * 5; const cy = masterY - 22 - c * 3;
-            g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx - 3, cy - 8); g.lineTo(cx + 1, cy - 2); g.fillPath();
-        }
-        // Right claw arm
-        g.lineStyle(3, 0x1A0A22, clawAlpha);
-        g.beginPath(); g.moveTo(rkx + 20, rky + 15);
-        g.lineTo(x + 10, masterY - 20); g.strokePath();
-        g.fillStyle(0x1A0A22, clawAlpha);
-        for (let c = 0; c < 3; c++) {
-            const cx = x + 5 + c * 5; const cy = masterY - 22 - c * 3;
-            g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + 3, cy - 8); g.lineTo(cx - 1, cy - 2); g.fillPath();
+            // Outer stroke
+            g.lineStyle(5, 0x000000, rikaAlpha * 0.5);
+            g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
+            // Inner fill
+            g.lineStyle(3, 0xcbd5e1, rikaAlpha * 0.7);
+            g.beginPath(); g.moveTo(startX, startY); g.lineTo(endX, endY); g.strokePath();
         }
 
-        // Dark tendrils / hair flowing
-        g.lineStyle(2, 0x110818, rikaAlpha * 0.7);
-        for (let i = 0; i < 4; i++) {
-            const wave = Math.sin(rt + i * 1.5) * 8;
+        // ── Rika's Segmented Tail (flowing downward from torso) ──
+        const tailBaseX = rkx;
+        const tailBaseY = rkBaseY + 20;
+        const tailSegments = 8;
+        const tailBaseWidth = 18;
+        let prevTailX = tailBaseX;
+        let prevTailY = tailBaseY;
+        for (let i = 0; i < tailSegments; i++) {
+            const segT = i / tailSegments;
+            const segWidth = tailBaseWidth * (1 - segT * 0.85);
+            const waveX = Math.sin(rt * 3 - i * 0.35) * 3;
+            const nextX = prevTailX + waveX;
+            const nextY = prevTailY + 8;
+            g.fillStyle(0xcbd5e1, rikaAlpha * 0.6);
             g.beginPath();
-            g.moveTo(rkx - 12 + i * 8, rky - 30);
-            g.lineTo(rkx - 15 + i * 10 + wave, rky - 50 - i * 3);
+            g.moveTo(prevTailX - segWidth / 2, prevTailY);
+            g.lineTo(prevTailX + segWidth / 2, prevTailY);
+            g.lineTo(nextX + (segWidth * 0.8) / 2, nextY);
+            g.lineTo(nextX - (segWidth * 0.8) / 2, nextY);
+            g.closePath();
+            g.fillPath();
+            g.lineStyle(1, 0x000000, rikaAlpha * 0.3);
             g.strokePath();
+            prevTailX = nextX;
+            prevTailY = nextY;
+        }
+        // Triangle tip
+        const tipW = tailBaseWidth * 0.15;
+        g.fillStyle(0xcbd5e1, rikaAlpha * 0.5);
+        g.fillTriangle(prevTailX - tipW, prevTailY, prevTailX + tipW, prevTailY, prevTailX, prevTailY + 10);
+
+        // ── Rika's Dark Orbs (orbiting near tail base) ──
+        const orbData = [
+            { dx: -8, dy: 15, size: 5, phase: 0 },
+            { dx: 6, dy: 22, size: 4, phase: 1.5 },
+            { dx: -3, dy: 32, size: 6, phase: 3 },
+            { dx: 8, dy: 38, size: 3, phase: 4.5 }
+        ];
+        orbData.forEach(orb => {
+            const ox = tailBaseX + orb.dx + Math.sin(rt * 4 + orb.phase) * 3;
+            const oy = tailBaseY + orb.dy + Math.cos(rt * 4 + orb.phase) * 2;
+            g.fillStyle(0x0f172a, rikaAlpha * 1.2);
+            g.fillCircle(ox, oy, orb.size);
+            g.lineStyle(1, 0x000000, rikaAlpha * 0.5);
+            g.strokeCircle(ox, oy, orb.size);
+        });
+
+        // ── Rika's Arms (bone-like with claws) ──
+        const drawRikaArm = (side) => {
+            const s = side;
+            const shoulderX = rkx + s * 18;
+            const shoulderY = rkBaseY + 2;
+            const armSway = Math.sin(rt * 2 + (side > 0 ? 0 : Math.PI)) * 0.15;
+            const elbowAngle = (side < 0 ? Math.PI * 0.8 : Math.PI * 0.2) + armSway;
+            const wristAngle = elbowAngle + (side < 0 ? -0.2 : 0.2) + Math.sin(rt * 3) * 0.08;
+            const upperLen = 18;
+            const foreLen = 16;
+            const elbowX = shoulderX + Math.cos(elbowAngle) * upperLen;
+            const elbowY = shoulderY + Math.sin(elbowAngle) * upperLen;
+            const wristX = elbowX + Math.cos(wristAngle) * foreLen;
+            const wristY = elbowY + Math.sin(wristAngle) * foreLen;
+
+            // Bone outline
+            g.lineStyle(4, 0x000000, rikaAlpha * 0.5);
+            g.beginPath(); g.moveTo(shoulderX, shoulderY); g.lineTo(elbowX, elbowY); g.lineTo(wristX, wristY); g.strokePath();
+            // Bone fill
+            g.lineStyle(2, 0xe2e8f0, rikaAlpha * 0.7);
+            g.beginPath(); g.moveTo(shoulderX, shoulderY); g.lineTo(elbowX, elbowY); g.lineTo(wristX, wristY); g.strokePath();
+
+            // Joints
+            g.fillStyle(0xe2e8f0, rikaAlpha * 0.7);
+            g.fillCircle(shoulderX, shoulderY, 4);
+            g.fillCircle(elbowX, elbowY, 3);
+            g.fillCircle(wristX, wristY, 3);
+
+            // Spine claws
+            const clawAngles = [-0.4, -0.2, 0, 0.2, 0.4];
+            g.lineStyle(1.5, 0x000000, rikaAlpha * 0.6);
+            clawAngles.forEach(offset => {
+                const finalAngle = wristAngle + (side < 0 ? Math.PI : 0) + offset;
+                const clawEndX = wristX + Math.cos(finalAngle) * 8;
+                const clawEndY = wristY + Math.sin(finalAngle) * 8;
+                g.beginPath(); g.moveTo(wristX, wristY); g.lineTo(clawEndX, clawEndY); g.strokePath();
+            });
+        };
+        drawRikaArm(-1);
+        drawRikaArm(1);
+
+        // ── Rika's Torso (trapezoidal ribcage) ──
+        g.fillStyle(0xe2e8f0, rikaAlpha * 0.6);
+        g.beginPath();
+        g.moveTo(rkx - 14, rkBaseY - 5);
+        g.lineTo(rkx + 14, rkBaseY - 5);
+        g.lineTo(rkx + 6, rkBaseY + 20);
+        g.lineTo(rkx - 6, rkBaseY + 20);
+        g.closePath();
+        g.fillPath();
+        // Spine line
+        g.lineStyle(1.5, 0x94a3b8, rikaAlpha * 0.5);
+        g.lineBetween(rkx, rkBaseY - 5, rkx, rkBaseY + 18);
+        // Ribs
+        for (let i = 0; i < 3; i++) {
+            const ribY = rkBaseY + i * 7;
+            const ribW = 10 - i * 2;
+            g.lineStyle(1, 0x94a3b8, rikaAlpha * 0.4);
+            g.lineBetween(rkx - ribW, ribY, rkx + ribW, ribY);
         }
 
-        // LEGS
+        // ── Rika's Head (void face with fangs) ──
+        // Head circle
+        g.fillStyle(0xe2e8f0, rikaAlpha * 0.7);
+        g.fillCircle(rkHeadX, rkHeadY, rkHeadR);
+        // Dark void interior
+        g.fillStyle(0x0a0a0c, rikaAlpha * 0.8);
+        g.fillEllipse(rkHeadX, rkHeadY, rkHeadR * 1.0, rkHeadR * 1.2);
+        // Purple mouth void
+        const mouthY = rkHeadY + 4;
+        g.fillStyle(0x4a1147, rikaAlpha * 0.9);
+        g.fillEllipse(rkHeadX, mouthY, 8, 7);
+        // Triangular fangs (top row)
+        g.fillStyle(0xFFFFFF, rikaAlpha * 0.8);
+        for (let i = 0; i < 5; i++) {
+            const tx = rkHeadX - 6 + (i * 3);
+            g.fillTriangle(tx, mouthY - 5, tx + 1.5, mouthY - 1, tx + 3, mouthY - 5);
+        }
+        // Triangular fangs (bottom row)
+        for (let i = 0; i < 5; i++) {
+            const tx = rkHeadX - 6 + (i * 3);
+            g.fillTriangle(tx, mouthY + 5, tx + 1.5, mouthY + 1, tx + 3, mouthY + 5);
+        }
+        // Cyclops eye
+        const eyeGlow = 0.5 + Math.sin(rt * 3) * 0.3;
+        g.fillStyle(0xef4444, rikaAlpha * eyeGlow * 2);
+        g.fillCircle(rkHeadX, rkHeadY - 6, 3);
+        g.fillStyle(0xFFFFFF, rikaAlpha * eyeGlow);
+        g.fillCircle(rkHeadX - 1, rkHeadY - 7, 1);
+
+        // ════════════════════════════════════════════
+        // YUTA OKKOTSU — White Uniform with Katana
+        // ════════════════════════════════════════════
+
+        // ── LEGS ──
         const legY = masterY + 8;
         let leftLeg = 38, rightLeg = 38;
         if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
         else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 22; rightLeg = 22; }
-        g.lineStyle(7, uniformColor, 1);
+        g.lineStyle(7, pantColor, 1);
         g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 14 - (f * 8), legY + leftLeg); g.strokePath();
         g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 14 + (f * 8), legY + rightLeg); g.strokePath();
+        // Blue knee joints
+        g.fillStyle(0x3b82f6, 1);
+        g.fillCircle(x - 12 - f * 4, legY + leftLeg * 0.6, 4);
+        g.fillCircle(x + 12 + f * 4, legY + rightLeg * 0.6, 4);
 
-        // TORSO — Jujutsu High uniform
+        // ── TORSO (White uniform, closed) ──
         g.fillStyle(uniformColor, 1);
         g.fillRect(x - 15, masterY - 38, 30, 50);
-        // Collar
+        // Collar V-lines
         g.lineStyle(1, 0x333366, 0.6);
         g.lineBetween(x - 6, masterY - 38, x, masterY - 30);
         g.lineBetween(x + 6, masterY - 38, x, masterY - 30);
 
-        // HEAD
+        // ── HEAD ──
         const hx = x; const hy = masterY - 52;
-        g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, 13);
-        // Hair — dark, messy medium length
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(hx, hy, 13);
+        // Dark messy spiky hair
         g.fillStyle(hairColor, 1);
-        g.beginPath();
-        g.moveTo(hx - 14, hy - 4); g.lineTo(hx - 12, hy - 18);
-        g.lineTo(hx - 5, hy - 14); g.lineTo(hx, hy - 20);
-        g.lineTo(hx + 5, hy - 14); g.lineTo(hx + 12, hy - 18);
-        g.lineTo(hx + 14, hy - 4); g.fillPath();
+        // Hair base band
+        g.fillRect(hx - 12, hy - 8, 24, 5);
+        // Spiky triangles
+        g.fillTriangle(hx - 7, hy - 5, hx - 10, hy - 17, hx - 4, hy - 5);
+        g.fillTriangle(hx - 2, hy - 5, hx - 3, hy - 19, hx + 1, hy - 5);
+        g.fillTriangle(hx + 3, hy - 5, hx + 2, hy - 18, hx + 6, hy - 5);
+        g.fillTriangle(hx + 8, hy - 5, hx + 10, hy - 16, hx + 11, hy - 5);
+        // Side hair
         g.fillRect(hx - 15, hy - 4, 4, 10);
         g.fillRect(hx + 11, hy - 4, 4, 10);
-        // Eyes
-        g.fillStyle(0x334488, 1);
-        g.fillCircle(hx - 4 * f, hy - 2, 2);
-        g.fillCircle(hx + 4 * f, hy - 2, 2);
+        // Exhausted eye bags
+        g.lineStyle(1, 0x2c2e3f, 0.5);
+        g.lineBetween(hx - 5, hy - 1, hx - 1, hy - 1);
+        g.lineBetween(hx + 1, hy - 1, hx + 5, hy - 1);
+        // Blue eyes
+        g.fillStyle(0x3b82f6, 1);
+        g.fillCircle(hx - 3 * f, hy - 2, 1.5);
+        g.fillCircle(hx + 3 * f, hy - 2, 1.5);
 
-        // ARMS + KATANA
+        // ── ARMS + KATANA ──
         const armY = masterY - 32;
+        // Back arm
         g.lineStyle(7, uniformColor, 0.85);
         g.beginPath(); g.moveTo(x - 14, armY + 3); g.lineTo(x - 22 * f, armY + 20); g.strokePath();
+        g.fillStyle(0x3b82f6, 1); g.fillCircle(x - 22 * f, armY + 12, 3); // Elbow joint
+        g.fillStyle(skinColor, 1); g.fillCircle(x - 22 * f, armY + 22, 4); // Hand
+
         // Front arm with katana
         g.lineStyle(8, uniformColor, 1);
         if (this.stateMachine.is('block')) {
             g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 8 * f, armY - 12); g.strokePath();
+            g.fillStyle(0x3b82f6, 1); g.fillCircle(x + 8 * f, armY - 6, 3);
+            g.fillStyle(skinColor, 1); g.fillCircle(x + 8 * f, armY - 14, 4);
             // Katana guard position
             g.lineStyle(3, 0xCCCCDD, 1);
             g.beginPath(); g.moveTo(x + 5 * f, armY - 15); g.lineTo(x + 5 * f, armY + 15); g.strokePath();
         } else if (this.attackSwing > 0) {
             g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (25 + armExtend) * f, armY - 3); g.strokePath();
+            g.fillStyle(0x3b82f6, 1); g.fillCircle(x + (20 + armExtend * 0.5) * f, armY, 3);
+            g.fillStyle(skinColor, 1); g.fillCircle(x + (27 + armExtend) * f, armY - 4, 4);
             // Katana extended
             g.lineStyle(2, 0xCCCCDD, 1);
             g.beginPath(); g.moveTo(x + (25 + armExtend) * f, armY - 5);
@@ -1110,12 +1224,14 @@ export default class Yuta extends Fighter {
             g.lineTo(x + (50 + armExtend) * f, armY - 18); g.strokePath();
         } else {
             g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 18 * f, armY + 20); g.strokePath();
+            g.fillStyle(0x3b82f6, 1); g.fillCircle(x + 16 * f, armY + 12, 3);
+            g.fillStyle(skinColor, 1); g.fillCircle(x + 18 * f, armY + 22, 4);
             // Katana at side
             g.lineStyle(2, 0xCCCCDD, 1);
             g.beginPath(); g.moveTo(x + 16 * f, armY + 18);
             g.lineTo(x + 10 * f, armY + 50); g.strokePath();
             // Handle
-            g.lineStyle(3, 0x443322, 1);
+            g.lineStyle(3, 0xfbbf24, 1);
             g.beginPath(); g.moveTo(x + 17 * f, armY + 15);
             g.lineTo(x + 16 * f, armY + 22); g.strokePath();
         }

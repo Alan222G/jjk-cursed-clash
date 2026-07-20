@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Diseñador de Personajes (Toji Musculoso & Kenjaku Proporcional)</title>
+    <style>
+        :root {
+            --bg-color: #0d0e12;
+            --card-bg: #161821;
+            --text-color: #e3e6eb;
+            --accent-color: #10b981;
+            --accent-kenjaku: #8b5cf6;
+            --border-color: #2a2e3f;
+            --code-bg: #090a0f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #10b981, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #8f9cae;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #202436 0%, #0d0e12 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #33394d;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 450px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #b0bac9;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 340px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #1f2230;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #8f9cae;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-color);
+            padding-top: 8px;
+        }
+
+        .tab-btn.active.kenjaku-tab {
+            border-top-color: var(--accent-kenjaku);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #5d6775;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Antigravity Stickman & Melon Sandbox Designer</h1>
+        <p>Previsualización de los diseños canon optimizados para Toji Fushiguro (Musculoso) y Kenjaku (Cabello largo, Cuello definido y Extremidades completas).</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-toji" onclick="switchCharacter('toji')">Toji Fushiguro</button>
+            <button class="tab-btn" id="btn-kenjaku" onclick="switchCharacter('kenjaku')">Kenjaku / Geto</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-color);"></span>
+                    <span id="char-title">Previsualización: Toji Fushiguro</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-toji">
+                        <h3>Opciones de Toji</h3>
+                        <div class="control-group">
+                            <label for="color-toji-ropa">Color de Camiseta:</label>
+                            <input type="color" id="color-toji-ropa" value="#111113" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-toji-gusano">Color del Gusano:</label>
+                            <input type="color" id="color-toji-gusano" value="#6b327a" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-toji-piel">Color de Piel:</label>
+                            <input type="color" id="color-toji-piel" value="#eec7b8" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-kenjaku">
+                        <h3>Opciones de Kenjaku</h3>
+                        <div class="control-group">
+                            <label for="color-kenjaku-tunica">Color de Túnica:</label>
+                            <input type="color" id="color-kenjaku-tunica" value="#1c1b2e" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-kenjaku-kesa">Color de Manto (Okesa):</label>
+                            <input type="color" id="color-kenjaku-kesa" value="#1e3f20" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-kenjaku-piel">Color de Piel:</label>
+                            <input type="color" id="color-kenjaku-piel" value="#ebd0c5" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Configuración</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Bordes Negros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Simular Físicas:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-toji">
+                    <div class="code-header">
+                        <h2>Código para Antigravity (Toji)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-toji')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-toji"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-kenjaku">
+                    <div class="code-header">
+                        <h2>Código para Antigravity (Kenjaku)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-kenjaku')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-kenjaku"></code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <p class="footer-note">
+            📐 <strong>Control de Proporciones:</strong> La cabeza de Geto ha sido reubicada verticalmente a un offset de -49 para despejar un espacio de cuello de 12px de alto. Los brazos ahora constan de un set completo (Manga -> Codo -> Antebrazo -> Mano).
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'toji';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            toji: { ropa: '#111113', gusano: '#6b327a', piel: '#eec7b8' },
+            kenjaku: { tunica: '#1c1b2e', kesa: '#1e3f20', piel: '#ebd0c5' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-toji').classList.toggle('active', char === 'toji');
+            document.getElementById('btn-kenjaku').classList.toggle('active', char === 'kenjaku');
+            if(char === 'kenjaku') document.getElementById('btn-kenjaku').classList.add('kenjaku-tab');
+            else document.getElementById('btn-kenjaku').classList.remove('kenjaku-tab');
+            
+            document.getElementById('ctrl-toji').classList.toggle('hidden', char !== 'toji');
+            document.getElementById('ctrl-kenjaku').classList.toggle('hidden', char !== 'kenjaku');
+            
+            document.getElementById('code-toji').classList.toggle('hidden', char !== 'toji');
+            document.getElementById('code-kenjaku').classList.toggle('hidden', char !== 'kenjaku');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'toji') {
+                badge.style.backgroundColor = 'var(--accent-color)';
+                title.innerText = 'Previsualización: Toji Fushiguro';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-kenjaku)';
+                title.innerText = 'Previsualización: Kenjaku / Geto';
+            }
+        }
+
+        function updateColors() {
+            colors.toji.ropa = document.getElementById('color-toji-ropa').value;
+            colors.toji.gusano = document.getElementById('color-toji-gusano').value;
+            colors.toji.piel = document.getElementById('color-toji-piel').value;
+
+            colors.kenjaku.tunica = document.getElementById('color-kenjaku-tunica').value;
+            colors.kenjaku.kesa = document.getElementById('color-kenjaku-kesa').value;
+            colors.kenjaku.piel = document.getElementById('color-kenjaku-piel').value;
+
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.5);' : '';
+
+            const codeToji = `// === DISEÑO MEJORADO: TOJI FUSHIGURO (COMPLEXIÓN CORPULENTA) ===` + strokeCode + `
+
+// Capa 1: Torso Musculoso (Ancho expandido)
+dibujarRectangulo(torso_superior, ancho: 27, alto: 38, color: "${colors.toji.ropa}");
+dibujarRectangulo(torso_inferior, ancho: 26, alto: 18, color: "${colors.toji.ropa}");
+dibujarRectangulo(cuello, ancho: 12, alto: 10, color: "${colors.toji.piel}");
+
+// Abdomen y definición muscular (Frontal libre de bloqueos)
+dibujarLinea(linea_pecho_izq, x1: -8, y1: 5, x2: -2, y2: 5, grosor: 1.5, color: "#1f1f23");
+dibujarLinea(linea_pecho_der, x1: 2, y1: 5, x2: 8, y2: 5, grosor: 1.5, color: "#1f1f23");
+dibujarLinea(abs_central, x1: 0, y1: -2, x2: 0, y2: -12, grosor: 1.2, color: "#1f1f23");
+
+// Brazos robustos (Grosor aumentado a 8.5)
+dibujarRectangulo(brazo_superior_izq, ancho: 8.5, alto: 22, color: "${colors.toji.ropa}");
+dibujarCirculo(articulacion_codo_izq, radio: 4, color: "#22c55e");
+dibujarRectangulo(brazo_inferior_izq, ancho: 7, alto: 20, color: "${colors.toji.piel}");
+
+dibujarRectangulo(brazo_superior_der, ancho: 8.5, alto: 22, color: "${colors.toji.ropa}");
+dibujarCirculo(articulacion_codo_der, radio: 4, color: "#22c55e");
+dibujarRectangulo(brazo_inferior_der, ancho: 7, alto: 20, color: "${colors.toji.piel}");
+
+// Piernas y Pantalones de entrenamiento (Gris Claro / Blanco)
+dibujarRectangulo(pierna_superior_izq, ancho: 9, alto: 28, color: "#e5e7eb");
+dibujarCirculo(articulacion_rodilla_izq, radio: 4, color: "#22c55e");
+dibujarRectangulo(pierna_inferior_izq, ancho: 8, alto: 25, color: "#e5e7eb");
+dibujarRectangulo(pierna_superior_der, ancho: 9, alto: 28, color: "#e5e7eb");
+dibujarCirculo(articulacion_rodilla_der, radio: 4, color: "#22c55e");
+dibujarRectangulo(pierna_inferior_der, ancho: 8, alto: 25, color: "#e5e7eb");
+
+// Capa 2: Maldición de Inventario Envolvente (Trazo Canon Trasero/Lateral)
+dibujarCirculo(gusano_gran_cuerpo_hombro, radio: 11, color: "${colors.toji.gusano}");
+dibujarCirculo(ojo_maldicion_1, radio: 1.5, color: "#000000");
+dibujarCirculo(ojo_maldicion_2, radio: 1.5, color: "#000000");
+dibujarCirculo(gusano_bucle_espalda, radio: 7, color: "${colors.toji.gusano}");
+dibujarCirculo(gusano_salida_cadera, radio: 6.5, color: "${colors.toji.gusano}");
+
+// Capa 3: Cabeza y Cicatriz
+dibujarCirculo(cabeza_base, radio: 13, color: "${colors.toji.piel}");
+dibujarLinea(cicatriz_labio, x1: -4, y1: -5, x2: -1, y2: -3, grosor: 1.5, color: "#7f1d1d");
+
+// Capa 4: Cabello Liso Caído hacia el centro
+dibujarTriangulo(mechon_centro_1, base: 5, altura: 9, color: "#000000", rotacion: 12);
+dibujarTriangulo(mechon_centro_2, base: 6, altura: 11, color: "#000000", rotacion: 2);
+dibujarTriangulo(mechon_centro_3, base: 5, altura: 9, color: "#000000", rotacion: -12);
+dibujarRectangulo(cobertura_pelo_superior, ancho: 26, alto: 6, color: "#000000");`;
+
+            const codeKenjaku = `// === DISEÑO MEJORADO: KENJAKU / GETO (CON CUELLO Y BRAZOS COMPLETOS) ===` + strokeCode + `
+
+// Capa 0: Fondo de Cabello Largo Desplegado
+dibujarRectangulo(cabello_largo_trasero, ancho: 25, alto: 40, color: "#141416");
+
+// Capa 1: Túnica Budista Base (Oscura)
+dibujarRectangulo(torso_superior, ancho: 25, alto: 38, color: "${colors.kenjaku.tunica}");
+dibujarRectangulo(torso_inferior, ancho: 25, alto: 18, color: "${colors.kenjaku.tunica}");
+
+// Cuello Redefinido (Soporte visible sin solapamiento)
+dibujarRectangulo(cuello_anatomico, ancho: 9.5, alto: 12, color: "${colors.kenjaku.piel}");
+
+// Brazos Estilo Stickman Completos (Manga ancha -> Codo -> Antebrazo -> Mano)
+dibujarRectangulo(manga_ancha_izq, ancho: 12, alto: 22, color: "${colors.kenjaku.tunica}");
+dibujarCirculo(codo_izq, radio: 4, color: "#6b21a8");
+dibujarRectangulo(antebrazo_izq, ancho: 7, alto: 18, color: "${colors.kenjaku.piel}");
+dibujarCirculo(mano_izq, radio: 4, color: "${colors.kenjaku.piel}");
+
+dibujarRectangulo(manga_ancha_der, ancho: 12, alto: 22, color: "${colors.kenjaku.tunica}");
+dibujarCirculo(codo_der, radio: 4, color: "#6b21a8");
+dibujarRectangulo(antebrazo_der, ancho: 7, alto: 18, color: "${colors.kenjaku.piel}");
+dibujarCirculo(mano_der, radio: 4, color: "${colors.kenjaku.piel}");
+
+// Capa 2: Toga Okesa Tradicional (Manto Verde con rejilla dorada)
+dibujarRectangulo(manto_kesa_frontal, ancho: 18, alto: 30, color: "${colors.kenjaku.kesa}");
+dibujarRectangulo(borde_dorado_kesa, ancho: 18, alto: 30, color: "transparent", bordeColor: "#eab308");
+dibujarLinea(division_kesa_h_1, x1: -9, y1: 5, x2: 9, y2: 5, grosor: 1.2, color: "#eab308");
+dibujarLinea(division_kesa_h_2, x1: -9, y1: -5, x2: 9, y2: -5, grosor: 1.2, color: "#eab308");
+dibujarLinea(division_kesa_v, x1: 0, y1: -15, x2: 0, y2: 15, grosor: 1.2, color: "#eab308");
+
+// Capa 3: Cabeza Proporcional y Costuras de la Frente
+dibujarCirculo(cabeza_base, radio: 13, color: "${colors.kenjaku.piel}");
+dibujarLinea(linea_costura_principal, x1: -8, y1: 8, x2: 8, y2: 8, grosor: 1.5, color: "#7f1d1d");
+
+// Capa 4: Peinado Alto (Moño) y Mechón Izquierdo
+dibujarCirculo(moño_alto, radio: 4.5, color: "#141416");
+dibujarTriangulo(mechon_frontal, base: 3.5, altura: 14, color: "#141416", rotacion: -25);`;
+
+            document.getElementById('code-block-toji').textContent = codeToji;
+            document.getElementById('code-block-kenjaku').textContent = codeKenjaku;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.04;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 30;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const floatOffset = isMoving ? Math.sin(time * 1.5) * 3 : 0;
+
+            if (currentCharacter === 'toji') {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Piernas Blancas/Gris de Toji (Pantalón holgado canon)
+                drawRect(ox - 7, oy + 41, 9, 28, '#e5e7eb', isMoving ? Math.cos(time)*4 : 0);
+                drawCircle(ox - 7, oy + 54, 4, '#22c55e');
+                drawRect(ox - 7, oy + 67, 8, 25, '#e5e7eb', isMoving ? Math.cos(time + 0.5)*3 : 0);
+                
+                drawRect(ox + 7, oy + 41, 9, 28, '#e5e7eb', isMoving ? -Math.cos(time)*4 : 0);
+                drawCircle(ox + 7, oy + 54, 4, '#22c55e');
+                drawRect(ox + 7, oy + 67, 8, 25, '#e5e7eb', isMoving ? -Math.cos(time + 0.5)*3 : 0);
+
+                // MALDICIÓN: Capa trasera/lateral del gusano (No tapa el abdomen frontal)
+                drawCircle(ox - 15,  oy - 18, 11, colors.toji.gusano); 
+                drawCircle(ox - 18, oy - 21, 1.5, '#000000'); 
+                drawCircle(ox - 13, oy - 19, 1.5, '#000000'); 
+                drawCircle(ox - 12, oy - 2, 7, colors.toji.gusano);  
+                drawCircle(ox + 12, oy + 18, 6.5, colors.toji.gusano); 
+
+                // Torso Más Musculoso (Ancho 27)
+                drawRect(ox, oy + 18, 26, 18, colors.toji.ropa);
+                drawRect(ox, oy - 10, 27, 38, colors.toji.ropa);
+                drawRect(ox, oy - 31, 12, 10, colors.toji.piel);
+
+                // Detalles de músculos / Abs en la camiseta apretada
+                drawLine(ox - 7, oy - 5, ox - 2, oy - 5, 1.5, '#222226');
+                drawLine(ox + 2, oy - 5, ox + 7, oy - 5, 1.5, '#222226');
+                drawLine(ox, oy + 2, ox, oy + 14, 1.5, '#222226');
+
+                // Brazos musculosos más gruesos
+                drawRect(ox - 16, oy - 13, 8.5, 22, colors.toji.ropa, isMoving ? Math.sin(time)*10 : 5);
+                drawCircle(ox - 17, oy - 2, 4, '#22c55e');
+                drawRect(ox - 16, oy + 9, 7, 20, colors.toji.piel, 5);
+
+                drawRect(ox + 16, oy - 13, 8.5, 22, colors.toji.ropa, isMoving ? -Math.sin(time)*10 : -5);
+                drawCircle(ox + 17, oy - 2, 4, '#22c55e');
+                drawRect(ox + 16, oy + 9, 7, 20, colors.toji.piel, -5);
+
+                // Cabeza
+                drawCircle(ox, oy - 45, 13, colors.toji.piel);
+                drawLine(ox - 5, oy - 46, ox - 1, oy - 46, 1.5, '#000000');
+                drawLine(ox + 1, oy - 46, ox + 5, oy - 46, 1.5, '#000000');
+                drawLine(ox - 4, oy - 40, ox - 1, oy - 41, 1.5, '#7f1d1d'); 
+
+                // CABELLO: Triángulos cayendo en dirección al centro del círculo
+                drawRect(ox, oy - 56, 26, 6, '#000000');
+                drawTriangle(ox - 6, oy - 50, 6, 10, '#000000', 15);  
+                drawTriangle(ox, oy - 49, 7, 12, '#000000', 2);      
+                drawTriangle(ox + 6, oy - 50, 6, 10, '#000000', -15); 
+
+            } else {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // CABELLO LARGO DE KENJAKU (En el fondo, cubriendo la nuca y espalda baja)
+                drawRect(ox, oy - 42, 25, 40, '#141416');
+
+                // Piernas Toga
+                drawRect(ox - 7, oy + 39, 10, 28, colors.kenjaku.tunica, isMoving ? Math.cos(time * 1.2) * 5 : 0);
+                drawCircle(ox - 7, oy + 52, 4, '#6b21a8');
+                drawRect(ox - 7, oy + 65, 9, 25, colors.kenjaku.tunica, 0);
+                drawRect(ox + 7, oy + 39, 10, 28, colors.kenjaku.tunica, isMoving ? -Math.cos(time * 1.2) * 5 : 0);
+                drawCircle(ox + 7, oy + 52, 4, '#6b21a8');
+                drawRect(ox + 7, oy + 65, 9, 25, colors.kenjaku.tunica, 0);
+
+                // Túnica Base Oscura y Cuello Visible (Despejado)
+                drawRect(ox, oy - 10, 25, 38, colors.kenjaku.tunica);
+                drawRect(ox, oy + 16, 25, 18, colors.kenjaku.tunica);
+                
+                // CUELLO VISIBLE (y: -33, alto: 12) -> Hace de conector limpio entre torso (-29) y cabeza (-36)
+                drawRect(ox, oy - 33, 9.5, 12, colors.kenjaku.piel);
+
+                // TOGA / OKESA CANON (Manto verde con rejilla dorada/amarilla)
+                drawRect(ox, oy + 2, 18, 30, colors.kenjaku.kesa);
+                ctx.strokeStyle = '#eab308';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(ox - 9, oy - 13, 18, 30);
+                drawLine(ox - 9, oy - 3, ox + 9, oy - 3, 1.2, '#eab308');
+                drawLine(ox - 9, oy + 7, ox + 9, oy + 7, 1.2, '#eab308');
+                drawLine(ox, oy - 13, ox, oy + 17, 1.2, '#eab308');
+
+                // === BRAZOS COMPLETOS (Rotación jerárquica unificada) ===
+                // Brazo Izquierdo
+                const rotIzquierda = isMoving ? Math.sin(time * 1.2) * 8 : 5;
+                drawRect(ox - 16, oy - 10, 12, 22, colors.kenjaku.tunica, rotIzquierda);
+                
+                ctx.save();
+                ctx.translate(ox - 16, oy - 10);
+                ctx.rotate(rotIzquierda * Math.PI / 180);
+                drawCircle(-1, 11, 4, '#6b21a8'); // Codo
+                drawRect(-1, 20, 7, 18, colors.kenjaku.piel, 0); // Antebrazo
+                drawCircle(-1, 29, 4, colors.kenjaku.piel); // Mano
+                ctx.restore();
+
+                // Brazo Derecho
+                const rotDerecha = isMoving ? -Math.sin(time * 1.2) * 8 : -5;
+                drawRect(ox + 16, oy - 10, 12, 22, colors.kenjaku.tunica, rotDerecha);
+                
+                ctx.save();
+                ctx.translate(ox + 16, oy - 10);
+                ctx.rotate(rotDerecha * Math.PI / 180);
+                drawCircle(1, 11, 4, '#6b21a8'); // Codo
+                drawRect(1, 20, 7, 18, colors.kenjaku.piel, 0); // Antebrazo
+                drawCircle(1, 29, 4, colors.kenjaku.piel); // Mano
+                ctx.restore();
+
+                // Cabeza (Reubicada a y: -49 para dar espacio)
+                drawCircle(ox, oy - 49, 13, colors.kenjaku.piel);
+                
+                // Ojos proporcionales
+                drawCircle(ox - 4,  oy - 50, 2.5, '#a855f7');
+                drawCircle(ox + 4,  oy - 50, 2.5, '#a855f7');
+
+                // CICATRIZ DE COSTURAS EN LA FRENTE
+                drawLine(ox - 8, oy - 57, ox + 8, oy - 57, 1.5, '#7f1d1d');
+                for (let i = -6; i <= 6; i += 3) {
+                    drawLine(ox + i, oy - 59, ox + i, oy - 55, 1, '#450a0a');
+                }
+
+                // Peinado: Moño alto + mechón icónico cayendo al frente
+                drawRect(ox, oy - 61, 22, 6, '#141416');
+                drawCircle(ox, oy - 65, 4.5, '#141416'); 
+                drawTriangle(ox - 6, oy - 51, 3.5, 14, '#141416', -25); 
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const btn = document.querySelector(`#${elementId === 'code-block-toji' ? 'code-toji' : 'code-kenjaku'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

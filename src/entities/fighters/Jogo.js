@@ -329,46 +329,101 @@ export default class Jogo extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0x665555;
-        const clothesColor = isFlashing ? 0xFFFFFF : 0x441111;
-        const armExtend = this.attackSwing * 30;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        // LEGS
-        const legY = masterY + 10;
-        let leftLeg = 25, rightLeg = 25;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        g.lineStyle(8, skinColor, 1);
-        g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 15 - (f * 5), legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 15 + (f * 5), legY + rightLeg); g.strokePath();
+        const headColor = isFlashing ? 0xFFFFFF : 0xdce8f5;
+        const haoriColor = isFlashing ? 0xFFFFFF : 0xcbd924;
+        const pantsColor = isFlashing ? 0xFFFFFF : 0x151922;
+        const sleeveColor = isFlashing ? 0xFFFFFF : 0x1e222b;
+        const collarColor = isFlashing ? 0xFFFFFF : 0xf0f5fa;
+        const craterBrown = isFlashing ? 0xFFFFFF : 0xd9b47e;
+        const craterDark = isFlashing ? 0xFFFFFF : 0x3a2010;
+        const earColor = isFlashing ? 0xFFFFFF : 0xab794b;
+        const ashColor = isFlashing ? 0xFFFFFF : 0x1e2417;
 
-        // BODY / CLOTHES
-        g.fillStyle(clothesColor, 1);
-        g.fillRect(x - 18, masterY - 30, 36, 45);
-        g.lineStyle(2, 0xFFCC00, 0.8);
-        g.strokeRect(x - 18, masterY - 30, 36, 45);
+        const ox = x;
+        const oy = masterY;
 
-        // HEAD (Volcano shape)
-        const hx = x; const hy = masterY - 45;
-        g.fillStyle(skinColor, 1);
-        g.beginPath();
-        g.moveTo(hx - 15, hy);
-        g.lineTo(hx + 15, hy);
-        g.lineTo(hx + 10, hy - 25); // Top crater
-        g.lineTo(hx - 10, hy - 25);
-        g.fillPath();
-        // Lava in crater
-        g.fillStyle(0xFF4400, 0.9);
-        g.fillEllipse(hx, hy - 25, 20, 6);
-        this.drawFace(g, hx, hy - 8, f);
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotLegSup = isMoving ? Math.cos(time) * 5 : 0;
 
-        // ARMS
-        const armY = masterY - 20;
-        g.lineStyle(6, skinColor, 1);
-        if (this.attackSwing > 0) {
-            g.beginPath(); g.moveTo(x + 12, armY); g.lineTo(x + (25 + armExtend) * f, armY); g.strokePath();
-            g.fillStyle(0xFF4400, 0.8); g.fillCircle(x + (28 + armExtend) * f, armY, 8); // Fire fist
-        } else {
-            g.beginPath(); g.moveTo(x + 12, armY); g.lineTo(x + 18 * f, armY + 15); g.strokePath();
+        // ── Legs (dark pants) ──
+        this.drawRect(g, ox - 9, oy + 39, 8, 35, pantsColor, rotLegSup);
+        this.drawRect(g, ox + 9, oy + 39, 8, 35, pantsColor, -rotLegSup);
+        // Feet
+        this.drawRect(g, ox - 9, oy + 62, 11, 6, isFlashing ? 0xFFFFFF : 0x08080a);
+        this.drawRect(g, ox + 9, oy + 62, 11, 6, isFlashing ? 0xFFFFFF : 0x08080a);
+
+        // ── Haori body (green-lime cloak) ──
+        this.drawRect(g, ox, oy - 5, 24, 52, haoriColor);
+
+        // ── Ash spots on haori ──
+        if (!isFlashing) {
+            this.drawCircle(g, ox - 6, oy - 18, 3.5, ashColor);
+            this.drawCircle(g, ox + 7, oy - 5, 2.5, ashColor);
+            this.drawCircle(g, ox - 5, oy + 10, 4, ashColor);
+            this.drawCircle(g, ox + 5, oy - 24, 3, ashColor);
+        }
+
+        // ── Fluffy collar (overlapping white circles) ──
+        this.drawCircle(g, ox - 11, oy - 25, 11, collarColor);
+        this.drawCircle(g, ox + 11, oy - 25, 11, collarColor);
+        this.drawCircle(g, ox, oy - 24, 12, collarColor);
+        // Collar stitching
+        if (!isFlashing) {
+            this.drawLine(g, ox, oy - 26, ox, oy - 14, 3.5, 0x000000);
+            this.drawLine(g, ox - 3, oy - 22, ox + 3, oy - 22, 1.8, 0x000000);
+            this.drawLine(g, ox - 3, oy - 18, ox + 3, oy - 18, 1.8, 0x000000);
+            this.drawLine(g, ox - 3, oy - 14, ox + 3, oy - 14, 1.8, 0x000000);
+        }
+
+        // ── Arms (dark sleeves under cloak) ──
+        this.drawRect(g, ox - 13, oy - 18, 8, 28, sleeveColor, rotArmSup - 15);
+        this.drawRect(g, ox + 13, oy - 18, 8, 28, sleeveColor, -rotArmSup + 15);
+        // Pale hands
+        this.drawCircle(g, ox - 18, oy + 4, 4, headColor);
+        this.drawCircle(g, ox + 18, oy + 4, 4, headColor);
+
+        // ── Head (pale cyclops) ──
+        this.drawCircle(g, ox, oy - 42, 13, headColor);
+
+        // ── Cork wooden ears ──
+        this.drawRect(g, ox - 14, oy - 42, 5, 8, earColor, -10);
+        this.drawRect(g, ox + 14, oy - 42, 5, 8, earColor, 10);
+
+        // ── Volcano crater on top ──
+        this.drawRect(g, ox, oy - 52, 14, 10, craterDark);
+        this.drawRect(g, ox, oy - 56, 11, 6, craterBrown);
+        // Lava ellipse at top
+        g.fillStyle(isFlashing ? 0xFFFFFF : 0xe74c3c, 1);
+        g.fillEllipse(ox, oy - 59, 10, 4);
+
+        // ── Cyclops eye ──
+        this.drawCircle(g, ox, oy - 43, 6.2, isFlashing ? 0xFFFFFF : 0xffffff);
+        this.drawCircle(g, ox, oy - 43, 2.5, isFlashing ? 0xFFFFFF : 0xe74c3c);
+        this.drawCircle(g, ox, oy - 43, 0.9, isFlashing ? 0xFFFFFF : 0x000000);
+        // Angry brow
+        if (!isFlashing) this.drawLine(g, ox - 6, oy - 47, ox + 6, oy - 46, 2.2, 0x000000);
+
+        // ── Teeth grid ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 5, oy - 35, ox + 5, oy - 35, 1.8, 0x000000);
+            this.drawLine(g, ox - 3, oy - 37, ox - 3, oy - 33, 1, 0x000000);
+            this.drawLine(g, ox, oy - 37, ox, oy - 33, 1, 0x000000);
+            this.drawLine(g, ox + 3, oy - 37, ox + 3, oy - 33, 1, 0x000000);
+        }
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = (this.animTimer || 0) * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(x + Math.cos(angle) * 20, y - 60 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.2) * 23, y - 60 + Math.sin(angle + 0.2) * 12,
+                    x + Math.cos(angle - 0.2) * 23, y - 60 + Math.sin(angle - 0.2) * 12);
+            }
         }
     }
 

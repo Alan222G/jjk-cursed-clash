@@ -81,6 +81,144 @@ export default class Nanami extends Fighter {
         super.takeDamage(damage, kbX, kbY, stunDuration);
     }
 
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x; const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.0035);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xfed7aa;
+        const suitColor = isFlashing ? 0xFFFFFF : 0xe3d5ca;
+        const tieColor = isFlashing ? 0xFFFFFF : 0xfacc15;
+        const shirtColor = isFlashing ? 0xFFFFFF : 0x60a5fa;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xfef08a;
+
+        const ox = x;
+        const oy = masterY - 15;
+
+        // 1. LEGS (beige trousers and dark shoes)
+        const legAngle = isMoving ? Math.sin(time) * 5 : 0;
+        this.drawRect(g, ox - 5, oy + 28 + 18, 7.5, 38, suitColor, legAngle);
+        this.drawRect(g, ox - 5, oy + 28 + 39, 9.5, 5, 0x1e1b4b);
+
+        this.drawRect(g, ox + 5, oy + 28 + 18, 7.5, 38, suitColor, -legAngle);
+        this.drawRect(g, ox + 5, oy + 28 + 39, 9.5, 5, 0x1e1b4b);
+
+        // 2. TORSO
+        this.drawRect(g, ox, oy + 5, 17, 34, suitColor);
+        // Shirt
+        this.drawTriangle(g, ox, oy - 4 - 3, 8, 12, shirtColor);
+        // Spotted tie
+        this.drawRect(g, ox, oy - 4 + 4, 2.5, 14, tieColor);
+        if (!isFlashing) {
+            // Draw leopard/spotted dots on tie
+            g.fillStyle(0x000000, 0.8);
+            g.fillRect(ox - 0.8, oy, 0.8, 0.8);
+            g.fillRect(ox + 0.4, oy + 3, 0.8, 0.8);
+            g.fillRect(ox - 0.6, oy + 6, 0.8, 0.8);
+        }
+
+        // 3. ARMS
+        // Back Arm
+        this.drawRect(g, ox - 9, oy - 10, 7.5, 28, suitColor, 22);
+        this.drawCircle(g, ox - 9 - Math.sin(22*Math.PI/180)*28, oy - 10 + Math.cos(22*Math.PI/180)*28, 3.8, skinColor);
+
+        // Front Arm holding ratio sword
+        const armExtend = this.attackSwing * 40;
+        let fx, fy;
+        if (this.attackSwing > 0) {
+            fx = ox + (9 + 22 + armExtend) * f;
+            fy = oy - 10 + 5;
+            this.drawRect(g, ox + 9, oy - 10, 7.5, 28 + armExtend, suitColor, 85 * f);
+        } else {
+            fx = ox + 9;
+            fy = oy - 10 + 27;
+            this.drawRect(g, ox + 9, oy - 10, 7.5, 28, suitColor, -15 * f);
+        }
+        this.drawCircle(g, fx, fy, 3.8, skinColor);
+
+        // Ratio Sword (Cleaver wrapped in spotted bandage)
+        const rx = fx;
+        const ry = fy;
+        g.save();
+        // Translate and rotate cleaver based on hand position
+        if (this.attackSwing > 0) {
+            g.translate(rx, ry);
+            g.rotate((85 + this.attackSwing * 90) * f * Math.PI / 180);
+        } else {
+            g.translate(rx, ry);
+            g.rotate(85 * f * Math.PI / 180);
+        }
+
+        // Empuñadura (Handle)
+        g.fillStyle(0x000000, 1);
+        g.fillRect(-2.5, 0, 5, 9);
+        g.lineStyle(1.8, 0x000000, 1);
+        g.strokeRect(-2.5, 0, 5, 9);
+
+        // Cleaver blade wrapped in white bandages
+        g.fillStyle(0xf8fafc, 1);
+        g.fillRect(-4.25, -26, 8.5, 26);
+        g.strokeRect(-4.25, -26, 8.5, 26);
+
+        // Spotted patterns on the wraps
+        if (!isFlashing) {
+            g.fillStyle(0x000000, 1);
+            g.fillRect(-2, -23, 2, 3);
+            g.fillRect(2, -18, 2, 2.5);
+            g.fillRect(-3, -13, 2.5, 2);
+            g.fillRect(1, -8, 2.2, 3);
+            g.fillRect(-2, -4, 2, 2);
+        }
+        g.restore();
+
+        // 7:3 Ratio Crit Effect Spark (when attacking at critical distance)
+        if (this.attackSwing > 0 && this.scene.time.now % 100 < 50) {
+            const ratioX = rx + 30 * f;
+            const ratioY = ry - 18;
+            g.lineStyle(2.2, 0xfacc15, 1);
+            g.beginPath();
+            g.moveTo(ratioX - 7, ratioY - 7); g.lineTo(ratioX + 7, ratioY + 7);
+            g.moveTo(ratioX + 7, ratioY - 7); g.lineTo(ratioX - 7, ratioY + 7);
+            g.strokePath();
+        }
+
+        // 4. HEAD
+        const hx = ox;
+        const hy = oy - 22;
+
+        this.drawCircle(g, hx, hy, 10, skinColor);
+
+        // Hair peinado
+        this.drawCircle(g, hx, hy - 8, 9, hairColor);
+        this.drawTriangle(g, hx - 4, hy - 6, 4, 8, hairColor, 45);
+        this.drawTriangle(g, hx, hy - 7, 5, 8, hairColor, 15);
+        this.drawTriangle(g, hx + 4, hy - 6, 5, 8, 0xeab308, -30);
+
+        // Tired face eyes without goggles
+        if (!isFlashing) {
+            this.drawLine(g, hx - 5, hy + 1, hx - 1, hy + 1, 1.8, 0x000000);
+            this.drawLine(g, hx - 5, hy - 1, hx - 1, hy - 1, 2, 0x451a03);
+
+            this.drawLine(g, hx + 1, hy + 1, hx + 5, hy + 1, 1.8, 0x000000);
+            this.drawLine(g, hx + 1, hy - 1, hx + 5, hy - 1, 2, 0x451a03);
+
+            // Eye bags
+            this.drawLine(g, hx - 4.5, hy + 3, hx - 1.5, hy + 3, 1, 0x94a3b8);
+            this.drawLine(g, hx + 1.5, hy + 3, hx + 4.5, hy + 3, 1, 0x94a3b8);
+
+            // Mouth
+            this.drawLine(g, hx - 2.5, hy + 6, hx + 2.5, hy + 6, 1.5, 0x000000);
+        }
+    }
+
     trySpecialAttack() {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();

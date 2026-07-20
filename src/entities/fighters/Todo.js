@@ -9,6 +9,122 @@ export default class Todo extends Fighter {
         this.isCasting = false;
     }
 
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x; const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+        if (this.isDead) { g.fillStyle(0x111118, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.005);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xffd3ba;
+        const pantsColor = isFlashing ? 0xFFFFFF : 0x16171d;
+        const shadowColor = isFlashing ? 0xFFFFFF : 0xca8a04;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x111827;
+
+        const ox = x;
+        const oy = masterY;
+
+        // 1. LEGS (black combat trousers)
+        const legSwing = isMoving ? Math.sin(time * 1.5) * 8 : 0;
+        this.drawRect(g, ox - 8, oy + 38, 14, 32, pantsColor, legSwing);
+        this.drawCircle(g, ox - 8, oy + 53, 6.5, 0x0a0a0d); // Joint knee
+        this.drawRect(g, ox - 8, oy + 65, 12, 20, pantsColor, legSwing * 0.5);
+        this.drawRect(g, ox - 8, oy + 76, 14, 5, skinColor); // Bare feet / wrap
+
+        this.drawRect(g, ox + 8, oy + 38, 14, 32, pantsColor, -legSwing);
+        this.drawCircle(g, ox + 8, oy + 53, 6.5, 0x0a0a0d);
+        this.drawRect(g, ox + 8, oy + 65, 12, 20, pantsColor, -legSwing * 0.5);
+        this.drawRect(g, ox + 8, oy + 76, 14, 5, skinColor);
+
+        // 2. TORSO (Ultra muscular)
+        // Shoulders/Trapezius behind head
+        this.drawCircle(g, ox - 13, oy - 20, 6, skinColor);
+        this.drawCircle(g, ox + 13, oy - 20, 6, skinColor);
+
+        // Broad chest and abs
+        this.drawRect(g, ox, oy - 12, 34, 24, skinColor);
+        this.drawRect(g, ox, oy + 8, 28, 20, skinColor);
+
+        // Abs muscle lines
+        if (!isFlashing) {
+            this.drawLine(g, ox - 1, oy - 12, ox - 1, oy + 15, 1.2, shadowColor);
+            this.drawLine(g, ox - 10, oy - 2, ox + 10, oy - 2, 1.2, shadowColor); // Pec line
+            this.drawLine(g, ox - 8, oy + 4, ox + 8, oy + 4, 1.2, shadowColor);
+            this.drawLine(g, ox - 6, oy + 10, ox + 6, oy + 10, 1.2, shadowColor);
+        }
+
+        // 3. ARMS
+        const clapCycle = isMoving ? Math.sin(time * 3) : -0.5;
+        const isClapping = (this.stateMachine.is('attack') || (isMoving && Math.abs(clapCycle) > 0.85));
+
+        // Left arm
+        g.save();
+        g.translate(ox - 18, oy - 14);
+        const armRotL = isClapping ? 52 : (-20 + Math.sin(time * 1.5) * 10);
+        g.rotate(armRotL * Math.PI / 180);
+        this.drawRect(g, 0, 12, 11, 24, skinColor);
+        this.drawCircle(g, 0, 23, 6, shadowColor); // Elbow joint
+        this.drawRect(g, 0, 32, 9, 20, skinColor);
+        this.drawCircle(g, 0, 41, 6, skinColor); // Hand
+        g.restore();
+
+        // Right arm
+        g.save();
+        g.translate(ox + 18, oy - 14);
+        const armRotR = isClapping ? -52 : (20 - Math.sin(time * 1.5) * 10);
+        g.rotate(armRotR * Math.PI / 180);
+        this.drawRect(g, 0, 12, 11, 24, skinColor);
+        this.drawCircle(g, 0, 23, 6, shadowColor);
+        this.drawRect(g, 0, 32, 9, 20, skinColor);
+        this.drawCircle(g, 0, 41, 6, skinColor);
+        g.restore();
+
+        // Boogie Woogie clap energy effect
+        if (isClapping) {
+            g.save();
+            const pulse = Math.sin(time * 15) * 5;
+            g.fillStyle(0x38bdf8, 0.8);
+            g.fillCircle(ox, oy + 14, 13 + pulse);
+            g.fillStyle(0x06b6d4, 0.35);
+            g.fillCircle(ox, oy + 14, 26);
+            g.restore();
+        }
+
+        // 4. HEAD
+        const hx = ox;
+        const hy = oy - 34;
+
+        this.drawCircle(g, hx, hy, 14, hairColor);
+        this.drawCircle(g, hx, hy + 1, 12.5, skinColor);
+
+        // Samurai bun (Top-knot)
+        this.drawCircle(g, hx, hy - 14, 4.5, hairColor);
+        this.drawTriangle(g, hx, hy - 17, 8, 10, hairColor, 180);
+
+        if (!isFlashing) {
+            // Giant scar on left eye
+            this.drawLine(g, hx + 5, hy - 9, hx + 3.8, hy + 7, 1.8, 0x7f1d1d);
+            this.drawLine(g, hx + 4.6, hy - 4, hx + 4.2, hy + 2, 0.8, 0xf87171);
+
+            // Determined eyes
+            this.drawLine(g, hx - 7, hy - 4, hx - 2, hy - 3, 2, 0x000000);
+            this.drawLine(g, hx + 2, hy - 3.2, hx + 7, hy - 3.8, 2, 0x000000);
+            this.drawCircle(g, hx - 4.5, hy - 1, 1.8, 0xffffff);
+            this.drawCircle(g, hx + 4.5, hy - 1, 1.8, 0xffffff);
+            this.drawCircle(g, hx - 4.5, hy - 1, 1, 0x000000);
+            this.drawCircle(g, hx + 4.5, hy - 1, 1, 0x000000);
+
+            // Challenger smirk
+            this.drawLine(g, hx - 4, hy + 5, hx + 4, hy + 4, 2, 0x000000);
+        }
+    }
+
     // +50% knockback on ALL normal attacks
     getBasicAttackData(type) {
         const base = { ...super.getBasicAttackData(type) };

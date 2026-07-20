@@ -501,122 +501,121 @@ export default class Higuruma extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
-        const suitColor = isFlashing ? 0xFFFFFF : 0x1A1A2E;
-        const tieColor = isFlashing ? 0xFFFFFF : 0x8B0000;
-        const hairColor = isFlashing ? 0xFFFFFF : 0x111122;
-        const armExtend = this.attackSwing * 40;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.0035);
 
+        const skinColor = isFlashing ? 0xFFFFFF : 0xfecdd3;
+        const suitColor = isFlashing ? 0xFFFFFF : 0x11121b;
+        const tieColor = isFlashing ? 0xFFFFFF : 0x991b1b;
+        const shirtColor = isFlashing ? 0xFFFFFF : 0xffffff;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x1e293b;
+
+        const ox = x;
+        const oy = masterY - 15;
+
+        // Executioner Sword back aura
         if (this.hasExecutionerSword) {
             const pulse = 0.4 + Math.sin((this.animTimer || 0) * 0.005) * 0.2;
             g.fillStyle(0xFF0000, pulse * 0.3);
-            g.fillEllipse(x, masterY - 15, 60, 90);
+            g.fillEllipse(ox, oy + 15, 60, 90);
         }
 
-        // LEGS (Gojo scale: Y+5, 35 height)
-        const legY = masterY + 5;
-        let leftLeg = 35, rightLeg = 35;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 20; rightLeg = 20; }
-        g.fillStyle(suitColor, 0.85);
-        g.fillTriangle(x - 10, legY, x - 10 - 10, legY + leftLeg, x - 10 + 10, legY + leftLeg - 5);
-        g.fillStyle(suitColor, 1);
-        g.fillTriangle(x + 10, legY, x + 10 - 12 * f, legY + rightLeg, x + 10 + 12 * f, legY + rightLeg - 2);
+        // 1. LEGS (Suit trousers and shoes)
+        const legAngle = isMoving ? Math.sin(time) * 5 : 0;
+        this.drawRect(g, ox - 5, oy + 28 + 18, 7.5, 38, suitColor, legAngle);
+        this.drawRect(g, ox - 5, oy + 28 + 39, 9, 5, 0x1e293b); // Shoe
 
-        // TORSO
-        g.fillStyle(suitColor, 1);
-        g.beginPath();
-        g.moveTo(x - 16, masterY - 38);
-        g.lineTo(x + 16, masterY - 38);
-        g.lineTo(x + 12, masterY + 12);
-        g.lineTo(x - 12, masterY + 12);
-        g.fillPath();
+        this.drawRect(g, ox + 5, oy + 28 + 18, 7.5, 38, suitColor, -legAngle);
+        this.drawRect(g, ox + 5, oy + 28 + 39, 9, 5, 0x1e293b); // Shoe
+
+        // 2. TORSO
+        this.drawRect(g, ox, oy + 5, 17, 34, suitColor);
+        // Shirt V-neck
+        this.drawTriangle(g, ox, oy - 4 - 3, 8, 14, shirtColor);
+        // Tie
+        this.drawRect(g, ox, oy - 4 + 5, 2.2, 16, tieColor);
+
+        // 3. ARMS
+        // Back Arm
+        this.drawRect(g, ox - 9, oy - 10, 7.5, 28, suitColor, -30);
+        this.drawCircle(g, ox - 9 - Math.sin(-30*Math.PI/180)*28, oy - 10 + Math.cos(-30*Math.PI/180)*28, 3.8, skinColor);
+
+        // Front Arm (holding gavel/sword)
+        const armExtend = this.attackSwing * 40;
+        const armRot = (12 + (isMoving ? Math.sin(time) * 8 : 0));
         
-        // Shirt & Tie
-        g.fillStyle(0xEEEEEE, 1);
-        g.fillRect(x - 6, masterY - 35, 12, 35);
-        g.fillStyle(tieColor, 1);
-        g.beginPath();
-        g.moveTo(x - 4, masterY - 35);
-        g.lineTo(x + 4, masterY - 35);
-        g.lineTo(x + 2, masterY - 5);
-        g.lineTo(x, masterY);
-        g.lineTo(x - 2, masterY - 5);
-        g.fillPath();
+        let fx, fy;
+        if (this.attackSwing > 0) {
+            fx = ox + (9 + 22 + armExtend) * f;
+            fy = oy - 10 + 5;
+            this.drawRect(g, ox + 9, oy - 10, 7.5, 28 + armExtend, suitColor, 85 * f);
+        } else {
+            fx = ox + 9;
+            fy = oy - 10 + 27;
+            this.drawRect(g, ox + 9, oy - 10, 7.5, 28, suitColor, armRot * f);
+        }
+        this.drawCircle(g, fx, fy, 3.8, skinColor);
 
-        // BACK ARM
-        const armY = masterY - 34;
-        g.lineStyle(10, suitColor, 0.8);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY + 2);
-        g.lineTo(x - 22 * f, armY + 18);
-        g.strokePath();
-
-        // FRONT ARM
-        g.lineStyle(10, suitColor, 1);
-        g.beginPath();
-        g.moveTo(x + 12 * f, armY + 2);
-        g.lineTo(x + (22 + armExtend) * f, armY + 5);
-        g.strokePath();
-        // Hands
-        g.fillStyle(skinColor, 1);
-        g.fillCircle(x - 22 * f, armY + 20, 5);
-        g.fillCircle(x + (22 + armExtend) * f, armY + 5, 5);
-
-        // GAVEL (held in front hand)
-        const gs = this.gavelSize;
-        const gx = x + (22 + armExtend) * f;
-        const gy = armY + 5;
-        g.lineStyle(3, 0x8B7355, 1);
-        g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + 20 * gs * f, gy - 15 * gs); g.strokePath();
-        const headColor = this.hasExecutionerSword ? 0xFF0000 : 0x555555;
-        g.fillStyle(headColor, 1);
-        g.fillRect(gx + 18 * gs * f - 8 * gs, gy - 15 * gs - 15 * gs, 16 * gs, 30 * gs);
-
+        // GAVEL OR EXECUTIONER SWORD RENDER
+        const gs = this.gavelSize || 1.0;
         if (this.hasExecutionerSword) {
+            // Executioner Sword
             const pulse = 0.7 + Math.sin((this.animTimer || 0) * 0.006) * 0.3;
             g.fillStyle(0xFF0000, pulse);
             g.beginPath();
-            g.moveTo(gx + 15 * f, gy - 18);
-            g.lineTo(gx + 60 * f, gy - 30);
-            g.lineTo(gx + 65 * f, gy - 20);
-            g.lineTo(gx + 20 * f, gy - 5);
+            g.moveTo(fx + 15 * f, fy - 18);
+            g.lineTo(fx + 60 * f, fy - 30);
+            g.lineTo(fx + 65 * f, fy - 20);
+            g.lineTo(fx + 20 * f, fy - 5);
             g.fillPath();
-            g.lineStyle(2, 0xFFAAAA, pulse * 0.8); g.strokePath();
+            g.lineStyle(2, 0xFFAAAA, pulse * 0.8);
+            g.beginPath();
+            g.moveTo(fx + 15 * f, fy - 18);
+            g.lineTo(fx + 60 * f, fy - 30);
+            g.lineTo(fx + 65 * f, fy - 20);
+            g.lineTo(fx + 20 * f, fy - 5);
+            g.closePath();
+            g.strokePath();
+        } else {
+            // Gavel
+            const hx = fx;
+            const hy = fy;
+            // Draw judge blue/purple aura
+            g.lineStyle(3, 0x818cf8, 0.4);
+            g.strokeCircle(hx - 8*f, hy - 46, 25 * gs);
+
+            // Gavel handle
+            g.lineStyle(3.5, 0x78350f, 1);
+            g.beginPath();
+            g.moveTo(hx, hy);
+            g.lineTo(hx - 8 * f, hy - 46);
+            g.strokePath();
+
+            // Gavel head
+            this.drawRect(g, hx - 8 * f, hy - 46, 18 * gs, 34 * gs, 0x475569, 90);
+            this.drawRect(g, hx - 8 * f, hy - 46, 14 * gs, 36 * gs, 0x334155, 90);
         }
 
-        // HEAD
-        const hx = x; const hy = masterY - 56;
-        g.fillStyle(skinColor, 1);
-        g.fillRect(hx - 4, hy + 5, 8, 8); // Neck
-        g.beginPath();
-        g.moveTo(hx - 12, hy - 10);
-        g.lineTo(hx + 12, hy - 10);
-        g.lineTo(hx + 8, hy + 12);
-        g.lineTo(hx - 8, hy + 12);
-        g.fillPath();
+        // 4. HEAD
+        const hx = ox;
+        const hy = oy - 22;
 
-        // Hair
-        g.fillStyle(hairColor, 1);
-        g.beginPath();
-        g.moveTo(hx - 14, hy - 5);
-        g.lineTo(hx - 12, hy - 18);
-        g.lineTo(hx - 4, hy - 16);
-        g.lineTo(hx + 4, hy - 18);
-        g.lineTo(hx + 12, hy - 16);
-        g.lineTo(hx + 14, hy - 5);
-        g.fillPath();
+        this.drawCircle(g, hx, hy, 10, skinColor);
 
-        // Eyes
-        g.fillStyle(0x000000, 1);
-        g.fillCircle(hx - 5 * f, hy - 2, 2.5);
-        g.fillCircle(hx + 5 * f, hy - 2, 2.5);
-        // Eyebrows
-        g.lineStyle(2, hairColor, 1);
-        g.beginPath(); g.moveTo(hx - 8 * f, hy - 6); g.lineTo(hx - 2 * f, hy - 5); g.strokePath();
-        g.beginPath(); g.moveTo(hx + 2 * f, hy - 6); g.lineTo(hx + 8 * f, hy - 5); g.strokePath();
-        // Mouth
-        g.lineStyle(1, 0x000000, 0.6);
-        g.beginPath(); g.moveTo(hx - 4 * f, hy + 6); g.lineTo(hx + 4 * f, hy + 6); g.strokePath();
+        // Face details
+        if (!isFlashing) {
+            this.drawLine(g, hx - 5, hy + 2, hx - 1, hy + 2, 1, 0x64748b);
+            this.drawLine(g, hx + 1, hy + 2, hx + 5, hy + 2, 1, 0x64748b);
+            this.drawLine(g, hx - 3, hy - 1, hx - 1, hy - 1.5, 1.8, 0x000000);
+            this.drawLine(g, hx + 1, hy - 1.5, hx + 3, hy - 1, 1.8, 0x000000);
+            this.drawLine(g, hx - 3, hy + 5, hx + 3, hy + 5, 1.5, 0x000000);
+        }
+
+        // Messy attorney hair
+        this.drawCircle(g, hx, hy - 8, 9, hairColor);
+        this.drawTriangle(g, hx - 4, hy - 4, 4, 10, hairColor, 20);
+        this.drawTriangle(g, hx, hy - 4, 5, 11, hairColor, 0);
+        this.drawTriangle(g, hx + 4, hy - 4, 4, 10, hairColor, -20);
+        this.drawTriangle(g, hx - 2, hy - 8, 3.5, 13, hairColor, -45);
     }
 }

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Battle Geometry - Fixed</title>
+    <!-- Phaser 3 desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #050508;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        #game-container {
+            border: 4px solid #3b2042;
+            box-shadow: 0 0 30px rgba(109, 40, 217, 0.3);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container"></div>
+
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            parent: 'game-container',
+            backgroundColor: '#05050a',
+            scene: {
+                create: create,
+                update: update
+            }
+        };
+
+        const game = new Phaser.Game(config);
+
+        let canvasTexture;
+        let bossSprite;
+        let particles = [];
+        let bossYOffset = 0;
+
+        function create() {
+            // Creamos una textura de Canvas nativa de 800x600 en Phaser
+            canvasTexture = this.textures.createCanvas('bossCanvas', 800, 600);
+            
+            // Añadimos esta textura dinámica al centro del escenario como un sprite común
+            bossSprite = this.add.image(400, 300, 'bossCanvas');
+
+            // Partículas púrpuras de fondo
+            for (let i = 0; i < 35; i++) {
+                particles.push({
+                    x: Phaser.Math.Between(10, 790),
+                    y: Phaser.Math.Between(10, 590),
+                    size: Phaser.Math.Between(2, 6),
+                    speed: Phaser.Math.FloatBetween(0.2, 0.8),
+                    alpha: Phaser.Math.FloatBetween(0.2, 0.7)
+                });
+            }
+        }
+
+        function update(time, delta) {
+            // Obtenemos el contexto 2D nativo del canvas de la textura
+            const ctx = canvasTexture.context;
+            
+            // Limpiamos el lienzo en cada ciclo
+            ctx.clearRect(0, 0, 800, 600);
+
+            // 1. Dibujar partículas flotantes
+            particles.forEach(p => {
+                p.y -= p.speed;
+                if (p.y < -10) p.y = 610;
+                ctx.fillStyle = `rgba(109, 40, 217, ${p.alpha})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Flotación constante del jefe entero
+            bossYOffset = Math.sin(time * 0.002) * 12;
+
+            const headX = 400;
+            const headY = 170 + bossYOffset;
+            const headRadius = 40;
+            const torsoY = headY + 70;
+
+            // 2. Dibujar Pelo Radial (Dispersado naturalmente)
+            drawRadialHair(ctx, headX, headY, headRadius, time);
+
+            // 3. Dibujar Cola Optimizada (Trapecios seguidos de un Triángulo final)
+            const spinePoints = generateTailSpine(headX, torsoY + 45, time);
+            drawOptimizedTail(ctx, spinePoints);
+
+            // 4. Dibujar Esferas de Vacío Oscuras
+            drawDarkOrbs(ctx, spinePoints, time);
+
+            // 5. Dibujar Brazos Articulados
+            drawArm(ctx, headX, torsoY, true, time);  // Brazo Izquierdo
+            drawArm(ctx, headX, torsoY, false, time); // Brazo Derecho
+
+            // 6. Dibujar Torso (Con costillas/placas estilizadas)
+            drawTorso(ctx, headX, torsoY);
+
+            // 7. Dibujar Cabeza y Rostro
+            drawHeadAndFace(ctx, headX, headY, headRadius);
+
+            // IMPORTANTE: Refrescamos la textura en el ciclo de Phaser para proyectar los cambios
+            canvasTexture.refresh();
+        }
+
+        // =========================================================================
+        // LÓGICA DE DIBUJO CON CANVAS 2D NATIVO
+        // =========================================================================
+
+        // Genera la curva de la cola (columna vertebral)
+        function generateTailSpine(startX, startY, time) {
+            const points = [];
+            let currentX = startX;
+            let currentY = startY;
+            const segments = 13;
+            const segmentLength = 22;
+
+            points.push({ x: currentX, y: currentY });
+
+            for (let i = 1; i <= segments; i++) {
+                const wave = Math.sin(time * 0.003 - (i * 0.35)) * 0.14;
+                const angle = Math.PI / 2 + wave; // 90° hacia abajo + el oleaje
+
+                currentX += Math.cos(angle) * segmentLength;
+                currentY += Math.sin(angle) * segmentLength;
+
+                points.push({ x: currentX, y: currentY });
+            }
+            return points;
+        }
+
+        // Dibuja la cola optimizada sin spam de círculos
+        function drawOptimizedTail(ctx, spine) {
+            const baseWidth = 56;
+            const leftCoords = [];
+            const rightCoords = [];
+
+            // Calcular bordes de los segmentos
+            for (let i = 0; i < spine.length; i++) {
+                const p = spine[i];
+                let dx, dy;
+
+                if (i === 0) {
+                    dx = spine[1].x - p.x;
+                    dy = spine[1].y - p.y;
+                } else if (i === spine.length - 1) {
+                    dx = p.x - spine[i - 1].x;
+                    dy = p.y - spine[i - 1].y;
+                } else {
+                    dx = spine[i + 1].x - spine[i - 1].x;
+                    dy = spine[i + 1].y - spine[i - 1].y;
+                }
+
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len;
+                const ny = dx / len;
+
+                const t = i / (spine.length - 1);
+                const currentWidth = baseWidth * (1 - t * 0.95); // Se adelgaza hacia la punta
+
+                leftCoords.push({ x: p.x + nx * (currentWidth / 2), y: p.y + ny * (currentWidth / 2) });
+                rightCoords.push({ x: p.x - nx * (currentWidth / 2), y: p.y - ny * (currentWidth / 2) });
+            }
+
+            // Uniones de segmentos (Trapecios rellenos)
+            for (let i = 0; i < spine.length - 2; i++) {
+                ctx.fillStyle = "#cbd5e1";
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 4;
+                ctx.lineJoin = "round";
+
+                ctx.beginPath();
+                ctx.moveTo(leftCoords[i].x, leftCoords[i].y);
+                ctx.lineTo(leftCoords[i+1].x, leftCoords[i+1].y);
+                ctx.lineTo(rightCoords[i+1].x, rightCoords[i+1].y);
+                ctx.lineTo(rightCoords[i].x, rightCoords[i].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Cierre de la punta en forma de Triángulo único
+            const lastIdx = spine.length - 2;
+            ctx.fillStyle = "#cbd5e1";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 4;
+            ctx.lineJoin = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(leftCoords[lastIdx].x, leftCoords[lastIdx].y);
+            ctx.lineTo(spine[spine.length - 1].x, spine[spine.length - 1].y);
+            ctx.lineTo(rightCoords[lastIdx].x, rightCoords[lastIdx].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Pelo radial en abanico con gravedad natural
+        function drawRadialHair(ctx, headX, headY, radius, time) {
+            const strandsCount = 10;
+            const minAngle = Math.PI * 1.05; // 185 grados
+            const maxAngle = Math.PI * 1.95; // 355 grados
+
+            for (let i = 0; i < strandsCount; i++) {
+                const t = i / (strandsCount - 1);
+                const baseAngle = minAngle + t * (maxAngle - minAngle);
+
+                const wave = Math.sin(time * 0.0025 + i * 0.6) * 0.06;
+                const angle = baseAngle + wave;
+
+                const startX = headX + radius * Math.cos(angle);
+                const startY = headY + radius * Math.sin(angle);
+
+                const length = 140 + Math.sin(t * Math.PI) * 35;
+
+                // CP1: Proyección radial (Empuja hacia los lados)
+                const cp1X = startX + Math.cos(angle) * (length * 0.45);
+                const cp1Y = startY + Math.sin(angle) * (length * 0.45);
+
+                // CP2: Gravedad física descendente
+                const cp2X = cp1X + Math.cos(angle) * (length * 0.15);
+                const cp2Y = cp1Y + 110; 
+
+                // Destino final de la punta
+                const endX = cp1X + Math.cos(angle) * (length * 0.35);
+                const endY = cp2Y + 40;
+
+                // Borde Negro
+                ctx.strokeStyle = "#000000";
+                ctx.lineWidth = 16;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+                ctx.stroke();
+
+                // Relleno Gris/Blanco
+                ctx.strokeStyle = "#cbd5e1";
+                ctx.lineWidth = 10;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+                ctx.stroke();
+            }
+        }
+
+        // Torso musculado estilo caja torácica
+        function drawTorso(ctx, headX, torsoY) {
+            ctx.fillStyle = "#e2e8f0";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 4;
+            ctx.lineJoin = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(headX - 35, torsoY);
+            ctx.lineTo(headX + 35, torsoY);
+            ctx.lineTo(headX + 16, torsoY + 55);
+            ctx.lineTo(headX - 16, torsoY + 55);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Costillas internas
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(headX, torsoY);
+            ctx.lineTo(headX, torsoY + 50);
+
+            ctx.moveTo(headX - 24, torsoY + 15);
+            ctx.quadraticCurveTo(headX, torsoY + 22, headX + 24, torsoY + 15);
+            ctx.moveTo(headX - 20, torsoY + 28);
+            ctx.quadraticCurveTo(headX, torsoY + 35, headX + 20, torsoY + 28);
+            ctx.moveTo(headX - 16, torsoY + 41);
+            ctx.quadraticCurveTo(headX, torsoY + 48, headX + 16, torsoY + 41);
+            ctx.stroke();
+        }
+
+        // Brazos mecánicos/huesudos con garras
+        function drawArm(ctx, headX, torsoY, isLeft, time) {
+            const side = isLeft ? -1 : 1;
+            const shoulderX = headX + side * 44;
+            const shoulderY = torsoY + 10;
+
+            const armSway = Math.sin(time * 0.002 + (isLeft ? 0 : Math.PI)) * 0.15;
+            const elbowAngle = (isLeft ? Math.PI * 0.8 : Math.PI * 0.2) + armSway;
+            const wristAngle = elbowAngle + (isLeft ? -0.2 : 0.2) + Math.sin(time * 0.003) * 0.08;
+
+            const upperArmLen = 50;
+            const forearmLen = 45;
+
+            const elbowX = shoulderX + Math.cos(elbowAngle) * upperArmLen;
+            const elbowY = shoulderY + Math.sin(elbowAngle) * upperArmLen;
+
+            const wristX = elbowX + Math.cos(wristAngle) * forearmLen;
+            const wristY = elbowY + Math.sin(wristAngle) * forearmLen;
+
+            // Silueta de los huesos
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 12;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(shoulderX, shoulderY);
+            ctx.lineTo(elbowX, elbowY);
+            ctx.lineTo(wristX, wristY);
+            ctx.stroke();
+
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 6;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(shoulderX, shoulderY);
+            ctx.lineTo(elbowX, elbowY);
+            ctx.lineTo(wristX, wristY);
+            ctx.stroke();
+
+            // Articulaciones
+            ctx.fillStyle = "#e2e8f0";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 4;
+
+            ctx.beginPath(); ctx.arc(shoulderX, shoulderY, 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(elbowX, elbowY, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.arc(wristX, wristY, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+            // Garras tipo espina
+            const clawAngles = [-0.4, -0.2, 0, 0.2, 0.4];
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+
+            clawAngles.forEach(offset => {
+                const finalAngle = wristAngle + (isLeft ? Math.PI : 0) + offset;
+                const clawEndX = wristX + Math.cos(finalAngle) * 24;
+                const clawEndY = wristY + Math.sin(finalAngle) * 24;
+
+                ctx.beginPath();
+                ctx.moveTo(wristX, wristY);
+                ctx.lineTo(clawEndX, clawEndY);
+                ctx.stroke();
+            });
+        }
+
+        // Cabeza y Rostro (Boca de vacío con dientes)
+        function drawHeadAndFace(ctx, headX, headY, radius) {
+            // Contorno de cabeza
+            ctx.fillStyle = "#e2e8f0";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(headX, headY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Sombra interna/Vacío
+            ctx.fillStyle = "#0a0a0c";
+            ctx.beginPath();
+            ctx.ellipse(headX, headY, radius * 0.7, radius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Boca
+            const mouthY = headY + 12;
+            ctx.fillStyle = "#4a1147";
+            ctx.beginPath();
+            ctx.ellipse(headX, mouthY, 20, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Colmillos superiores e inferiores
+            ctx.fillStyle = "#ffffff";
+            const teethNum = 9;
+
+            for (let i = 0; i < teethNum; i++) {
+                const tx = headX - 15 + (i * 3.4);
+                const ty = mouthY - 10;
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(tx + 1.5, ty + 8);
+                ctx.lineTo(tx + 3, ty);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            for (let i = 0; i < teethNum; i++) {
+                const tx = headX - 15 + (i * 3.4);
+                const ty = mouthY + 10;
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(tx + 1.5, ty - 8);
+                ctx.lineTo(tx + 3, ty);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        // Esferas oscuras que orbitan la base de la cola
+        function drawDarkOrbs(ctx, spine, time) {
+            const orbOffsets = [
+                { dx: -15, dy: 30, size: 14, phase: 0 },
+                { dx: 12, dy: 45, size: 10, phase: 1.5 },
+                { dx: -6, dy: 70, size: 18, phase: 3 },
+                { dx: 18, dy: 85, size: 8, phase: 4.5 }
+            ];
+
+            ctx.fillStyle = "#0f172a";
+            ctx.strokeStyle = "#000000";
+            ctx.lineWidth = 3;
+
+            orbOffsets.forEach(orb => {
+                const ox = spine[1].x + orb.dx + Math.sin(time * 0.004 + orb.phase) * 6;
+                const oy = spine[1].y + orb.dy + Math.cos(time * 0.004 + orb.phase) * 4;
+
+                ctx.beginPath();
+                ctx.arc(ox, oy, orb.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+        }
+    </script>
+</body>
+</html>

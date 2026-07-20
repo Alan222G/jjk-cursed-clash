@@ -164,7 +164,7 @@ export default class MahoragaNPC {
         });
     }
 
-    // ── Drawing (Sukuna 20-sized imposing divine shikigami) ──
+    // ── Drawing (Colossal Divine General from Mahoraga.html template) ──
     drawCharacter() {
         if (!this.graphics || this.isDead) return;
         this.graphics.clear();
@@ -172,89 +172,214 @@ export default class MahoragaNPC {
         const sx = this.sprite.x;
         const sy = this.sprite.y;
         const f = this.facing;
+        const g = this.graphics;
 
-        // === LEGS ===
-        // Left leg
-        this.graphics.fillStyle(0xBBBBBB, 1);
-        this.graphics.fillRoundedRect(sx - 18, sy + 25, 14, 50, 4);
-        // Right leg
-        this.graphics.fillRoundedRect(sx + 4, sy + 25, 14, 50, 4);
-        // Feet
-        this.graphics.fillStyle(0x999999, 1);
-        this.graphics.fillRoundedRect(sx - 20, sy + 70, 18, 8, 3);
-        this.graphics.fillRoundedRect(sx + 2, sy + 70, 18, 8, 3);
+        const skinColor = 0xe2e8f0;
+        const hakamaColor = 0x14151f;
+        const beltColor = 0xf1f5f9;
+        const bladeColor = 0xcbd5e1;
+        const muscleLineColor = 0x94a3b8;
+        const outlineColor = 0x05060b;
 
-        // === TORSO (muscular) ===
-        this.graphics.fillStyle(0xDDDDDD, 1);
-        this.graphics.fillRoundedRect(sx - 25, sy - 50, 50, 80, 8);
-        // Chest definition
-        this.graphics.lineStyle(2, 0xAAAAAA, 0.4);
-        this.graphics.beginPath();
-        this.graphics.moveTo(sx, sy - 45);
-        this.graphics.lineTo(sx, sy + 10);
-        this.graphics.strokePath();
+        // Breathing bob
+        const bob = Math.sin((this.lifetimeTimer || 0) * 0.002) * 2;
 
-        // === SHOULDERS ===
-        this.graphics.fillStyle(0xCCCCCC, 1);
-        this.graphics.fillCircle(sx - 28, sy - 45, 12);
-        this.graphics.fillCircle(sx + 28, sy - 45, 12);
+        // ══════════════════════════════════════
+        // 1. LEGS (Dark Hakama + Bare Calves + Feet)
+        // ══════════════════════════════════════
+        const legOff = 14;
 
-        // === 4 ARMS (divine shikigami has multiple arms) ===
-        this.graphics.lineStyle(6, 0xCCCCCC, 1);
-        // Front arm (main - holding sword)
-        this.graphics.beginPath();
-        this.graphics.moveTo(sx + 28 * f, sy - 45);
-        this.graphics.lineTo(sx + 55 * f, sy - 25);
-        this.graphics.strokePath();
-        // Back arm
-        this.graphics.lineStyle(5, 0xBBBBBB, 0.8);
-        this.graphics.beginPath();
-        this.graphics.moveTo(sx + 28 * f, sy - 40);
-        this.graphics.lineTo(sx + 50 * f, sy - 5);
-        this.graphics.strokePath();
-        // Other side arms (behind)
-        this.graphics.lineStyle(5, 0xBBBBBB, 0.6);
-        this.graphics.beginPath();
-        this.graphics.moveTo(sx - 28 * f, sy - 45);
-        this.graphics.lineTo(sx - 45 * f, sy - 20);
-        this.graphics.strokePath();
-        this.graphics.beginPath();
-        this.graphics.moveTo(sx - 28 * f, sy - 40);
-        this.graphics.lineTo(sx - 40 * f, sy - 5);
-        this.graphics.strokePath();
+        // Bare feet
+        g.fillStyle(skinColor, 1);
+        g.fillRect(sx - legOff - 9, sy + 68, 18, 8);
+        g.fillRect(sx + legOff - 9, sy + 68, 18, 8);
 
-        // === HEAD ===
-        this.graphics.fillStyle(0xFFFFFF, 1);
-        this.graphics.fillCircle(sx, sy - 68, 20);
-        // Eye (single divine cyclopean eye)
-        this.graphics.fillStyle(0xFF0000, 1);
-        this.graphics.fillCircle(sx + 4 * f, sy - 70, 5);
-        // Eye glow
-        this.graphics.fillStyle(0xFF4444, 0.4);
-        this.graphics.fillCircle(sx + 4 * f, sy - 70, 8);
+        // Bare calves
+        g.fillStyle(skinColor, 1);
+        g.beginPath();
+        g.moveTo(sx - legOff - 8, sy + 42); g.lineTo(sx - legOff + 8, sy + 42);
+        g.lineTo(sx - legOff + 6, sy + 68); g.lineTo(sx - legOff - 6, sy + 68);
+        g.closePath(); g.fillPath();
+        g.beginPath();
+        g.moveTo(sx + legOff - 8, sy + 42); g.lineTo(sx + legOff + 8, sy + 42);
+        g.lineTo(sx + legOff + 6, sy + 68); g.lineTo(sx + legOff - 6, sy + 68);
+        g.closePath(); g.fillPath();
 
-        // === SWORD (Sword of Extermination) ===
+        // Hakama pants (wide trapezoidal)
+        g.fillStyle(hakamaColor, 1);
+        g.beginPath();
+        g.moveTo(sx - legOff - 14, sy + 5); g.lineTo(sx - legOff + 14, sy + 5);
+        g.lineTo(sx - legOff + 16, sy + 45); g.lineTo(sx - legOff - 16, sy + 45);
+        g.closePath(); g.fillPath();
+        g.beginPath();
+        g.moveTo(sx + legOff - 14, sy + 5); g.lineTo(sx + legOff + 14, sy + 5);
+        g.lineTo(sx + legOff + 16, sy + 45); g.lineTo(sx + legOff - 16, sy + 45);
+        g.closePath(); g.fillPath();
+
+        // White rope belt
+        g.fillStyle(beltColor, 1);
+        g.fillRect(sx - 30, sy + 2, 60, 10);
+        // Belt buckle
+        g.fillStyle(0xd1d5db, 1);
+        g.fillCircle(sx, sy + 9, 5);
+
+        // ══════════════════════════════════════
+        // 2. UPPER BODY (Colossal Musculature)
+        // ══════════════════════════════════════
+
+        // Abdomen (trapezoid, marked muscles)
+        g.fillStyle(skinColor, 1);
+        g.beginPath();
+        g.moveTo(sx - 22, sy - 20 + bob); g.lineTo(sx + 22, sy - 20 + bob);
+        g.lineTo(sx + 16, sy + 5); g.lineTo(sx - 16, sy + 5);
+        g.closePath(); g.fillPath();
+        // Ab lines
+        g.lineStyle(1.5, muscleLineColor, 0.6);
+        g.lineBetween(sx - 9, sy - 15, sx + 9, sy - 15);
+        g.lineBetween(sx - 9, sy - 7, sx + 9, sy - 7);
+        g.lineBetween(sx - 9, sy + 1, sx + 9, sy + 1);
+        g.lineBetween(sx, sy - 20 + bob, sx, sy + 5);
+
+        // Pectorals (wide trapezoid)
+        g.fillStyle(skinColor, 1);
+        g.beginPath();
+        g.moveTo(sx - 35, sy - 42 + bob); g.lineTo(sx + 35, sy - 42 + bob);
+        g.lineTo(sx + 24, sy - 18 + bob); g.lineTo(sx - 24, sy - 18 + bob);
+        g.closePath(); g.fillPath();
+        // Chest division
+        g.lineStyle(2, 0x64748b, 0.5);
+        g.lineBetween(sx - 26, sy - 30, sx + 26, sy - 30);
+        g.lineStyle(2.5, 0x64748b, 0.5);
+        g.lineBetween(sx, sy - 42 + bob, sx, sy - 18 + bob);
+
+        // Trapezius muscles
+        g.fillStyle(skinColor, 1);
+        g.beginPath();
+        g.moveTo(sx - 35, sy - 42 + bob); g.lineTo(sx - 10, sy - 60 + bob);
+        g.lineTo(sx + 10, sy - 60 + bob); g.lineTo(sx + 35, sy - 42 + bob);
+        g.closePath(); g.fillPath();
+
+        // Giant deltoid shoulders
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(sx - 38, sy - 40 + bob, 16);
+        g.fillCircle(sx + 38, sy - 40 + bob, 16);
+
+        // ── BACK ARMS (2 behind, smaller/transparent) ──
+        g.lineStyle(5, skinColor, 0.5);
+        g.beginPath(); g.moveTo(sx - 38 * f, sy - 40 + bob); g.lineTo(sx - 50 * f, sy - 20 + bob); g.strokePath();
+        g.lineStyle(4, skinColor, 0.4);
+        g.beginPath(); g.moveTo(sx - 38 * f, sy - 35 + bob); g.lineTo(sx - 45 * f, sy - 5 + bob); g.strokePath();
+
+        // ── FRONT LEFT ARM (Free fist) ──
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(sx - 48 * f, sy - 20 + bob, 10); // Bicep
+        g.fillRect(sx - 52 * f - 5, sy - 5 + bob, 10, 22); // Forearm
+        g.fillCircle(sx - 55 * f, sy + 18 + bob, 7); // Fist
+
+        // ── FRONT RIGHT ARM (Sword of Extermination strapped) ──
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(sx + 48 * f, sy - 20 + bob, 10); // Bicep
+        g.fillRect(sx + 48 * f - 5, sy - 5 + bob, 10, 22); // Forearm
+        g.fillCircle(sx + 52 * f, sy + 18 + bob, 7); // Hand
+
+        // Sword of Extermination (strapped to forearm)
         if (this.state === 'attack') {
-            // Extended divine blade when attacking
-            this.graphics.lineStyle(4, 0xFFD700, 1);
-            this.graphics.beginPath();
-            this.graphics.moveTo(sx + 55 * f, sy - 25);
-            this.graphics.lineTo(sx + 95 * f, sy - 60);
-            this.graphics.strokePath();
-            // Blade glow
-            this.graphics.lineStyle(8, 0xFFD700, 0.3);
-            this.graphics.beginPath();
-            this.graphics.moveTo(sx + 55 * f, sy - 25);
-            this.graphics.lineTo(sx + 95 * f, sy - 60);
-            this.graphics.strokePath();
+            // Extended blade during attack
+            g.fillStyle(bladeColor, 1);
+            g.beginPath();
+            g.moveTo(sx + 45 * f, sy - 10 + bob); g.lineTo(sx + 55 * f, sy - 10 + bob);
+            g.lineTo(sx + 65 * f, sy - 55 + bob); g.lineTo(sx + 50 * f, sy - 55 + bob);
+            g.closePath(); g.fillPath();
+            // Blade tip
+            g.fillTriangle(sx + 50 * f, sy - 55 + bob, sx + 65 * f, sy - 55 + bob, sx + 57 * f, sy - 70 + bob);
+            // Glow
+            g.lineStyle(2, 0xFFD700, 0.6);
+            g.lineBetween(sx + 52 * f, sy - 15 + bob, sx + 57 * f, sy - 55 + bob);
         } else {
-            // Resting blade
-            this.graphics.lineStyle(3, 0xFFD700, 0.8);
-            this.graphics.beginPath();
-            this.graphics.moveTo(sx + 55 * f, sy - 25);
-            this.graphics.lineTo(sx + 65 * f, sy + 10);
-            this.graphics.strokePath();
+            // Resting blade (pointing down alongside forearm)
+            g.fillStyle(bladeColor, 1);
+            g.beginPath();
+            g.moveTo(sx + 44 * f, sy + bob); g.lineTo(sx + 54 * f, sy + bob);
+            g.lineTo(sx + 58 * f, sy + 50 + bob); g.lineTo(sx + 48 * f, sy + 50 + bob);
+            g.closePath(); g.fillPath();
+            // Blade tip
+            g.fillTriangle(sx + 48 * f, sy + 50 + bob, sx + 58 * f, sy + 50 + bob, sx + 53 * f, sy + 62 + bob);
         }
+        // Bandage straps on forearm
+        g.lineStyle(2.5, 0xf8fafc, 0.8);
+        g.lineBetween(sx + 43 * f, sy - 3 + bob, sx + 57 * f, sy + bob);
+        g.lineBetween(sx + 42 * f, sy + 6 + bob, sx + 56 * f, sy + 9 + bob);
+        g.lineBetween(sx + 41 * f, sy + 14 + bob, sx + 55 * f, sy + 17 + bob);
+
+        // Thick neck
+        g.fillStyle(skinColor, 1);
+        g.fillRect(sx - 8, sy - 62 + bob, 16, 14);
+
+        // ══════════════════════════════════════
+        // 3. HEAD, SENSORIAL WINGS & HEAD TAIL
+        // ══════════════════════════════════════
+
+        // Head tail (flowing horizontally from back of head)
+        g.fillStyle(skinColor, 0.8);
+        g.beginPath();
+        g.moveTo(sx - 2 * f, sy - 72 + bob);
+        g.lineTo(sx - 30 * f, sy - 68 + bob);
+        g.lineTo(sx - 55 * f, sy - 80 + bob);
+        g.lineTo(sx - 70 * f, sy - 72 + bob);
+        g.lineTo(sx - 55 * f, sy - 65 + bob);
+        g.lineTo(sx - 30 * f, sy - 60 + bob);
+        g.lineTo(sx - 2 * f, sy - 64 + bob);
+        g.closePath(); g.fillPath();
+
+        // Head
+        g.fillStyle(skinColor, 1);
+        g.fillCircle(sx, sy - 70 + bob, 12);
+
+        // Monstrous jaw/fauces (no eyes, rectangular teeth area)
+        g.fillStyle(0xFFFFFF, 1);
+        g.fillRect(sx - 5, sy - 64 + bob, 10, 5);
+        g.lineStyle(1, outlineColor, 0.7);
+        g.strokeRect(sx - 5, sy - 64 + bob, 10, 5);
+        // Teeth division lines
+        g.lineBetween(sx - 5, sy - 62 + bob, sx + 5, sy - 62 + bob);
+        g.lineBetween(sx, sy - 64 + bob, sx, sy - 59 + bob);
+
+        // Sensorial Wings (angular approximations of bezier curves)
+        // Left upper wing
+        g.fillStyle(skinColor, 0.8);
+        g.beginPath();
+        g.moveTo(sx - 2, sy - 70 + bob);
+        g.lineTo(sx - 20, sy - 78 + bob);
+        g.lineTo(sx - 40, sy - 82 + bob);
+        g.lineTo(sx - 50, sy - 76 + bob);
+        g.lineTo(sx - 35, sy - 72 + bob);
+        g.lineTo(sx - 15, sy - 68 + bob);
+        g.closePath(); g.fillPath();
+        // Left lower wing
+        g.beginPath();
+        g.moveTo(sx - 2, sy - 66 + bob);
+        g.lineTo(sx - 20, sy - 68 + bob);
+        g.lineTo(sx - 40, sy - 64 + bob);
+        g.lineTo(sx - 30, sy - 60 + bob);
+        g.lineTo(sx - 15, sy - 62 + bob);
+        g.closePath(); g.fillPath();
+        // Right upper wing
+        g.beginPath();
+        g.moveTo(sx + 2, sy - 70 + bob);
+        g.lineTo(sx + 20, sy - 78 + bob);
+        g.lineTo(sx + 40, sy - 82 + bob);
+        g.lineTo(sx + 50, sy - 76 + bob);
+        g.lineTo(sx + 35, sy - 72 + bob);
+        g.lineTo(sx + 15, sy - 68 + bob);
+        g.closePath(); g.fillPath();
+        // Right lower wing
+        g.beginPath();
+        g.moveTo(sx + 2, sy - 66 + bob);
+        g.lineTo(sx + 20, sy - 68 + bob);
+        g.lineTo(sx + 40, sy - 64 + bob);
+        g.lineTo(sx + 30, sy - 60 + bob);
+        g.lineTo(sx + 15, sy - 62 + bob);
+        g.closePath(); g.fillPath();
     }
 
     // ── AI Loop ──
@@ -267,16 +392,45 @@ export default class MahoragaNPC {
             this.ultimateReady = true;
         }
 
-        // Ground handled by physics world bounds (height = GROUND_Y)
-
-        // Wheel rendering
+        // ══════════════════════════════════════
+        // DHARMA WHEEL (8-spoke golden wheel floating above head)
+        // ══════════════════════════════════════
         if (this.wheel) {
             this.wheel.clear();
-            this.wheel.lineStyle(4, 0xFFD700, 1);
-            this.wheel.strokeCircle(this.sprite.x, this.sprite.y - 120, 20);
-            const wx = this.sprite.x + Math.cos(this.wheelRotation) * 20;
-            const wy = this.sprite.y - 120 + Math.sin(this.wheelRotation) * 20;
-            this.wheel.lineBetween(this.sprite.x, this.sprite.y - 120, wx, wy);
+            this.wheelRotation += dt * 0.003;
+            const wx = this.sprite.x;
+            const wy = this.sprite.y - 100;
+            const wheelRadius = 20;
+            const goldColor = 0xeab308;
+
+            // Outer golden ring
+            this.wheel.lineStyle(3.5, goldColor, 1);
+            this.wheel.strokeCircle(wx, wy, wheelRadius);
+
+            // Central hub
+            this.wheel.fillStyle(goldColor, 1);
+            this.wheel.fillCircle(wx, wy, 5);
+
+            // 8 spokes + celestial spheres
+            for (let i = 0; i < 8; i++) {
+                const angle = this.wheelRotation + (i * Math.PI / 4);
+                const tipX = wx + Math.cos(angle) * wheelRadius;
+                const tipY = wy + Math.sin(angle) * wheelRadius;
+
+                // Spoke line
+                this.wheel.lineStyle(2, goldColor, 1);
+                this.wheel.beginPath();
+                this.wheel.moveTo(wx, wy);
+                this.wheel.lineTo(tipX, tipY);
+                this.wheel.strokePath();
+
+                // Celestial sphere at tip
+                this.wheel.fillStyle(goldColor, 1);
+                this.wheel.fillCircle(tipX, tipY, 3.5);
+                // White highlight
+                this.wheel.fillStyle(0xFFFFFF, 0.8);
+                this.wheel.fillCircle(tipX, tipY, 1.5);
+            }
         }
 
         // Draw character visuals

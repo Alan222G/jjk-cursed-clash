@@ -12,7 +12,6 @@ const GRID = [
     ['ISHIGORI', 'KUROROSHI', 'YUJI', 'MAHITO', 'TODO'],
     ['NAOYA', 'HAKARI', 'HIGURUMA', 'NANAMI', 'NOBARA'],
     ['JOGO', 'DAGON', 'HANAMI', 'CHOSO', 'MEGUMI'],
-    ['KASHIMO', 'YOROZU', 'URO', 'URAUME', 'HANA'],
 ];
 
 // Map character key → menu avatar texture key

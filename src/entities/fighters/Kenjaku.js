@@ -61,6 +61,113 @@ export default class Kenjaku extends Fighter {
         }
     }
 
+    // ── Kenjaku design: dark monk robe, green kesa, forehead stitches, long black hair ──
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xebd0c5;
+        const robeColor = isFlashing ? 0xFFFFFF : 0x1c1b2e;
+        const kesaColor = isFlashing ? 0xFFFFFF : 0x1e3f20;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x141416;
+        const elbowColor = isFlashing ? 0xFFFFFF : 0x6b21a8;
+
+        const ox = x;
+        const oy = masterY;
+
+        const rotArmSup = isMoving ? Math.sin(time * 1.2) * 8 : 5;
+        const rotLegSup = isMoving ? Math.cos(time * 1.2) * 5 : 0;
+
+        // ── Long hair background (covers nape/back) ──
+        this.drawRect(g, ox, oy - 42, 25, 40, hairColor);
+
+        // ── Legs (robe pants) ──
+        this.drawRect(g, ox - 7, oy + 39, 10, 28, robeColor, rotLegSup);
+        this.drawCircle(g, ox - 7, oy + 52, 4, elbowColor);
+        this.drawRect(g, ox - 7, oy + 65, 9, 25, robeColor);
+        this.drawRect(g, ox + 7, oy + 39, 10, 28, robeColor, -rotLegSup);
+        this.drawCircle(g, ox + 7, oy + 52, 4, elbowColor);
+        this.drawRect(g, ox + 7, oy + 65, 9, 25, robeColor);
+
+        // ── Torso (dark robe) ──
+        this.drawRect(g, ox, oy - 10, 25, 38, robeColor);
+        this.drawRect(g, ox, oy + 16, 25, 18, robeColor);
+
+        // ── Visible neck ──
+        this.drawRect(g, ox, oy - 33, 9.5, 12, skinColor);
+
+        // ── Buddhist kesa/okesa (green overlay with gold grid) ──
+        this.drawRect(g, ox, oy + 2, 18, 30, kesaColor);
+        if (!isFlashing) {
+            // Gold border and grid lines
+            g.lineStyle(1.5, 0xeab308, 0.8);
+            g.strokeRect(ox - 9, oy - 13, 18, 30);
+            this.drawLine(g, ox - 9, oy - 3, ox + 9, oy - 3, 1.2, 0xeab308);
+            this.drawLine(g, ox - 9, oy + 7, ox + 9, oy + 7, 1.2, 0xeab308);
+            this.drawLine(g, ox, oy - 13, ox, oy + 17, 1.2, 0xeab308);
+        }
+
+        // ── Arms (wide robe sleeves) ──
+        this.drawRect(g, ox - 16, oy - 10, 12, 22, robeColor, rotArmSup);
+        this.drawCircle(g, ox - 17, oy + 1, 4, elbowColor);
+        this.drawRect(g, ox - 16, oy + 10, 7, 18, skinColor);
+        this.drawCircle(g, ox - 16, oy + 19, 4, skinColor);
+
+        this.drawRect(g, ox + 16, oy - 10, 12, 22, robeColor, -rotArmSup);
+        this.drawCircle(g, ox + 17, oy + 1, 4, elbowColor);
+        this.drawRect(g, ox + 16, oy + 10, 7, 18, skinColor);
+        this.drawCircle(g, ox + 16, oy + 19, 4, skinColor);
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 49, 13, skinColor);
+
+        // ── Purple eyes ──
+        this.drawCircle(g, ox - 4, oy - 50, 2.5, isFlashing ? 0xFFFFFF : 0xa855f7);
+        this.drawCircle(g, ox + 4, oy - 50, 2.5, isFlashing ? 0xFFFFFF : 0xa855f7);
+
+        // ── Forehead stitching scar ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 8, oy - 57, ox + 8, oy - 57, 1.5, 0x7f1d1d);
+            for (let i = -6; i <= 6; i += 3) {
+                this.drawLine(g, ox + i, oy - 59, ox + i, oy - 55, 1, 0x450a0a);
+            }
+        }
+
+        // ── Hair: bun on top + front strand ──
+        this.drawRect(g, ox, oy - 61, 22, 6, hairColor);
+        this.drawCircle(g, ox, oy - 65, 4.5, hairColor);
+        this.drawTriangle(g, ox - 6, oy - 51, 3.5, 14, hairColor, -25);
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.3) * 16, y - 60 + Math.sin(angle + 0.3) * 6,
+                    x + Math.cos(angle - 0.3) * 16, y - 60 + Math.sin(angle - 0.3) * 6
+                );
+            }
+        }
+    }
+
     trySpecialAttack() {
         if (this.isCasting) return;
         const tier = this.ceSystem.getTier();

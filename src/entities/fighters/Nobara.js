@@ -340,97 +340,77 @@ export default class Nobara extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0xFFE4C4;
-        const uniformColor = isFlashing ? 0xFFFFFF : 0x223355; // Blue-black uniform
-        const skirtColor = isFlashing ? 0xFFFFFF : 0x334466; 
-        const hairColor = isFlashing ? 0xFFFFFF : 0xCC6633; // Orange/Brown hair
-        const armExtend = this.attackSwing * 40;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        // LEGS & SKIRT
-        const legY = masterY + 5;
-        let leftLeg = 40, rightLeg = 40;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 25; rightLeg = 25; }
-        
-        g.lineStyle(6, 0x111111, 1); // Tights/leggings
-        g.beginPath(); g.moveTo(x - 8, legY); g.lineTo(x - 12 - (f * 8), legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 8, legY); g.lineTo(x + 12 + (f * 8), legY + rightLeg); g.strokePath();
+        const skinColor = isFlashing ? 0xFFFFFF : 0xfcd0a1;
+        const jacketColor = isFlashing ? 0xFFFFFF : 0x1b263b;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xd35400;
+        const beltColor = isFlashing ? 0xFFFFFF : 0x5c3a21;
+        const bootColor = isFlashing ? 0xFFFFFF : 0x5c3a21;
+        const buttonColor = isFlashing ? 0xFFFFFF : 0xf1c40f;
 
-        // Skirt
-        g.fillStyle(skirtColor, 1);
-        g.beginPath();
-        g.moveTo(x - 18, legY - 10);
-        g.lineTo(x + 18, legY - 10);
-        g.lineTo(x + 22, legY + 15);
-        g.lineTo(x - 22, legY + 15);
-        g.fillPath();
-        g.lineStyle(2, 0x112233, 0.5); // Skirt pleats
-        g.lineBetween(x - 10, legY - 10, x - 12, legY + 15);
-        g.lineBetween(x, legY - 10, x, legY + 15);
-        g.lineBetween(x + 10, legY - 10, x + 12, legY + 15);
+        const ox = x;
+        const oy = masterY;
 
-        // TORSO
-        g.fillStyle(uniformColor, 1);
-        g.fillRect(x - 14, masterY - 35, 28, 30);
-        
-        // Collar / Belt
-        g.lineStyle(3, 0xDDAA44, 1); // Gold buttons
-        g.strokeRect(x - 2 * f, masterY - 30, 2, 2);
-        g.strokeRect(x - 2 * f, masterY - 20, 2, 2);
-        g.strokeRect(x - 2 * f, masterY - 10, 2, 2);
-        
-        // Belt with nails pouch
-        g.fillStyle(0x332211, 1); g.fillRect(x - 16, masterY - 10, 32, 5);
-        g.fillStyle(0x664422, 1); g.fillRect(x - 10 * f, masterY - 10, 8, 12); // Pouch
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotLegSup = isMoving ? Math.cos(time) * 5 : 0;
 
-        // HEAD
-        const hx = x; const hy = masterY - 45;
-        g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, 13);
-        
-        // Hair — Short orange-brown bob
-        g.fillStyle(hairColor, 1);
-        g.beginPath();
-        g.moveTo(hx - 15, hy + 5);
-        g.lineTo(hx - 16, hy - 15);
-        g.lineTo(hx - 5, hy - 18);
-        g.lineTo(hx + 8, hy - 17);
-        g.lineTo(hx + 15, hy - 10);
-        g.lineTo(hx + 15, hy + 5);
-        g.lineTo(hx + 10, hy - 5);
-        g.lineTo(hx - 10, hy - 5);
-        g.fillPath();
+        // ── Legs (dark tights) ──
+        this.drawRect(g, ox - 8, oy + 39, 7, 35, 0x111111, rotLegSup);
+        this.drawRect(g, ox + 8, oy + 39, 7, 35, 0x111111, -rotLegSup);
 
-        // Eyes
-        g.fillStyle(0x552211, 1);
-        g.fillCircle(hx + 4 * f, hy - 2, 2.5);
+        // ── Boots ──
+        this.drawRect(g, ox - 8, oy + 62, 10, 6, bootColor);
+        this.drawRect(g, ox + 8, oy + 62, 10, 6, bootColor);
 
-        // ARMS
-        const armY = masterY - 30;
-        
-        // Back arm (Holding nails)
-        g.lineStyle(6, uniformColor, 1);
-        g.beginPath(); g.moveTo(x - 10, armY + 3); g.lineTo(x - 18 * f, armY + 15); g.strokePath();
-        g.fillStyle(skinColor, 1); g.fillCircle(x - 18 * f, armY + 15, 4);
-        
-        // Glowing nails in back hand
-        g.lineStyle(2, 0x88CCFF, 0.9);
-        g.lineBetween(x - 18 * f, armY + 15, x - 18 * f, armY + 5);
-        g.lineBetween(x - 15 * f, armY + 15, x - 15 * f, armY + 5);
-
-        // Front arm (Holding hammer)
-        g.lineStyle(6, uniformColor, 1);
-        if (this.stateMachine.is('block')) {
-            g.beginPath(); g.moveTo(x + 10, armY + 3); g.lineTo(x + 10 * f, armY - 15); g.strokePath();
-            this.drawHammer(g, x + 10 * f, armY - 15, -45 * f);
-        } else if (this.attackSwing > 0) {
-            g.beginPath(); g.moveTo(x + 10, armY + 3); g.lineTo(x + (25 + armExtend) * f, armY - 5); g.strokePath();
-            this.drawHammer(g, x + (25 + armExtend) * f, armY - 5, 90 * f);
-        } else {
-            g.beginPath(); g.moveTo(x + 10, armY + 3); g.lineTo(x + 15 * f, armY + 15); g.strokePath();
-            this.drawHammer(g, x + 15 * f, armY + 15, 45 * f);
+        // ── Pleated skirt ──
+        this.drawRect(g, ox, oy + 14, 26, 22, jacketColor);
+        if (!isFlashing) {
+            this.drawLine(g, ox - 7, oy + 4, ox - 10, oy + 24, 1.8, 0x0d131f);
+            this.drawLine(g, ox, oy + 4, ox, oy + 24, 1.8, 0x0d131f);
+            this.drawLine(g, ox + 7, oy + 4, ox + 10, oy + 24, 1.8, 0x0d131f);
         }
 
-        // Hitstun stars
+        // ── Torso (school jacket) ──
+        this.drawRect(g, ox, oy - 14, 18, 32, jacketColor);
+
+        // ── White collar triangle ──
+        this.drawTriangle(g, ox, oy - 26, 7, 7, isFlashing ? 0xFFFFFF : 0xffffff);
+
+        // ── Gold buttons ──
+        this.drawCircle(g, ox, oy - 18, 2, buttonColor);
+        this.drawCircle(g, ox, oy - 10, 2, buttonColor);
+
+        // ── Belt with pouch ──
+        this.drawRect(g, ox, oy + 3, 21, 5, beltColor);
+        this.drawRect(g, ox - 7, oy + 9, 5, 8, isFlashing ? 0xFFFFFF : 0x3e2723);
+
+        // ── Arms (jacket sleeves) ──
+        this.drawRect(g, ox - 13, oy - 13, 7, 28, jacketColor, rotArmSup - 10);
+        this.drawRect(g, ox + 13, oy - 13, 7, 28, jacketColor, -rotArmSup + 10);
+
+        // ── Hands ──
+        this.drawCircle(g, ox - 17, oy + 8, 4, skinColor);
+        this.drawCircle(g, ox + 17, oy + 8, 4, skinColor);
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 42, 12, skinColor);
+
+        // ── Eyes (angry anime style) ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 5, oy - 41, ox - 1, oy - 41, 2, 0x3e2723);
+            this.drawLine(g, ox + 1, oy - 41, ox + 5, oy - 41, 2, 0x3e2723);
+            this.drawLine(g, ox - 2, oy - 36, ox + 2, oy - 36, 1.5, 0x000000); // Mouth
+        }
+
+        // ── Orange bob hair ──
+        this.drawCircle(g, ox, oy - 47, 12, hairColor);
+        this.drawTriangle(g, ox - 7, oy - 43, 4.5, 11, hairColor, 15);
+        this.drawTriangle(g, ox, oy - 43, 5.5, 13, hairColor, 0);
+        this.drawTriangle(g, ox + 7, oy - 43, 4.5, 11, hairColor, -15);
+
+        // ── Hitstun stars ──
         if (this.stateMachine.is('hitstun')) {
             const starT = (this.animTimer || 0) * 0.01;
             for (let i = 0; i < 3; i++) {

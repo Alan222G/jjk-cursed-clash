@@ -499,45 +499,119 @@ export default class Naoya extends Fighter {
             g.fillStyle(0x00FFCC, 0.04 + Math.sin(t) * 0.02);
             g.fillEllipse(x, masterY - 10, 70, 55);
         } else {
-            // HUMAN FORM
-            const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
-            const clothColor = isFlashing ? 0xFFFFFF : 0x222255;
-            const hairColor = isFlashing ? 0xFFFFFF : 0xCCBB77;
+            // HUMAN FORM — Zen'in style haori + hakama
+            const skinColor = isFlashing ? 0xFFFFFF : 0xffe4e6;
+            const haoriColor = isFlashing ? 0xFFFFFF : 0x1c2536;
+            const hakamaColor = isFlashing ? 0xFFFFFF : 0xd1d5db;
+            const hairColor = isFlashing ? 0xFFFFFF : 0xc3be5a;
+            const isMoving = this.stateMachine.is('walk');
+            const time = (this.scene.time.now * 0.004);
+
             // Speed afterimages
-            if (this.speedLevel >= 3 && this.stateMachine.is('walk')) {
+            if (this.speedLevel >= 3 && isMoving) {
                 for (let i = 1; i <= 2; i++) {
-                    g.fillStyle(clothColor, 0.1); g.fillEllipse(x - i * 20 * f, masterY - 15, 20, 55);
+                    g.fillStyle(haoriColor, 0.1); g.fillEllipse(x - i * 20 * f, masterY - 15, 20, 55);
                 }
             }
-            // Legs
-            const legY = masterY + 8; let lL = 38, rL = 38;
-            if (this.stateMachine.is('walk')) { lL += this.walkCycle * 1.5; rL -= this.walkCycle * 1.5; }
-            else if (this.stateMachine.isAny('jump', 'fall')) { lL = 22; rL = 22; }
-            g.lineStyle(7, clothColor, 1);
-            g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 14 - (f * 8), legY + lL); g.strokePath();
-            g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 14 + (f * 8), legY + rL); g.strokePath();
-            // Torso
-            g.fillStyle(clothColor, 1); g.fillRect(x - 15, masterY - 38, 30, 50);
-            // Head
-            const hx = x; const hy = masterY - 52;
-            g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, 13);
-            g.fillStyle(hairColor, 1);
-            g.beginPath(); g.moveTo(hx - 14, hy - 4); g.lineTo(hx - 10, hy - 18);
-            g.lineTo(hx - 3, hy - 14); g.lineTo(hx + 3, hy - 18);
-            g.lineTo(hx + 10, hy - 14); g.lineTo(hx + 14, hy - 4); g.fillPath();
-            g.fillStyle(0x334488, 1);
-            g.fillCircle(hx - 4 * f, hy - 2, 2); g.fillCircle(hx + 4 * f, hy - 2, 2);
-            // Arms
-            const armY = masterY - 32;
-            g.lineStyle(7, clothColor, 0.85);
-            g.beginPath(); g.moveTo(x - 14, armY + 3); g.lineTo(x - 22 * f, armY + 20); g.strokePath();
-            g.lineStyle(8, clothColor, 1);
-            if (this.attackSwing > 0) {
-                g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (25 + armExtend) * f, armY - 3); g.strokePath();
-                g.fillStyle(skinColor, 1); g.fillCircle(x + (28 + armExtend) * f, armY - 3, 5);
-            } else {
-                g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 18 * f, armY + 20); g.strokePath();
+
+            const ox = x;
+            const oy = masterY - 15;
+
+            // 1. LEGS — Wide hakama (pleated pants)
+            const legAngle = isMoving ? Math.sin(time) * 6 : 0;
+            const drawNaoyaLeg = (sideSign, angle) => {
+                g.save();
+                g.translate(ox + (sideSign * 6) * f, oy + 28);
+                g.rotate(angle * f * Math.PI / 180);
+                
+                // Hakama
+                g.fillStyle(hakamaColor, 1);
+                g.fillRect(-12/2, 22 - 46/2, 12, 46);
+                g.lineStyle(1.5, 0x000000, 1);
+                g.strokeRect(-12/2, 22 - 46/2, 12, 46);
+                
+                // Crease line
+                if (!isFlashing) {
+                    g.lineStyle(1, 0x9ca3af, 1);
+                    g.lineBetween(-3 * sideSign * f, 4, -3 * sideSign * f, 42);
+                }
+                
+                // Ankle
+                g.fillStyle(0x374151, 1);
+                g.fillRect(-9/2, 48 - 6/2, 9, 6);
+                g.strokeRect(-9/2, 48 - 6/2, 9, 6);
+                
+                // Sandal
+                g.fillStyle(0x78716c, 1);
+                g.fillRect(-11/2, 52 - 3/2, 11, 3);
+                g.strokeRect(-11/2, 52 - 3/2, 11, 3);
+                
+                g.restore();
+            };
+
+            drawNaoyaLeg(-1, legAngle);  // Left Leg
+            drawNaoyaLeg(1, -legAngle);  // Right Leg
+
+            // 2. TORSO
+            this.drawRect(g, ox, oy + 25, 20, 6, 0x9ca3af); // Obi belt
+            this.drawRect(g, ox, oy + 5, 18, 34, haoriColor); // Haori
+            this.drawRect(g, ox, oy - 13, 6, 10, 0xf8fafc); // Inner white collar
+            if (!isFlashing) this.drawLine(g, ox - 4, oy - 11, ox + 3, oy - 2, 1, 0xcbd5e1);
+
+            // 3. ARMS
+            const armAngleL = isMoving ? Math.sin(time) * 12 : 10;
+            const armAngleR = isMoving ? -Math.sin(time) * 12 : -10;
+
+            const drawNaoyaArm = (sideSign, angle) => {
+                g.save();
+                g.translate(ox + (sideSign * 9) * f, oy - 10);
+                g.rotate(angle * f * Math.PI / 180);
+                
+                // Manga superior
+                g.fillStyle(haoriColor, 1);
+                g.fillRect(-11/2, 12 - 24/2, 11, 24);
+                g.lineStyle(1.5, 0x000000, 1);
+                g.strokeRect(-11/2, 12 - 24/2, 11, 24);
+                
+                // Puño (white cuff)
+                g.fillStyle(0xffffff, 1);
+                g.fillRect(-7.5/2, 26 - 14/2, 7.5, 14);
+                g.strokeRect(-7.5/2, 26 - 14/2, 7.5, 14);
+                
+                // Mano (skin)
+                g.fillStyle(skinColor, 1);
+                g.fillCircle(0, 35, 4);
+                g.lineStyle(1.5, 0x000000, 1);
+                g.strokeCircle(0, 35, 4);
+                
+                g.restore();
+            };
+
+            drawNaoyaArm(-1, armAngleL); // Left Arm
+            drawNaoyaArm(1, armAngleR);  // Right Arm
+
+            // 4. HEAD
+            const hx = ox;
+            const hy = oy - 22;
+
+            this.drawCircle(g, hx, hy - 2, 11.5, 0x1e293b); // Dark hair base
+            this.drawCircle(g, hx, hy, 10, skinColor); // Face
+
+            if (!isFlashing) {
+                this.drawLine(g, hx - 5, hy - 2, hx - 1, hy - 1, 1.5, 0x000000); // Eyes
+                this.drawLine(g, hx + 1, hy - 1, hx + 5, hy - 2, 1.5, 0x000000);
+                this.drawCircle(g, hx - 3, hy + 0.5, 1.2, 0x1e3a8a); // Blue pupils
+                this.drawCircle(g, hx + 3, hy + 0.5, 1.2, 0x1e3a8a);
+                this.drawLine(g, hx - 2.5, hy + 5, hx + 2.5, hy + 4.5, 1.5, 0x000000); // Smirk
             }
+
+            // Hair crown + bangs
+            this.drawCircle(g, hx, hy - 6, 9.5, hairColor);
+            this.drawTriangle(g, hx - 5, hy - 3, 3.5, 8, hairColor, 15);
+            this.drawTriangle(g, hx - 2, hy - 3, 4, 10, hairColor, 5);
+            this.drawTriangle(g, hx + 2, hy - 3, 4, 10, hairColor, -5);
+            this.drawTriangle(g, hx + 5, hy - 3, 3.5, 8, hairColor, -15);
+
             // Speed level indicator
             if (this.speedLevel > 0) {
                 g.fillStyle(0x00FFCC, 0.5);

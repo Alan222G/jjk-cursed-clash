@@ -519,99 +519,141 @@ export default class Hakari extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0xF0D0B0;
-        const jacketColor = isFlashing ? 0xFFFFFF : 0x222222;
-        const pantsColor = isFlashing ? 0xFFFFFF : 0x333333;
-        const hairColor = isFlashing ? 0xFFFFFF : 0xBB8833;
-        const armExtend = this.attackSwing * 40;
-        const t = (this.animTimer || 0) * 0.003;
+        const skinColor = isFlashing ? 0xFFFFFF : 0xc68a4c;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xdda15e;
+        const pantsColor = isFlashing ? 0xFFFFFF : 0x222530;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
         // Jackpot golden aura
         if (this.jackpotActive) {
-            const pulse = 0.3 + Math.sin(t * 4) * 0.15;
+            const pulse = 0.3 + Math.sin(time * 4) * 0.15;
             g.fillStyle(0xFFDD00, pulse);
             g.fillEllipse(x, masterY - 20, 70, 90);
             g.lineStyle(2, 0xFFD700, pulse * 0.5);
             g.strokeEllipse(x, masterY - 20, 75, 95);
         }
         if (this.feverActive) {
-            g.fillStyle(0xFF4400, 0.1 + Math.sin(t * 3) * 0.05);
+            g.fillStyle(0xFF4400, 0.1 + Math.sin(time * 3) * 0.05);
             g.fillEllipse(x, masterY - 15, 55, 70);
         }
 
-        // LEGS
-        const legY = masterY + 5;
-        let leftLeg = 35, rightLeg = 35;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 20; rightLeg = 20; }
-        g.fillStyle(pantsColor, 0.85);
-        g.fillTriangle(x - 10, legY, x - 10 - 10, legY + leftLeg, x - 10 + 10, legY + leftLeg - 5);
-        g.fillStyle(pantsColor, 1);
-        g.fillTriangle(x + 10, legY, x + 10 - 12 * f, legY + rightLeg, x + 10 + 12 * f, legY + rightLeg - 2);
+        const ox = x;
+        const oy = masterY - 15;
 
-        // TORSO
-        g.fillStyle(jacketColor, 1);
-        g.beginPath();
-        g.moveTo(x - 16, masterY - 38);
-        g.lineTo(x + 16, masterY - 38);
-        g.lineTo(x + 12, masterY + 12);
-        g.lineTo(x - 12, masterY + 12);
-        g.fillPath();
-        // Shirt underneath
-        g.fillStyle(0xEEEEEE, 1);
-        g.fillRect(x - 6, masterY - 35, 12, 40);
-        g.lineStyle(2, 0xFF4444, 0.6);
-        g.beginPath(); g.moveTo(x, masterY - 34); g.lineTo(x, masterY + 8); g.strokePath();
-        // Jacket line details
-        g.lineStyle(1, 0x333333, 0.4);
-        g.beginPath(); g.moveTo(x, masterY - 38); g.lineTo(x, masterY + 10); g.strokePath();
+        // 1. LEGS — robust legs
+        const legAngle = isMoving ? Math.sin(time) * 8 : 0;
+        const drawHakariLeg = (sideSign, angle) => {
+            g.save();
+            g.translate(ox + (sideSign * 6) * f, oy + 24);
+            g.rotate(angle * f * Math.PI / 180);
+            
+            // Muslo (pantsColor)
+            g.fillStyle(pantsColor, 1);
+            g.fillRect(-10/2, 14 - 24/2, 10, 24);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeRect(-10/2, 14 - 24/2, 10, 24);
+            
+            // Knee
+            g.fillStyle(0x111827, 1);
+            g.fillCircle(0, 25, 5);
+            g.strokeCircle(0, 25, 5);
+            
+            // Pantorrilla (pantsColor)
+            g.fillStyle(pantsColor, 1);
+            g.fillRect(-8/2, 36 - 22/2, 8, 22);
+            g.strokeRect(-8/2, 36 - 22/2, 8, 22);
+            
+            // Tenis (white shoes)
+            g.fillStyle(0xffffff, 1);
+            g.fillRect(-10/2, 48 - 6/2, 10, 6);
+            g.strokeRect(-10/2, 48 - 6/2, 10, 6);
+            
+            g.restore();
+        };
 
-        // BACK ARM
-        const armY = masterY - 34;
-        g.lineStyle(10, jacketColor, 0.8);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY + 2);
-        g.lineTo(x - 22 * f, armY + 18);
-        g.strokePath();
+        drawHakariLeg(-1, legAngle);  // Left Leg
+        drawHakariLeg(1, -legAngle);  // Right Leg
 
-        // HEAD
-        const hx = x; const hy = masterY - 56;
-        g.fillStyle(skinColor, 1);
-        g.fillRect(hx - 4, hy + 5, 8, 8); // Neck
-        g.beginPath();
-        g.moveTo(hx - 12, hy - 10);
-        g.lineTo(hx + 12, hy - 10);
-        g.lineTo(hx + 8, hy + 12);
-        g.lineTo(hx - 8, hy + 12);
-        g.fillPath();
-
-        // Hair — messy/spiked blonde
-        g.fillStyle(hairColor, 1);
-        for (let i = -14; i <= 14; i += 4) {
-            const spikeH = 12 + Math.cos((i / 14) * (Math.PI / 2)) * 8;
-            const slant = (i * 0.5) * f;
-            g.fillTriangle(hx + i, hy - 8, hx + i + 2, hy - 8, hx + i + slant, hy - 8 - spikeH);
+        // 2. TORSO DE MUSCULATURA PESADA
+        this.drawRect(g, ox, oy + 5, 22, 36, 0xf3f4f6); // White coat
+        
+        // Definición abdominal y pectoral musculoso
+        if (!isFlashing) {
+            this.drawLine(g, ox - 8, oy - 8, ox + 8, oy - 8, 1.5, 0xcbd5e1); // Línea pectoral
+            this.drawLine(g, ox - 6, oy + 4, ox + 6, oy + 4, 1.2, 0xcbd5e1); // Abdomen alto
+            this.drawLine(g, ox, oy - 12, ox, oy + 18, 1.2, 0xcbd5e1);
         }
 
-        // Eyes
-        g.fillStyle(0x000000, 1);
-        g.fillCircle(hx - 5 * f, hy - 2, 2.5);
-        g.fillCircle(hx + 5 * f, hy - 2, 2.5);
-        // Smirk
-        g.lineStyle(1, 0x000000, 0.8);
-        g.beginPath(); g.moveTo(hx - 3 * f, hy + 6);
-        g.lineTo(hx + 6 * f, hy + 5); g.strokePath();
+        // 3. DELTOIDES GIGANTES (Hombros de físico-culturista)
+        this.drawCircle(g, ox - 11, oy - 8, 6.5, skinColor);
+        this.drawCircle(g, ox + 11, oy - 8, 6.5, skinColor);
 
-        // FRONT ARM (attack arm)
-        g.lineStyle(10, jacketColor, 1);
-        g.beginPath();
-        g.moveTo(x + 12 * f, armY + 2);
-        g.lineTo(x + (22 + armExtend) * f, armY + 5);
-        g.strokePath();
-        // Fists
-        g.fillStyle(skinColor, 1);
-        g.fillCircle(x - 22 * f, armY + 20, 5);
-        g.fillCircle(x + (22 + armExtend) * f, armY + 7, 6);
+        // 4. ARMS — compact and muscular
+        const armAngleL = isMoving ? Math.sin(time) * 15 : 12;
+        const armAngleR = isMoving ? -Math.sin(time) * 15 : -12;
+
+        const drawHakariArm = (sideSign, angle, extend = 0) => {
+            g.save();
+            g.translate(ox + (sideSign * 11) * f, oy - 8);
+            g.rotate(angle * f * Math.PI / 180);
+            
+            // Bíceps masivo (Grosor 11, longitud 18)
+            g.fillStyle(skinColor, 1);
+            g.fillRect(-11/2, 8 - 18/2, 11, 18);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeRect(-11/2, 8 - 18/2, 11, 18);
+            
+            // Codo robusto
+            g.fillStyle(0x78350f, 1);
+            g.fillCircle(0, 17, 5);
+            g.strokeCircle(0, 17, 5);
+            
+            // Antebrazo grueso (Grosor 9, longitud 16 + extend)
+            const foreLen = 16 + extend;
+            g.fillStyle(skinColor, 1);
+            g.fillRect(-9/2, 26 + extend/2 - foreLen/2, 9, foreLen);
+            g.strokeRect(-9/2, 26 + extend/2 - foreLen/2, 9, foreLen);
+            
+            // Puño masivo (Radio 5)
+            g.fillCircle(0, 36 + extend, 5);
+            g.strokeCircle(0, 36 + extend, 5);
+            
+            g.restore();
+        };
+
+        // Brazo Derecho (Front Arm) extends during attacks
+        let rightArmAngle = armAngleR;
+        let rightArmExtend = 0;
+        if (this.attackSwing > 0) {
+            rightArmAngle = -90;
+            rightArmExtend = this.attackSwing * 35;
+        }
+
+        drawHakariArm(-1, armAngleL, 0); // Left Arm (Back Arm)
+        drawHakariArm(1, rightArmAngle, rightArmExtend); // Right Arm (Front Arm)
+
+        // 5. CABEZA Y PEINADO POMPADOUR
+        const hx = ox;
+        const hy = oy - 20;
+
+        this.drawCircle(g, hx, hy, 10, skinColor);
+
+        if (!isFlashing) {
+            this.drawLine(g, hx - 5, hy - 2, hx - 1, hy - 1, 2, 0x000000);
+            this.drawLine(g, hx + 1, hy - 1, hx + 5, hy - 2, 2, 0x000000);
+            this.drawCircle(g, hx - 3, hy + 0.5, 1, 0x000000);
+            this.drawCircle(g, hx + 3, hy + 0.5, 1, 0x000000);
+
+            this.drawLine(g, hx - 3.5, hy + 3.8, hx + 3.5, hy + 3.8, 1.5, 0x451a03);
+            this.drawLine(g, hx - 3, hy + 6, hx + 3, hy + 5.5, 1.8, 0x000000);
+        }
+
+        this.drawCircle(g, hx - 5, hy - 9, 6, hairColor);
+        this.drawCircle(g, hx + 5, hy - 9, 6, hairColor);
+        this.drawCircle(g, hx, hy - 13, 8.5, hairColor);
+        this.drawCircle(g, hx - 2, hy - 10, 5, hairColor);
+        this.drawCircle(g, hx + 2, hy - 10, 5, hairColor);
 
         // Fever meter bar (above head)
         if (!this.jackpotActive) {

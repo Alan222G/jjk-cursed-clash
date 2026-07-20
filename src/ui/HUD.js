@@ -123,16 +123,26 @@ export default class HUD {
         const p2cx = GAME_WIDTH - HUD_STYLE.MARGIN - ar;
         const acy = 45;
 
-        // Create circular masks for portraits
-        this.p1PortraitMask = scene.add.graphics();
+        // Create circular masks for portraits (setScrollFactor(0) keeps them aligned with fixed portraits)
+        this.p1PortraitMask = scene.add.graphics().setScrollFactor(0);
         this.p1PortraitMask.fillStyle(0xffffff);
         this.p1PortraitMask.fillCircle(p1cx, acy, ar - 4);
-        this.p2PortraitMask = scene.add.graphics();
+        this.p2PortraitMask = scene.add.graphics().setScrollFactor(0);
         this.p2PortraitMask.fillStyle(0xffffff);
         this.p2PortraitMask.fillCircle(p2cx, acy, ar - 4);
     }
 
     setPortraits(p1Key, p2Key) {
+        // Safe cleanup of existing portraits to avoid layering duplicates
+        if (this.p1Portrait) {
+            this.p1Portrait.destroy();
+            this.p1Portrait = null;
+        }
+        if (this.p2Portrait) {
+            this.p2Portrait.destroy();
+            this.p2Portrait = null;
+        }
+
         // Store keys for pause menu
         this.p1Key = p1Key;
         this.p2Key = p2Key;

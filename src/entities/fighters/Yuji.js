@@ -311,80 +311,98 @@ export default class Yuji extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
-        const skinColor = isFlashing ? 0xFFFFFF : 0xF5D0B0;
-        const jacketColor = isFlashing ? 0xFFFFFF : 0x1A1A3E;
-        const shirtColor = isFlashing ? 0xFFFFFF : 0xEEEEEE;
-        const pantColor = isFlashing ? 0xFFFFFF : 0x111122;
-        const armExtend = this.attackSwing * 40;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        // LEGS
-        const legY = masterY + 8;
-        let leftLeg = 38, rightLeg = 38;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 22; rightLeg = 22; }
-        g.lineStyle(7, pantColor, 1);
-        g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 15 - (f * 8), legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 15 + (f * 8), legY + rightLeg); g.strokePath();
-        // Shoes
-        g.fillStyle(0x222222, 1);
-        g.fillCircle(x - 15 - (f * 8), legY + leftLeg, 5);
-        g.fillCircle(x + 15 + (f * 8), legY + rightLeg, 5);
+        const skinColor = isFlashing ? 0xFFFFFF : 0xffe4d6;
+        const uniformColor = isFlashing ? 0xFFFFFF : 0x161824;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xfda4af;
+        const shoeColor = isFlashing ? 0xFFFFFF : 0xdc2626;
+        const buttonColor = isFlashing ? 0xFFFFFF : 0xfbbf24;
 
-        // TORSO — Jacket over white shirt
-        g.fillStyle(jacketColor, 1);
-        g.fillRect(x - 16, masterY - 38, 32, 50);
-        // White shirt V-neck visible
-        g.fillStyle(shirtColor, 1);
-        g.beginPath();
-        g.moveTo(x - 6, masterY - 38); g.lineTo(x + 6, masterY - 38);
-        g.lineTo(x + 3, masterY - 20); g.lineTo(x - 3, masterY - 20); g.fillPath();
-        // Jacket lapel lines
-        g.lineStyle(1, 0x333366, 0.6);
-        g.lineBetween(x - 6, masterY - 38, x - 3, masterY - 5);
-        g.lineBetween(x + 6, masterY - 38, x + 3, masterY - 5);
+        const ox = x;
+        const oy = masterY;
 
-        // HEAD
-        const hx = x; const hy = masterY - 52;
-        g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, 13);
-        // Hair — spiky pink-brown
-        g.fillStyle(isFlashing ? 0xFFFFFF : 0xDD7788, 1);
-        g.beginPath();
-        g.moveTo(hx - 15, hy - 5); g.lineTo(hx - 14, hy - 20); g.lineTo(hx - 8, hy - 12);
-        g.lineTo(hx - 3, hy - 22); g.lineTo(hx + 3, hy - 16);
-        g.lineTo(hx + 8, hy - 24); g.lineTo(hx + 14, hy - 14);
-        g.lineTo(hx + 15, hy - 5); g.fillPath();
-        // Scar on face (from Sukuna)
-        g.lineStyle(2, 0xAA4444, 0.6);
-        g.beginPath(); g.moveTo(hx + 3 * f, hy - 6); g.lineTo(hx + 6 * f, hy + 2); g.strokePath();
-        // Eyes
-        g.fillStyle(0x884422, 1);
-        g.fillCircle(hx - 4 * f, hy - 2, 2);
-        g.fillCircle(hx + 4 * f, hy - 2, 2);
-        // Mouth — determined expression
-        g.lineStyle(1, 0x663333, 0.7);
-        g.beginPath(); g.moveTo(hx - 3, hy + 5); g.lineTo(hx + 3, hy + 5); g.strokePath();
+        const rotArmSup = isMoving ? Math.sin(time * 1.5) * 10 : 15;
+        const rotArmInf = isMoving ? Math.sin(time * 1.5 + 0.3) * 8 : 10;
+        const rotLegSup = isMoving ? Math.cos(time * 1.5) * 5 : 0;
+        const rotLegInf = isMoving ? Math.cos(time * 1.5 + 0.5) * 4 : 0;
 
-        // ARMS
-        const armY = masterY - 32;
-        // Back arm
-        g.lineStyle(7, jacketColor, 0.85);
-        g.beginPath(); g.moveTo(x - 14, armY + 3); g.lineTo(x - 24 * f, armY + 20); g.strokePath();
-        g.fillStyle(skinColor, 0.85); g.fillCircle(x - 24 * f, armY + 20, 5);
-        // Front arm
-        g.lineStyle(8, jacketColor, 1);
-        if (this.stateMachine.is('block')) {
-            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 8 * f, armY - 12); g.strokePath();
-        } else if (this.attackSwing > 0) {
-            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (25 + armExtend) * f, armY - 3); g.strokePath();
-            g.fillStyle(skinColor, 1); g.fillCircle(x + (28 + armExtend) * f, armY - 3, 6);
-            // Fist glow — cursed energy on hands
-            g.fillStyle(0xFF6600, 0.4); g.fillCircle(x + (28 + armExtend) * f, armY - 3, 10);
-        } else {
-            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 18 * f, armY + 20); g.strokePath();
-            g.fillStyle(skinColor, 1); g.fillCircle(x + 18 * f, armY + 20, 5);
+        // ── Legs (dark uniform pants) ──
+        this.drawRect(g, ox - 7, oy + 41, 9.5, 28, uniformColor, rotLegSup);
+        this.drawCircle(g, ox - 7, oy + 54, 4, isFlashing ? 0xFFFFFF : 0x000000); // Knee
+        this.drawRect(g, ox - 7, oy + 67, 8, 24, uniformColor, rotLegInf);
+        this.drawRect(g, ox - 8, oy + 80, 11, 6, shoeColor); // Red sneaker
+
+        this.drawRect(g, ox + 7, oy + 41, 9.5, 28, uniformColor, -rotLegSup);
+        this.drawCircle(g, ox + 7, oy + 54, 4, isFlashing ? 0xFFFFFF : 0x000000); // Knee
+        this.drawRect(g, ox + 7, oy + 67, 8, 24, uniformColor, -rotLegInf);
+        this.drawRect(g, ox + 8, oy + 80, 11, 6, shoeColor); // Red sneaker
+
+        // ── Torso (school uniform jacket) ──
+        this.drawRect(g, ox, oy - 10, 24, 38, uniformColor);
+        this.drawRect(g, ox, oy + 18, 23, 18, uniformColor);
+
+        // ── High collar with gold button ──
+        this.drawRect(g, ox, oy - 31, 12, 10, uniformColor);
+        this.drawCircle(g, ox + 4, oy - 30, 2.5, buttonColor);
+
+        // ── Arms (uniform sleeves) ──
+        this.drawRect(g, ox - 15, oy - 12, 8.5, 22, uniformColor, rotArmSup);
+        this.drawRect(g, ox - 15, oy + 8, 7, 18, uniformColor, rotArmInf);
+        this.drawCircle(g, ox - 15, oy + 20, 4.5, skinColor); // Hand
+
+        this.drawRect(g, ox + 15, oy - 12, 8.5, 22, uniformColor, -rotArmSup);
+        this.drawRect(g, ox + 15, oy + 8, 7, 18, uniformColor, -rotArmInf);
+        this.drawCircle(g, ox + 15, oy + 20, 4.5, skinColor); // Hand
+
+        // ── Head ──
+        const hx = ox;
+        const hy = oy - 48;
+
+        // Undercut hair base (behind head)
+        this.drawCircle(g, hx, hy - 2, 15, isFlashing ? 0xFFFFFF : 0x111827);
+
+        // Ears
+        this.drawCircle(g, hx - 13, hy + 1, 3.5, skinColor);
+        this.drawCircle(g, hx + 13, hy + 1, 3.5, skinColor);
+
+        // Face
+        this.drawCircle(g, hx, hy, 13, skinColor);
+
+        // ── Battle eyes (angry brows, white sclera, hazel pupils) ──
+        if (!isFlashing) {
+            // Angry eyebrows
+            this.drawLine(g, hx - 8, hy - 6, hx - 2, hy - 3.5, 2, 0x000000);
+            this.drawLine(g, hx + 8, hy - 6, hx + 2, hy - 3.5, 2, 0x000000);
+            // White sclera
+            this.drawRect(g, hx - 5, hy - 1, 5, 2.5, 0xffffff);
+            this.drawRect(g, hx + 5, hy - 1, 5, 2.5, 0xffffff);
+            // Hazel pupils
+            this.drawCircle(g, hx - 4, hy - 1, 1.2, 0x7c2d12);
+            this.drawCircle(g, hx + 4, hy - 1, 1.2, 0x7c2d12);
+            // Upper eyelids
+            this.drawLine(g, hx - 8, hy - 2, hx - 2, hy - 1, 2, 0x000000);
+            this.drawLine(g, hx + 8, hy - 2, hx + 2, hy - 1, 2, 0x000000);
+            // Determined mouth
+            this.drawLine(g, hx - 3, hy + 6, hx + 3, hy + 6, 1.5, 0x000000);
+            // Scars
+            this.drawLine(g, hx - 6, hy + 2.5, hx - 3, hy + 4.5, 1.5, 0x991b1b); // Cheek
+            this.drawLine(g, hx - 2, hy - 8, hx - 4, hy - 13, 1.5, 0x991b1b); // Forehead
         }
 
-        // Hitstun stars
+        // ── Pink spiky hair (upward spikes + bangs) ──
+        this.drawTriangle(g, hx - 8, hy - 12, 6, 14, hairColor, 155);
+        this.drawTriangle(g, hx - 3, hy - 14, 6, 16, hairColor, 170);
+        this.drawTriangle(g, hx + 3, hy - 14, 6, 16, hairColor, 190);
+        this.drawTriangle(g, hx + 8, hy - 12, 6, 14, hairColor, 205);
+        // Bangs falling on forehead
+        this.drawTriangle(g, hx - 7, hy - 8, 4.5, 11, hairColor, 25);
+        this.drawTriangle(g, hx - 2.5, hy - 9, 4.5, 13, hairColor, 10);
+        this.drawTriangle(g, hx + 2.5, hy - 9, 4.5, 13, hairColor, -10);
+        this.drawTriangle(g, hx + 7, hy - 8, 4.5, 11, hairColor, -25);
+
+        // ── Hitstun stars ──
         if (this.stateMachine.is('hitstun')) {
             const starT = (this.animTimer || 0) * 0.01;
             for (let i = 0; i < 3; i++) {

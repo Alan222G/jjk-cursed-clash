@@ -817,18 +817,15 @@ export default class GameScene extends Phaser.Scene {
         cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetScrollX, lerpSpeed);
         cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetScrollY, lerpSpeed);
 
-        // ── Sync HTML background to camera (constant scale prevents black borders) ──
+        // ── Sync HTML background to camera (restored original dynamic formula but scaled up to cover screen) ──
         const bgImg = document.getElementById('game-bg-img');
         if (bgImg) {
-            const bgScale = 1.25; // Always larger than the viewport
-            const maxScrollX = Math.max(1, this.worldWidth - viewW);
-            const maxScrollY = Math.max(1, (PHYSICS.GROUND_Y + 200) - viewH);
-            
-            // Pan background by up to 100px horizontally and 40px vertically
-            const panX = -(cam.scrollX / maxScrollX) * 100;
-            const panY = -(cam.scrollY / maxScrollY) * 40;
-            
-            bgImg.style.transform = `scale(${bgScale}) translate(${panX}px, ${panY}px)`;
+            // Scale background to match zoom, scaled up by 1.55 so it never goes below 1.0
+            const scaleX = cam.zoom * 1.55;
+            // Original pan formula
+            const panX = -(cam.scrollX / (this.worldWidth - viewW || 1)) * (this.worldWidth * scaleX - GAME_WIDTH);
+            const panY = -(cam.scrollY / (this.worldHeight - viewH || 1)) * 50; // Subtle vertical parallax
+            bgImg.style.transform = `scale(${scaleX}) translate(${panX / scaleX}px, ${panY / scaleX}px)`;
             bgImg.style.transformOrigin = 'center center';
         }
     }

@@ -573,137 +573,175 @@ export default class Mahito extends Fighter {
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
         const isSpirit = this.instantSpiritForm;
-        const skinColor = isFlashing ? 0xFFFFFF : (isSpirit ? 0x556655 : 0xBBCCBB);
-        const clothColor = isFlashing ? 0xFFFFFF : (isSpirit ? 0x223322 : 0x334455);
-        const stitchColor = isFlashing ? 0xFFAAAA : 0x446644;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : (isSpirit ? 0x556655 : 0xd1eae2);
+        const clothColor = isFlashing ? 0xFFFFFF : (isSpirit ? 0x223322 : 0x273142);
+        const hairColor = isFlashing ? 0xFFFFFF : (isSpirit ? 0x334433 : 0x7dd3fc);
+        const patchColor = isFlashing ? 0xFFFFFF : 0x94a3b8;
+        const stitchColor = isFlashing ? 0xFFFFFF : 0x1e293b;
+
+        const ox = x;
+        const oy = masterY;
         const armExtend = this.attackSwing * 40;
 
-        // LEGS
-        const legY = masterY + 8;
-        let leftLeg = 38, rightLeg = 38;
-        if (this.stateMachine.is('walk')) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
-        else if (this.stateMachine.isAny('jump', 'fall')) { leftLeg = 22; rightLeg = 22; }
-        g.lineStyle(7, clothColor, 1);
-        g.beginPath(); g.moveTo(x - 10, legY); g.lineTo(x - 14 - (f * 8), legY + leftLeg); g.strokePath();
-        g.beginPath(); g.moveTo(x + 10, legY); g.lineTo(x + 14 + (f * 8), legY + rightLeg); g.strokePath();
-
-        // TORSO — Patchwork skin with stitches
         if (isSpirit) {
-            // Armored carapace in true form
+            // ── True Form: Armored Carapace ──
             g.fillStyle(0x334433, 1);
-            g.fillRect(x - 18, masterY - 42, 36, 55);
-            // Carapace plates
+            g.fillRect(ox - 18, oy - 42, 36, 55);
             g.lineStyle(2, 0x00FFAA, 0.5);
-            g.lineBetween(x - 18, masterY - 30, x + 18, masterY - 30);
-            g.lineBetween(x - 18, masterY - 15, x + 18, masterY - 15);
-            g.lineBetween(x - 18, masterY, x + 18, masterY);
-            // Soul glow
+            g.lineBetween(ox - 18, oy - 30, ox + 18, oy - 30);
+            g.lineBetween(ox - 18, oy - 15, ox + 18, oy - 15);
+            g.lineBetween(ox - 18, oy, ox + 18, oy);
             g.fillStyle(0x00CCAA, 0.2);
-            g.fillRect(x - 16, masterY - 40, 32, 50);
+            g.fillRect(ox - 16, oy - 40, 32, 50);
+
+            // Legs
+            const legY = oy + 8;
+            let leftLeg = 38, rightLeg = 38;
+            if (isMoving) { leftLeg += this.walkCycle * 1.5; rightLeg -= this.walkCycle * 1.5; }
+            g.lineStyle(7, 0x223322, 1);
+            g.beginPath(); g.moveTo(ox - 10, legY); g.lineTo(ox - 14 - (f * 8), legY + leftLeg); g.strokePath();
+            g.beginPath(); g.moveTo(ox + 10, legY); g.lineTo(ox + 14 + (f * 8), legY + rightLeg); g.strokePath();
         } else {
-            g.fillStyle(clothColor, 1);
-            g.fillRect(x - 15, masterY - 38, 30, 50);
-            // Visible stitched skin patches
-            g.fillStyle(skinColor, 0.8);
-            g.fillRect(x - 8, masterY - 35, 16, 20);
-            // Stitch lines across the body
-            g.lineStyle(1, stitchColor, 0.7);
-            g.beginPath(); g.moveTo(x - 8, masterY - 30); g.lineTo(x + 8, masterY - 30); g.strokePath();
-            g.beginPath(); g.moveTo(x - 6, masterY - 22); g.lineTo(x + 6, masterY - 22); g.strokePath();
-            // Diagonal stitch
-            g.beginPath(); g.moveTo(x - 10, masterY - 35); g.lineTo(x + 5, masterY - 18); g.strokePath();
-        }
+            // ── Patchwork Human Form ──
+            // Legs
+            const legSwing = isMoving ? Math.sin(time * 1.5) * 6 : 0;
+            this.drawRect(g, ox - 6, oy + 36, 9, 24, clothColor, legSwing);
+            this.drawRect(g, ox + 6, oy + 36, 9, 24, clothColor, -legSwing);
+            this.drawRect(g, ox - 6, oy + 48, 7, 6, skinColor, legSwing);
+            this.drawRect(g, ox + 6, oy + 48, 7, 6, skinColor, -legSwing);
 
-        // HEAD
-        const hx = x; const hy = masterY - 52;
-        g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, isSpirit ? 15 : 13);
-
-        if (isSpirit) {
-            // True form head — more angular, armored
-            g.lineStyle(2, 0x00FFAA, 0.6);
-            g.strokeCircle(hx, hy, 16);
-            // Sharp horn-like protrusions
-            g.fillStyle(0x334433, 1);
-            g.fillTriangle(hx - 8, hy - 12, hx - 4, hy - 25, hx, hy - 12);
-            g.fillTriangle(hx + 8, hy - 12, hx + 4, hy - 25, hx, hy - 12);
-        } else {
-            // Hair — blue-gray, messy shoulder-length
-            g.fillStyle(isFlashing ? 0xFFFFFF : 0x5577AA, 1);
-            g.beginPath();
-            g.moveTo(hx - 15, hy - 4); g.lineTo(hx - 16, hy - 18); g.lineTo(hx - 8, hy - 14);
-            g.lineTo(hx - 2, hy - 20); g.lineTo(hx + 4, hy - 14);
-            g.lineTo(hx + 10, hy - 20); g.lineTo(hx + 15, hy - 10);
-            g.lineTo(hx + 15, hy - 4); g.fillPath();
-            // Hair falls to sides
-            g.fillRect(hx - 16, hy - 4, 4, 14);
-            g.fillRect(hx + 12, hy - 4, 4, 14);
-        }
-
-        // Eyes — mismatched (one normal, one with patchwork)
-        g.fillStyle(isSpirit ? 0x00FFAA : 0x446644, 1);
-        g.fillCircle(hx - 5 * f, hy - 2, isSpirit ? 3 : 2.5);
-        g.fillCircle(hx + 5 * f, hy - 2, isSpirit ? 3 : 2);
-        // Mouth — wide grin (characteristic)
-        g.lineStyle(2, isSpirit ? 0x00AA88 : 0x446644, 0.8);
-        g.beginPath();
-        g.moveTo(hx - 7, hy + 4);
-        g.lineTo(hx - 3, hy + 6);
-        g.lineTo(hx + 3, hy + 6);
-        g.lineTo(hx + 7, hy + 4);
-        g.strokePath();
-        // Stitch across face
-        g.lineStyle(1, stitchColor, 0.6);
-        g.beginPath(); g.moveTo(hx - 12, hy); g.lineTo(hx - 6, hy + 2); g.strokePath();
-
-        // ARMS
-        const armY = masterY - 32;
-        // Back arm
-        g.lineStyle(7, skinColor, 0.85);
-        g.beginPath(); g.moveTo(x - 14, armY + 3); g.lineTo(x - 22 * f, armY + 20); g.strokePath();
-
-        if (this.stance === 'blades' || this.morphedForm === 'blade') {
-            // Blade arms
-            g.lineStyle(6, skinColor, 1);
-            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (20 + armExtend) * f, armY - 5); g.strokePath();
-            g.fillStyle(0x556655, 1);
-            g.beginPath();
-            g.moveTo(x + (20 + armExtend) * f, armY - 10);
-            g.lineTo(x + (65 + armExtend) * f, armY - 5);
-            g.lineTo(x + (20 + armExtend) * f, armY);
-            g.fillPath();
-            g.lineStyle(2, 0x00CCAA, 0.6);
-            g.beginPath(); g.moveTo(x + (20 + armExtend) * f, armY - 10);
-            g.lineTo(x + (65 + armExtend) * f, armY - 5); g.strokePath();
-        } else if (this.stance === 'monstrous') {
-            // Monstrous giant mass arms
-            g.lineStyle(12, 0x334433, 1);
-            g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (18 + armExtend) * f, armY + 5); g.strokePath();
-            g.fillStyle(0x446644, 1);
-            g.fillEllipse(x + (25 + armExtend) * f, armY + 10, 25, 30);
-            g.fillStyle(0x00CCAA, 0.4);
-            g.fillEllipse(x + (25 + armExtend) * f, armY + 10, 20, 25);
-            // Sharp spikes
-            g.fillStyle(0x223322, 1);
-            g.fillTriangle(x + (30 + armExtend) * f, armY, x + (45 + armExtend) * f, armY - 10, x + (20 + armExtend) * f, armY - 5);
-            g.fillTriangle(x + (30 + armExtend) * f, armY + 20, x + (45 + armExtend) * f, armY + 30, x + (20 + armExtend) * f, armY + 25);
-        } else {
-            // Normal arms
-            g.lineStyle(8, skinColor, 1);
-            if (this.stateMachine.is('block')) {
-                g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 8 * f, armY - 12); g.strokePath();
-            } else if (this.attackSwing > 0) {
-                g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + (24 + armExtend) * f, armY - 3); g.strokePath();
-                g.fillStyle(skinColor, 1); g.fillCircle(x + (27 + armExtend) * f, armY - 3, 6);
-            } else {
-                g.beginPath(); g.moveTo(x + 14, armY + 3); g.lineTo(x + 18 * f, armY + 20); g.strokePath();
-                g.fillStyle(skinColor, 1); g.fillCircle(x + 18 * f, armY + 20, 5);
+            // Torso with stitches
+            this.drawRect(g, ox, oy, 26, 38, clothColor);
+            if (!isFlashing) {
+                this.drawLine(g, ox - 8, oy - 10, ox + 8, oy + 6, 1, 0x64748b);
+                this.drawLine(g, ox + 8, oy - 10, ox - 8, oy + 6, 1, 0x64748b);
             }
         }
 
-        // Spirit form glow
+        // ARMS
+        const armY = oy - 12;
+        const armSwingL = isMoving ? Math.sin(time * 1.5) * 12 : 20;
+        const armSwingR = isMoving ? -Math.sin(time * 1.5) * 12 : -20;
+
+        if (this.stance === 'blades' || this.morphedForm === 'blade') {
+            g.lineStyle(6, skinColor, 1);
+            g.beginPath(); g.moveTo(ox + 14, armY + 3); g.lineTo(ox + (20 + armExtend) * f, armY - 5); g.strokePath();
+            g.fillStyle(isSpirit ? 0x334433 : 0x556655, 1);
+            g.beginPath();
+            g.moveTo(ox + (20 + armExtend) * f, armY - 10);
+            g.lineTo(ox + (65 + armExtend) * f, armY - 5);
+            g.lineTo(ox + (20 + armExtend) * f, armY);
+            g.fillPath();
+            g.lineStyle(2, 0x00CCAA, 0.6);
+            g.beginPath(); g.moveTo(ox + (20 + armExtend) * f, armY - 10);
+            g.lineTo(ox + (65 + armExtend) * f, armY - 5); g.strokePath();
+        } else if (this.stance === 'monstrous') {
+            g.lineStyle(12, isSpirit ? 0x223322 : 0x334433, 1);
+            g.beginPath(); g.moveTo(ox + 14, armY + 3); g.lineTo(ox + (18 + armExtend) * f, armY + 5); g.strokePath();
+            g.fillStyle(isSpirit ? 0x223322 : 0x446644, 1);
+            g.fillEllipse(ox + (25 + armExtend) * f, armY + 10, 25, 30);
+            g.fillStyle(0x00CCAA, 0.4);
+            g.fillEllipse(ox + (25 + armExtend) * f, armY + 10, 20, 25);
+            g.fillStyle(0x223322, 1);
+            g.fillTriangle(ox + (30 + armExtend) * f, armY, ox + (45 + armExtend) * f, armY - 10, ox + (20 + armExtend) * f, armY - 5);
+            g.fillTriangle(ox + (30 + armExtend) * f, armY + 20, ox + (45 + armExtend) * f, armY + 30, ox + (20 + armExtend) * f, armY + 25);
+        } else {
+            // Normal Patchwork arms
+            if (isSpirit) {
+                g.lineStyle(8, skinColor, 1);
+                g.beginPath(); g.moveTo(ox + 14, armY + 3); g.lineTo(ox + 18 * f, armY + 20); g.strokePath();
+            } else {
+                // Left Arm (multisection stitch)
+                g.save();
+                g.translate(ox - 15, armY);
+                g.rotate(armSwingL * Math.PI / 180);
+                this.drawRect(g, 0, 8, 7, 16, skinColor);
+                this.drawCircle(g, 0, 16, 4, 0x111827); // Stitched joint
+                this.drawRect(g, 0, 24, 5.5, 14, patchColor);
+                this.drawCircle(g, 0, 31, 4, skinColor);
+                g.restore();
+
+                // Right Arm
+                g.save();
+                g.translate(ox + 15, armY);
+                g.rotate(armSwingR * Math.PI / 180);
+                this.drawRect(g, 0, 8, 7, 16, patchColor);
+                this.drawCircle(g, 0, 16, 4, 0x111827); // Stitched joint
+                this.drawRect(g, 0, 24, 5.5, 14, skinColor);
+                this.drawCircle(g, 0, 31, 4, skinColor);
+                g.restore();
+            }
+        }
+
+        // HEAD
+        const hx = ox; const hy = oy - 32;
+        if (isSpirit) {
+            g.fillStyle(skinColor, 1); g.fillCircle(hx, hy, 15);
+            g.lineStyle(2, 0x00FFAA, 0.6);
+            g.strokeCircle(hx, hy, 16);
+            g.fillStyle(0x334433, 1);
+            g.fillTriangle(hx - 8, hy - 12, hx - 4, hy - 25, hx, hy - 12);
+            g.fillTriangle(hx + 8, hy - 12, hx + 4, hy - 25, hx, hy - 12);
+            g.fillStyle(0x00FFAA, 1);
+            g.fillCircle(hx - 5 * f, hy - 2, 3);
+            g.fillCircle(hx + 5 * f, hy - 2, 3);
+            g.lineStyle(2, 0x00AA88, 0.8);
+            g.beginPath();
+            g.moveTo(hx - 7, hy + 4); g.lineTo(hx - 3, hy + 6); g.lineTo(hx + 3, hy + 6); g.lineTo(hx + 7, hy + 4);
+            g.strokePath();
+        } else {
+            // Dark hair base
+            this.drawCircle(g, hx, hy - 1, 14, 0x0f172a);
+            // Face skin
+            this.drawCircle(g, hx, hy, 12, skinColor);
+
+            if (!isFlashing) {
+                // Cross stitching on face
+                this.drawLine(g, hx - 12, hy + 1, hx + 12, hy + 1, 1.5, stitchColor);
+                this.drawLine(g, hx - 7, hy - 1.5, hx - 7, hy + 3.5, 1, 0x000000);
+                this.drawLine(g, hx - 2, hy - 1, hx - 2, hy + 3, 1, 0x000000);
+                this.drawLine(g, hx + 3, hy - 1.5, hx + 3, hy + 3.5, 1, 0x000000);
+                this.drawLine(g, hx + 8, hy - 2, hx + 8, hy + 3, 1, 0x000000);
+
+                // Heterochromia eyes
+                this.drawCircle(g, hx - 4.5, hy - 2, 2.2, 0xf8fafc);
+                this.drawCircle(g, hx + 4.5, hy - 2, 2.2, 0xf8fafc);
+                this.drawCircle(g, hx - 4.2, hy - 2, 1, 0x64748b);
+                this.drawCircle(g, hx + 4.2, hy - 2, 1, 0xeab308);
+
+                // Crazy eyelashes
+                this.drawLine(g, hx - 7, hy - 4, hx - 2, hy - 3.5, 1.5, 0x000000);
+                this.drawLine(g, hx + 7, hy - 4, hx + 2, hy - 3.5, 1.5, 0x000000);
+
+                // Sadism smile arc
+                g.lineStyle(1.5, 0x000000, 1);
+                g.beginPath();
+                g.arc(hx, hy + 4, 4, 0, Math.PI);
+                g.strokePath();
+            }
+
+            // Hair spikes
+            this.drawTriangle(g, hx - 5, hy - 8, 4, 12, hairColor, 15);
+            this.drawTriangle(g, hx, hy - 9, 5, 15, hairColor, 0);
+            this.drawTriangle(g, hx + 5, hy - 8, 4, 12, hairColor, -15);
+
+            // Segmented hair braids falling on shoulders
+            this.drawCircle(g, hx - 10, hy + 5, 4, hairColor);
+            this.drawCircle(g, hx - 11, hy + 11, 3.5, hairColor);
+            this.drawTriangle(g, hx - 12, hy + 18, 5, 8, hairColor, 15);
+
+            this.drawCircle(g, hx + 10, hy + 5, 4, hairColor);
+            this.drawCircle(g, hx + 11, hy + 11, 3.5, hairColor);
+            this.drawTriangle(g, hx + 12, hy + 18, 5, 8, hairColor, -15);
+        }
+
+        // Spirit form glow ring
         if (isSpirit) {
             g.lineStyle(2, 0x00FFAA, 0.3 + Math.sin(this.scene.time.now * 0.008) * 0.2);
-            g.strokeEllipse(x, masterY - 15, 50, 80);
+            g.strokeEllipse(ox, oy - 15, 50, 80);
         }
 
         // Hitstun stars
@@ -712,9 +750,9 @@ export default class Mahito extends Fighter {
             for (let i = 0; i < 3; i++) {
                 const angle = starT + (i * Math.PI * 2 / 3);
                 g.fillStyle(0xFFFF00, 0.8);
-                g.fillTriangle(x + Math.cos(angle) * 22, y - 65 + Math.sin(angle) * 10,
-                    x + Math.cos(angle + 0.2) * 25, y - 65 + Math.sin(angle + 0.2) * 12,
-                    x + Math.cos(angle - 0.2) * 25, y - 65 + Math.sin(angle - 0.2) * 12);
+                g.fillTriangle(ox + Math.cos(angle) * 22, y - 65 + Math.sin(angle) * 10,
+                    ox + Math.cos(angle + 0.2) * 25, y - 65 + Math.sin(angle + 0.2) * 12,
+                    ox + Math.cos(angle - 0.2) * 25, y - 65 + Math.sin(angle - 0.2) * 12);
             }
         }
     }

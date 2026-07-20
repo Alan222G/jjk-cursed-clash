@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mahoraga - Escala Colosal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #05060b;
+            color: #94a3b8;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1150px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            color: #f1f5f9;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+
+        header p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 950px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Paneles */
+        .panel {
+            background-color: #0a0c16;
+            border: 1px solid #181b30;
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #f8fafc;
+            margin-bottom: 20px;
+        }
+
+        .panel-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #eab308;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #eab308;
+        }
+
+        /* Contenedor de Canvas */
+        .canvas-wrapper {
+            background-color: #030408;
+            border: 1px solid #131625;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            background: radial-gradient(circle, #0d1020 0%, #030408 100%);
+            border-radius: 4px;
+        }
+
+        /* Ajustes y Configuración */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .settings-box {
+            background-color: #060810;
+            border: 1px dashed #1e233d;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .settings-box-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #1e233d;
+            padding-bottom: 6px;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Inputs */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 38px;
+            height: 22px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #2e3558;
+            border-radius: 4px;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #eab308;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Código */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .code-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .copy-btn {
+            background-color: #eab308;
+            color: #0f172a;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            background-color: #ca8a04;
+            transform: translateY(-1px);
+        }
+
+        .code-container {
+            background-color: #030408;
+            border: 1px solid #131625;
+            border-radius: 8px;
+            padding: 18px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 570px;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: #fed7aa;
+            white-space: pre-wrap;
+        }
+
+        .comment { color: #4b5563; }
+        .keyword { color: #f472b6; }
+        .string { color: #34d399; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <h1>MAHORAGA: EL GENERAL DIVINO</h1>
+            <p>Esquema de Renderizado de Proporciones Colosales y Anatomía de Combate</p>
+        </header>
+
+        <div class="workspace">
+            <!-- PREVISUALIZACIÓN -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span class="panel-dot"></span>
+                    <span>Lienzo de Proporciones Titánicas</span>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="500" height="500"></canvas>
+                </div>
+
+                <!-- Controles -->
+                <div class="settings-grid">
+                    <div class="settings-box">
+                        <div class="settings-box-title">Aspecto Físico</div>
+                        <div class="option-row">
+                            <span>Tono Muscular:</span>
+                            <input type="color" id="color-piel" value="#e2e8f0" oninput="config.colorPiel = this.value; draw();">
+                        </div>
+                        <div class="option-row">
+                            <span>Hakama Sagrado:</span>
+                            <input type="color" id="color-hakama" value="#14151f" oninput="config.colorHakama = this.value; draw();">
+                        </div>
+                    </div>
+
+                    <div class="settings-box">
+                        <div class="settings-box-title">Atributos Divinos</div>
+                        <div class="option-row">
+                            <span>Espada del Exterminio:</span>
+                            <input type="color" id="color-cuchilla" value="#e0f2fe" oninput="config.colorCuchilla = this.value; draw();">
+                        </div>
+                        <div class="option-row">
+                            <span>Giro de la Rueda:</span>
+                            <input type="checkbox" id="opt-rotacion" checked onchange="toggleRotation(this.checked)">
+                        </div>
+                        <div class="option-row">
+                            <span>Humano de Referencia:</span>
+                            <input type="checkbox" id="opt-humano" checked onchange="config.mostrarHumano = this.checked; draw();">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CÓDIGO -->
+            <div class="panel">
+                <div class="code-header">
+                    <span class="code-title">Esquema de Colisión y Anatomía</span>
+                    <button class="copy-btn" onclick="copyCode()">Copiar Código</button>
+                </div>
+                <div class="code-container">
+                    <pre id="code-display"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let breatheAngle = 0;
+        let rotationActive = true;
+
+        let config = {
+            colorPiel: '#e2e8f0',
+            colorHakama: '#14151f',
+            colorRueda: '#eab308',
+            colorCuchilla: '#cbd5e1',
+            mostrarHumano: true,
+            wheelAngle: 0
+        };
+
+        // --- AUXILIARES GEOMÉTRICOS ---
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(-w/2, -h/2, w, h);
+            ctx.restore();
+        }
+
+        function drawTrapezoid(x, y, topW, bottomW, h, color) {
+            ctx.beginPath();
+            ctx.moveTo(x - topW / 2, y - h / 2);
+            ctx.lineTo(x + topW / 2, y - h / 2);
+            ctx.lineTo(x + bottomW / 2, y + h / 2);
+            ctx.lineTo(x - bottomW / 2, y + h / 2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // --- DIBUJO PRINCIPAL ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = 210; // Elevamos el centro para dar espacio abajo
+
+            const bob = Math.sin(breatheAngle) * 3;
+            const scaleY = 1 + Math.sin(breatheAngle) * 0.008;
+
+            // =========================================================
+            // 1. TREN INFERIOR (Piernas Robustas y Hakama)
+            // =========================================================
+            const legOffset = 22; 
+            
+            // Pies gigantescos y descalzos
+            drawRect(cx - legOffset, cy + 226, 28, 14, config.colorPiel);
+            drawRect(cx + legOffset, cy + 226, 28, 14, config.colorPiel);
+
+            // Pantorrillas ultra musculosas
+            drawTrapezoid(cx - legOffset, cy + 185, 24, 18, 55, config.colorPiel);
+            drawTrapezoid(cx + legOffset, cy + 185, 24, 18, 55, config.colorPiel);
+
+            // Hakama oscuro (Pantalones amplios de combate)
+            drawTrapezoid(cx - legOffset, cy + 120, 42, 52, 90, config.colorHakama);
+            drawTrapezoid(cx + legOffset, cy + 120, 42, 52, 90, config.colorHakama);
+
+            // Cinturón sagrado de soga gruesa
+            drawRect(cx, cy + 70, 96, 18, '#f1f5f9');
+            drawCircle(cx, cy + 74, 10, '#d1d5db'); // Hebilla / Cuerda central
+
+            // =========================================================
+            // 2. TREN SUPERIOR (Anatomía Colosal y Sombras de Músculo)
+            // =========================================================
+            ctx.save();
+            ctx.translate(0, bob);
+            ctx.scale(1, scaleY);
+
+            // Abdomen de titán (Largo y marcado)
+            drawTrapezoid(cx, cy + 30, 68, 50, 60, config.colorPiel);
+            // Definición muscular abdominal (Cross-hatching del manga)
+            drawLine(cx - 14, cy + 15, cx + 14, cy + 15, 1.5, '#94a3b8');
+            drawLine(cx - 14, cy + 30, cx + 14, cy + 30, 1.5, '#94a3b8');
+            drawLine(cx - 14, cy + 45, cx + 14, cy + 45, 1.5, '#94a3b8');
+            drawLine(cx, cy + 5, cx, cy + 55, 1.5, '#94a3b8');
+
+            // Pectorales masivos acorazados
+            drawTrapezoid(cx, cy - 15, 110, 76, 46, config.colorPiel);
+            drawLine(cx - 40, cy - 10, cx + 40, cy - 10, 2, '#64748b'); // División inferior
+            drawLine(cx, cy - 30, cx, cy, 2.5, '#64748b'); // Esternón
+
+            // Trapecios colosales (Espalda alta gigante)
+            ctx.beginPath();
+            ctx.moveTo(cx - 55, cy - 30);
+            ctx.lineTo(cx - 15, cy - 56);
+            ctx.lineTo(cx + 15, cy - 56);
+            ctx.lineTo(cx + 55, cy - 30);
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel;
+            ctx.fill();
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Deltoides / Hombros gigantes de doble capa
+            drawCircle(cx - 58, cy - 22, 24, config.colorPiel);
+            drawCircle(cx + 58, cy - 22, 24, config.colorPiel);
+
+            // --- BRAZO IZQUIERDO (Tu derecha - Puño cerrado libre) ---
+            drawCircle(cx - 78, cy + 4, 16, config.colorPiel); // Bíceps masivo
+            drawRect(cx - 86, cy + 34, 15, 32, config.colorPiel, 15); // Antebrazo musculoso
+            drawCircle(cx - 94, cy + 54, 11, config.colorPiel); // Puño cerrado
+
+            // --- BRAZO DERECHO (Tu izquierda - Espada ACOPLADA) ---
+            drawCircle(cx + 78, cy + 4, 16, config.colorPiel); // Bíceps masivo
+            drawRect(cx + 86, cy + 34, 15, 32, config.colorPiel, -15); // Antebrazo musculoso
+            drawCircle(cx + 94, cy + 54, 11, config.colorPiel); // Mano real visible (en forma de puño)
+
+            // Espada del Exterminio ACOPLADA sobre el antebrazo (Sujeta con bandas)
+            ctx.save();
+            ctx.translate(cx + 92, cy + 28);
+            ctx.rotate(-12 * Math.PI / 180);
+            // Hoja de la espada masiva (Detrás y sobre el antebrazo)
+            drawTrapezoid(12, 45, 16, 26, 85, config.colorCuchilla);
+            // Punta de la hoja
+            ctx.beginPath();
+            ctx.moveTo(4, 87);
+            ctx.lineTo(12, 110);
+            ctx.lineTo(20, 87);
+            ctx.closePath();
+            ctx.fillStyle = config.colorCuchilla;
+            ctx.fill();
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Vendajes / Correas de acoplamiento sobre el antebrazo
+            drawLine(-15, -10, 10, -5, 4, '#f8fafc');
+            drawLine(-12, 10, 15, 15, 4, '#f8fafc');
+            drawLine(-10, 25, 15, 28, 4, '#f8fafc');
+            ctx.restore();
+
+            // Cuello ultra grueso
+            drawRect(cx, cy - 50, 26, 20, config.colorPiel);
+
+            // =========================================================
+            // 3. CABEZA, COLA DE CABEZA HORIZONTAL Y ALAS DEL ROSTRO
+            // =========================================================
+            
+            // --- COLA DE LA CABEZA CORREGIDA (Dinámica y ondeando a la derecha/atrás) ---
+            ctx.beginPath();
+            ctx.moveTo(cx + 4, cy - 70); // Nace en la nuca
+            // Curva fluida y horizontal hacia el lado izquierdo del lienzo (tu derecha)
+            ctx.bezierCurveTo(cx + 60, cy - 65, cx + 110, cy - 140, cx + 185, cy - 85); // Borde superior ondulado
+            ctx.bezierCurveTo(cx + 200, cy - 75, cx + 190, cy - 60, cx + 175, cy - 65); // Punta afilada
+            ctx.bezierCurveTo(cx + 120, cy - 110, cx + 70, cy - 45, cx + 4, cy - 56);  // Retorno a la base
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel;
+            ctx.fill();
+            ctx.strokeStyle = '#05060b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Cabeza
+            drawCircle(cx, cy - 62, 16, config.colorPiel);
+
+            // Fauces monstruosas (Rostro sin ojos, mandíbula expuesta)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx - 7, cy - 54, 14, 7);
+            ctx.strokeRect(cx - 7, cy - 54, 14, 7);
+            drawLine(cx - 7, cy - 50, cx + 7, cy - 50, 1, '#05060b'); // Dientes divisorios
+            drawLine(cx, cy - 54, cx, cy - 47, 1, '#05060b');
+
+            // --- ALAS SENSORIALES (Nacen de la zona ocular en el rostro) ---
+            // Ala Izquierda (Superior e Inferior)
+            ctx.beginPath();
+            ctx.moveTo(cx - 3, cy - 61);
+            ctx.bezierCurveTo(cx - 35, cy - 78, cx - 85, cy - 95, cx - 115, cy - 85);
+            ctx.bezierCurveTo(cx - 90, cy - 78, cx - 55, cy - 63, cx - 3, cy - 57);
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel; ctx.fill(); ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx - 3, cy - 56);
+            ctx.bezierCurveTo(cx - 35, cy - 60, cx - 80, cy - 65, cx - 105, cy - 50);
+            ctx.bezierCurveTo(cx - 75, cy - 50, cx - 45, cy - 50, cx - 3, cy - 52);
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel; ctx.fill(); ctx.stroke();
+
+            // Ala Derecha (Superior e Inferior)
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy - 61);
+            ctx.bezierCurveTo(cx + 35, cy - 78, cx + 85, cy - 95, cx + 115, cy - 85);
+            ctx.bezierCurveTo(cx + 90, cy - 78, cx + 55, cy - 63, cx + 3, cy - 57);
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel; ctx.fill(); ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy - 56);
+            ctx.bezierCurveTo(cx + 35, cy - 60, cx + 80, cy - 65, cx + 105, cy - 50);
+            ctx.bezierCurveTo(cx + 75, cy - 50, cx + 45, cy - 50, cx + 3, cy - 52);
+            ctx.closePath();
+            ctx.fillStyle = config.colorPiel; ctx.fill(); ctx.stroke();
+
+            // =========================================================
+            // 4. LA RUEDA DEL DHARMA (Elevada flotando en el aire)
+            // =========================================================
+            ctx.save();
+            ctx.translate(cx, cy - 155); // Flotando claramente sobre su cabeza
+            ctx.rotate(config.wheelAngle);
+
+            // Aro dorado principal de la Rueda
+            ctx.beginPath();
+            ctx.arc(0, 0, 36, 0, Math.PI * 2);
+            ctx.strokeStyle = config.colorRueda;
+            ctx.lineWidth = 5.5;
+            ctx.stroke();
+
+            // Centro sagrado
+            drawCircle(0, 0, 8, config.colorRueda);
+
+            // 8 Radios y las esferas celestiales
+            for (let i = 0; i < 8; i++) {
+                let angle = (i * Math.PI) / 4;
+                drawLine(0, 0, Math.cos(angle) * 36, Math.sin(angle) * 36, 2.5, config.colorRueda);
+                drawCircle(Math.cos(angle) * 38, Math.sin(angle) * 38, 5.5, config.colorRueda);
+                drawCircle(Math.cos(angle) * 38, Math.sin(angle) * 38, 2, '#ffffff'); // Brillo de adaptación
+            }
+
+            ctx.restore(); // Rueda restaurada
+            ctx.restore(); // Cuerpo completo restaurado
+
+            // =========================================================
+            // 5. HUMANO A ESCALA (Para demostrar su tamaño colossal)
+            // =========================================================
+            if (config.mostrarHumano) {
+                const hx = cx - 110; // Posicionado a un lado de sus pies
+                const hy = cy + 195; // Ground level
+
+                // Dibujamos un mini Hechicero (Megumi) de 35px de alto
+                // Cabeza
+                drawCircle(hx, hy, 4, '#fecdd3');
+                // Cabello spiky oscuro
+                drawLine(hx - 3, hy - 3, hx - 5, hy - 7, 2, '#1e1b4b');
+                drawLine(hx, hy - 4, hx, hy - 9, 2, '#1e1b4b');
+                drawLine(hx + 3, hy - 3, hx + 5, hy - 7, 2, '#1e1b4b');
+                // Cuerpo/Uniforme Jujutsu oscuro
+                drawRect(hx, hy + 11, 6, 14, '#1e1b4b');
+                // Piernas
+                drawLine(hx - 2, hy + 18, hx - 3, hy + 31, 2, '#1e1b4b');
+                drawLine(hx + 2, hy + 18, hx + 3, hy + 31, 2, '#1e1b4b');
+                // Brazos en pose de sombras (Invocación)
+                drawLine(hx - 3, hy + 8, hx - 6, hy + 13, 1.5, '#1e1b4b');
+                drawLine(hx + 3, hy + 8, hx + 6, hy + 13, 1.5, '#1e1b4b');
+
+                // Etiqueta de escala
+                ctx.fillStyle = '#64748b';
+                ctx.font = 'bold 9px monospace';
+                ctx.fillText("HUMANO (1.75m)", hx - 32, hy + 41);
+            }
+        }
+
+        // --- ANIMACIÓN ---
+        function animate() {
+            breatheAngle += 0.04;
+            if (rotationActive) {
+                config.wheelAngle += 0.012;
+            }
+            draw();
+            updateCodeDisplay();
+            requestAnimationFrame(animate);
+        }
+
+        function toggleRotation(active) {
+            rotationActive = active;
+        }
+
+        // --- EXPORTAR CÓDIGO DE LOGICA ---
+        function updateCodeDisplay() {
+            const codeDisplay = document.getElementById('code-display');
+            codeDisplay.innerHTML = `
+<span class="comment">// === SISTEMA DE COLISIÓN Y ANATOMÍA COLOSAL ===</span>
+
+<span class="comment">// Rueda del Dharma en flotación autónoma</span>
+translate(cx, cy - 155) {
+    drawWheelRing(radius: 36, color: <span class="string">"${config.colorRueda}"</span>);
+}
+
+<span class="comment">// Cola craneal ondulada (Flujo horizontal corregido)</span>
+drawHeadTailWave(direction: right, curve: horizontal, color: <span class="string">"${config.colorPiel}"</span>);
+
+<span class="comment">// Espada del Exterminio ACOPLADA al antebrazo</span>
+attachSwordToForearm(
+    arm: RIGHT, 
+    bladeLength: 85, 
+    straps: <span class="string">"bandages_white"</span>, 
+    handVisible: TRUE
+);
+
+<span class="comment">// Musculatura Colosal (Manga Scale)</span>
+drawBulkDeltoids(radius: 24, layers: 2);
+drawAbdominalsWithShading(crossHatchLines: TRUE);
+
+<span class="comment">// Escala de personaje en combate</span>
+if (mostrarHumanoReference) {
+    renderScaleComparison(scaleRatio: <span class="string">"1:6_TITAN"</span>);
+}
+`;
+        }
+
+        function copyCode() {
+            const codeText = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = "¡Copiado!";
+                copyBtn.style.backgroundColor = "#22c55e";
+                setTimeout(() => {
+                    copyBtn.textContent = "Copiar Código";
+                    copyBtn.style.backgroundColor = "#eab308";
+                }, 1500);
+            });
+        }
+
+        animate();
+    </script>
+</body>
+</html>

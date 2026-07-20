@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Rediseño de Armas y Proporciones</title>
+    <style>
+        :root {
+            --bg-color: #08090c;
+            --card-bg: #12141c;
+            --text-color: #f1f5f9;
+            --accent-higuruma: #818cf8;
+            --accent-nanami: #eab308;
+            --border-color: #222533;
+            --code-bg: #050608;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #818cf8, #facc15);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #181a24;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #94a3b8;
+            padding: 12px 24px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-higuruma);
+            padding-top: 10px;
+        }
+
+        .tab-btn.active.nanami-tab {
+            border-top-color: var(--accent-nanami);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #151724 0%, #050608 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #1e1d2b;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 520px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 420px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #a5f3fc;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rediseño Stickman: Armas Imponentes y Proporciones Mejoradas</h1>
+        <p>Brazos más largos para un balance dinámico, Nanami sin lentes (mirada cansada) y un gran enfoque en el diseño de las armas icónicas.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-higuruma" onclick="switchCharacter('higuruma')">Hiromi Higuruma</button>
+            <button class="tab-btn" id="btn-nanami" onclick="switchCharacter('nanami')">Kento Nanami</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-higuruma);"></span>
+                    <span id="char-title">Previsualización: Hiromi Higuruma</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-higuruma">
+                        <h3>Opciones de Higuruma</h3>
+                        <div class="control-group">
+                            <label for="color-higu-suit">Traje de Abogado:</label>
+                            <input type="color" id="color-higu-suit" value="#11121b" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-higu-tie">Corbata de Ley:</label>
+                            <input type="color" id="color-higu-tie" value="#991b1b" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-nanami">
+                        <h3>Opciones de Nanami</h3>
+                        <div class="control-group">
+                            <label for="color-nana-suit">Traje Beige/Cream:</label>
+                            <input type="color" id="color-nana-suit" value="#e3d5ca" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-nana-shirt">Camisa de Trabajo:</label>
+                            <input type="color" id="color-nana-shirt" value="#60a5fa" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Estética</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Contornos Claros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Postura (Respiración):</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-higuruma">
+                    <div class="code-header">
+                        <h2>Código de Hiromi Higuruma (Traje, Brazos y Mazo Gigante)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-higuruma')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-higuruma"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-nanami">
+                    <div class="code-header">
+                        <h2>Código de Kento Nanami (Sin Lentes y Espada 7:3)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-nanami')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-nanami"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'higuruma';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            higuruma: { suit: '#11121b', tie: '#991b1b', shirt: '#ffffff', skin: '#fecdd3' },
+            nanami: { suit: '#e3d5ca', tie: '#facc15', shirt: '#60a5fa', skin: '#fed7aa' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-higuruma').classList.toggle('active', char === 'higuruma');
+            document.getElementById('btn-nanami').classList.toggle('active', char === 'nanami');
+            if(char === 'nanami') document.getElementById('btn-nanami').classList.add('nanami-tab');
+            else document.getElementById('btn-nanami').classList.remove('nanami-tab');
+            
+            document.getElementById('ctrl-higuruma').classList.toggle('hidden', char !== 'higuruma');
+            document.getElementById('ctrl-nanami').classList.toggle('hidden', char !== 'nanami');
+            
+            document.getElementById('code-higuruma').classList.toggle('hidden', char !== 'higuruma');
+            document.getElementById('code-nanami').classList.toggle('hidden', char !== 'nanami');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'higuruma') {
+                badge.style.backgroundColor = 'var(--accent-higuruma)';
+                title.innerText = 'Previsualización: Hiromi Higuruma';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-nanami)';
+                title.innerText = 'Previsualización: Kento Nanami';
+            }
+        }
+
+        function updateColors() {
+            colors.higuruma.suit = document.getElementById('color-higu-suit').value;
+            colors.higuruma.tie = document.getElementById('color-higu-tie').value;
+            colors.nanami.suit = document.getElementById('color-nana-suit').value;
+            colors.nanami.shirt = document.getElementById('color-nana-shirt').value;
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.8);' : '';
+
+            const codeHigu = `// === STICKMAN MEJORADO: HIROMI HIGURUMA ===` + strokeCode + `
+
+// 1. Rostro con Pelo Desordenado Abogado
+dibujarCirculo(cabeza_base, radio: 10, color: "${colors.higuruma.skin}");
+dibujarTriangulo(pelo_central, x: 0, y: -9, base: 7, altura: 12, color: "#1e293b", rotacion: 5);
+
+// 2. Brazos Alargados Estilizados (Largo aumentado a 28px para mayor alcance)
+dibujarRectangulo(brazo_izq, x: -10, y: 15, ancho: 7.5, alto: 28, color: "${colors.higuruma.suit}");
+dibujarRectangulo(brazo_der, x: 10, y: 15, ancho: 7.5, alto: 28, color: "${colors.higuruma.suit}");
+
+// 3. Mazo de Juez Imponente y Gigante (Gavel Ampliado)
+// Mango reforzado
+dibujarLinea(mango_madera, x1: x_mano, y1: y_mano, x2: x_mano - 8, y2: y_mano - 46, grosor: 3.5, color: "#78350f");
+// Cabezal de mazo de piedra/metal masivo
+dibujarRectangulo(cabezal_mazo, x: x_mano - 8, y: y_mano - 46, ancho: 18, alto: 34, color: "#475569", rotacion: 90);
+dibujarRectangulo(nucleo_gavel, x: x_mano - 8, y: y_mano - 46, ancho: 14, alto: 36, color: "#334155", rotacion: 90);
+// Aura del Juicio (Efecto brillo)
+aplicarBrilloCelestial(cabezal_mazo, color: "#818cf8");`;
+
+            const codeNana = `// === STICKMAN MEJORADO: KENTO NANAMI ===` + strokeCode + `
+
+// 1. Rostro Sin Goggles (Mirada Cansada / Ojeras de Horas Extra)
+dibujarCirculo(cabeza_base, radio: 10, color: "${colors.nanami.skin}");
+dibujarLinea(ojo_izq, x1: -5, y1: 1, x2: -1, y2: 1, grosor: 1.8, color: "#000000");
+dibujarLinea(ojo_der, x1: 1, y1: 1, x2: 5, y2: 1, grosor: 1.8, color: "#000000");
+dibujarLinea(ojera_izq, x1: -4.5, y1: 3, x2: -1.5, y2: 3, grosor: 1.0, color: "#94a3b8");
+dibujarLinea(ojera_der, x1: 1.5, y1: 3, x2: 4.5, y2: 3, grosor: 1.0, color: "#94a3b8");
+
+// 2. Brazos Alargados Estilizados (Largo aumentado a 28px)
+dibujarRectangulo(brazo_izq, x: -10, y: 15, ancho: 7.5, alto: 28, color: "${colors.nanami.suit}");
+dibujarRectangulo(brazo_der, x: 10, y: 15, ancho: 7.5, alto: 28, color: "${colors.nanami.suit}");
+
+// 3. Espada Corta del Ratio (Envoltura de Venda Manchada de Leopardo)
+// Hoja más ancha y letal
+dibujarRectangulo(hoja_cortadora, x: x_mano, y: y_mano - 18, ancho: 8.5, alto: 26, color: "#f8fafc");
+// Empuñadura envuelta en cinta negra
+dibujarRectangulo(empunadura, x: x_mano, y: y_mano - 2, ancho: 5, alto: 9, color: "#000000");
+// Manchas negras en el patrón de vendas del arma (7:3)
+dibujarManchasLeopardo(hoja_cortadora);
+generarEfectoDestello(punto_critico_ratio_7_3);`;
+
+            document.getElementById('code-block-higuruma').textContent = codeHigu;
+            document.getElementById('code-block-nanami').textContent = codeNana;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.035;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 10;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const breathe = isMoving ? Math.sin(time) * 1.3 : 0;
+
+            if (currentCharacter === 'higuruma') {
+                // === HIROMI HIGURUMA ===
+                const ox = renderX;
+                const oy = renderY - 15;
+
+                // 1. PIERNAS
+                const legAngle = isMoving ? Math.sin(time) * 5 : 0;
+                
+                ctx.save();
+                ctx.translate(ox - 5, oy + 28);
+                ctx.rotate(legAngle * Math.PI / 180);
+                drawRect(0, 18, 7.5, 38, colors.higuruma.suit);
+                drawRect(0, 39, 9, 5, '#1e293b');
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(ox + 5, oy + 28);
+                ctx.rotate(-legAngle * Math.PI / 180);
+                drawRect(0, 18, 7.5, 38, colors.higuruma.suit);
+                drawRect(0, 39, 9, 5, '#1e293b');
+                ctx.restore();
+
+                // 2. TORSO
+                drawRect(ox, oy + 5 + breathe * 0.3, 17, 34, colors.higuruma.suit);
+                ctx.save();
+                ctx.translate(ox, oy - 4 + breathe * 0.3);
+                drawTriangle(0, -3, 8, 14, '#ffffff');
+                drawRect(0, 5, 2.2, 16, colors.higuruma.tie);
+                ctx.restore();
+
+                // 3. BRAZOS ALARGADOS (Largo de 28)
+                // Brazo Izquierdo (Sostiene el Gavel Gigante)
+                ctx.save();
+                ctx.translate(ox - 9, oy - 10 + breathe * 0.3);
+                ctx.rotate(-30 * Math.PI / 180);
+                drawRect(0, 14, 7.5, 28, colors.higuruma.suit); // Largo aumentado a 28
+                drawCircle(0, 27, 3.8, colors.higuruma.skin);
+                
+                // Mazo de Juez Gigante (Arma Destacada)
+                ctx.save();
+                ctx.translate(0, 27);
+                ctx.rotate(-35 * Math.PI / 180);
+                
+                // Aura del juicio del mazo
+                ctx.save();
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#818cf8';
+                drawLine(0, 12, 0, -44, 4, '#78350f'); // Mango más largo y robusto
+                drawRect(0, -46, 18, 34, '#475569', 90); // Cabezal más masivo (Enfoque en arma)
+                drawRect(0, -46, 14, 36, '#334155', 90); // Anillos decorativos del mazo
+                ctx.restore();
+                
+                ctx.restore();
+                ctx.restore();
+
+                // Brazo Derecho Alargado
+                ctx.save();
+                ctx.translate(ox + 9, oy - 10 + breathe * 0.3);
+                ctx.rotate((12 + (isMoving ? Math.sin(time) * 8 : 0)) * Math.PI / 180);
+                drawRect(0, 14, 7.5, 28, colors.higuruma.suit); // Largo aumentado a 28
+                drawCircle(0, 27, 3.8, colors.higuruma.skin);
+                ctx.restore();
+
+                // 4. CABEZA
+                const hx = ox;
+                const hy = oy - 22 + breathe * 0.3;
+
+                drawCircle(hx, hy, 10, colors.higuruma.skin);
+                // Rostro cansado
+                drawLine(hx - 5, hy + 2, hx - 1, hy + 2, 1, '#64748b');
+                drawLine(hx + 1, hy + 2, hx + 5, hy + 2, 1, '#64748b');
+                drawLine(hx - 3, hy - 1, hx - 1, hy - 1.5, 1.8, '#000000');
+                drawLine(hx + 1, hy - 1.5, hx + 3, hy - 1, 1.8, '#000000');
+                drawLine(hx - 3, hy + 5, hx + 3, hy + 5, 1.5, '#000000');
+
+                // Cabello
+                drawCircle(hx, hy - 8, 9, '#1e293b');
+                drawTriangle(hx - 4, hy - 4, 4, 10, '#1e293b', 20);
+                drawTriangle(hx, hy - 4, 5, 11, '#1e293b', 0);
+                drawTriangle(hx + 4, hy - 4, 4, 10, '#1e293b', -20);
+                drawTriangle(hx - 2, hy - 8, 3.5, 13, '#1e293b', -45);
+
+            } else {
+                // === KENTO NANAMI ===
+                const ox = renderX;
+                const oy = renderY - 15;
+
+                // 1. PIERNAS
+                const legAngle = isMoving ? Math.sin(time) * 5 : 0;
+                
+                ctx.save();
+                ctx.translate(ox - 5, oy + 28);
+                ctx.rotate(legAngle * Math.PI / 180);
+                drawRect(0, 18, 7.5, 38, colors.nanami.suit);
+                drawRect(0, 39, 9.5, 5, '#1e1b4b');
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(ox + 5, oy + 28);
+                ctx.rotate(-legAngle * Math.PI / 180);
+                drawRect(0, 18, 7.5, 38, colors.nanami.suit);
+                drawRect(0, 39, 9.5, 5, '#1e1b4b');
+                ctx.restore();
+
+                // 2. TORSO
+                drawRect(ox, oy + 5 + breathe * 0.3, 17, 34, colors.nanami.suit);
+                
+                ctx.save();
+                ctx.translate(ox, oy - 4 + breathe * 0.3);
+                drawTriangle(0, -3, 8, 12, colors.nanami.shirt);
+                
+                // Corbata con puntos negros (leopardo)
+                drawRect(0, 4, 2.5, 14, colors.nanami.tie);
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(-0.8, 0, 0.8, 0.8);
+                ctx.fillRect(0.4, 3, 0.8, 0.8);
+                ctx.fillRect(-0.6, 6, 0.8, 0.8);
+                ctx.restore();
+
+                // 3. BRAZOS ALARGADOS (Largo de 28)
+                // Brazo Izquierdo (Sostiene la Espada Ratio Destacada)
+                ctx.save();
+                ctx.translate(ox - 9, oy - 10 + breathe * 0.3);
+                ctx.rotate(22 * Math.PI / 180);
+                drawRect(0, 14, 7.5, 28, colors.nanami.suit); // Largo aumentado a 28
+                drawCircle(0, 27, 3.8, colors.nanami.skin);
+
+                // Espada Corta Envuelto en Vendas (Arma Enfoque)
+                ctx.save();
+                ctx.translate(0, 27);
+                ctx.rotate(85 * Math.PI / 180);
+                
+                // Empuñadura
+                drawRect(0, 4, 5, 9, '#000000'); 
+                // Hoja de la Espada envuelta en venda manchada (Más ancha y larga)
+                drawRect(0, -14, 8.5, 26, '#f8fafc'); 
+                // Manchas de la envoltura (Detalle del arma)
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(-2, -23, 2, 3);
+                ctx.fillRect(2, -18, 2, 2.5);
+                ctx.fillRect(-3, -13, 2.5, 2);
+                ctx.fillRect(1, -8, 2.2, 3);
+                ctx.fillRect(-2, -4, 2, 2);
+
+                // Destello/Chispas del Ratio 7:3 (Energía Maldita Focalizada)
+                if (isMoving) {
+                    ctx.save();
+                    ctx.translate(0, -18); // Punto crítico a 70% del arma
+                    ctx.shadowBlur = 12;
+                    ctx.shadowColor = '#facc15';
+                    ctx.strokeStyle = '#facc15';
+                    ctx.lineWidth = 2.2;
+                    ctx.beginPath();
+                    // Efecto de cruz de impacto crítico
+                    ctx.moveTo(-7, -7); ctx.lineTo(7, 7);
+                    ctx.moveTo(7, -7); ctx.lineTo(-7, 7);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                ctx.restore();
+                ctx.restore();
+
+                // Brazo Derecho Alargado
+                ctx.save();
+                ctx.translate(ox + 9, oy - 10 + breathe * 0.3);
+                ctx.rotate(-15 * Math.PI / 180);
+                drawRect(0, 14, 7.5, 28, colors.nanami.suit); // Largo aumentado a 28
+                drawCircle(0, 27, 3.8, colors.nanami.skin);
+                ctx.restore();
+
+                // 4. CABEZA (SIN LENTES - Ojeras cansadas muy detalladas)
+                const hx = ox;
+                const hy = oy - 22 + breathe * 0.3;
+
+                drawCircle(hx, hy, 10, colors.nanami.skin);
+
+                // Cabello rubio formal peinado
+                drawCircle(hx, hy - 8, 9, '#fef08a');
+                drawTriangle(hx - 4, hy - 6, 4, 8, '#fef08a', 45);
+                drawTriangle(hx, hy - 7, 5, 8, '#fef08a', 15);
+                drawTriangle(hx + 4, hy - 6, 5, 8, '#eab308', -30);
+
+                // Ojos Cansados (Reemplazando los lentes redondos)
+                drawLine(hx - 5, hy + 1, hx - 1, hy + 1, 1.8, '#000000'); // Ojo Izq
+                drawLine(hx - 5, hy - 1, hx - 1, hy - 1, 2, '#451a03');   // Ceja Izq
+                
+                drawLine(hx + 1, hy + 1, hx + 5, hy + 1, 1.8, '#000000'); // Ojo Der
+                drawLine(hx + 1, hy - 1, hx + 5, hy - 1, 2, '#451a03');   // Ceja Der
+
+                // Bolsas de los ojos (Ojeras de cansancio laboral)
+                drawLine(hx - 4.5, hy + 3, hx - 1.5, hy + 3, 1, '#94a3b8');
+                drawLine(hx + 1.5, hy + 3, hx + 4.5, hy + 3, 1, '#94a3b8');
+
+                // Boca seria (línea recta)
+                drawLine(hx - 2.5, hy + 6, hx + 2.5, hy + 6, 1.5, '#000000');
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const isHigu = (elementId === 'code-block-higuruma');
+                const btn = document.querySelector(`#${isHigu ? 'code-higuruma' : 'code-nanami'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

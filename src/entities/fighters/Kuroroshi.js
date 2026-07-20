@@ -476,216 +476,117 @@ export default class Kuroroshi extends Fighter {
     drawBody(dt) {
         const g = this.graphics;
         g.clear();
-
-        const x = this.sprite.x;
-        const y = this.sprite.y;
+        const x = this.sprite.x; const y = this.sprite.y;
         const f = this.facing;
-        const colors = this.colors;
         const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
-
-        if (this.isDead) {
-            g.fillStyle(colors.primary, 0.5);
-            g.fillEllipse(x, y + 20, 80, 25);
-            return;
-        }
+        if (this.isDead) { g.fillStyle(0x30231d, 0.5); g.fillEllipse(x, y + 20, 80, 25); return; }
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        const bodyColor = isFlashing ? 0xFFFFFF : colors.primary;     // Deep black-brown
-        const shellColor = isFlashing ? 0xFFFFFF : colors.secondary;  // Dark brown
-        const skinColor = isFlashing ? 0xFFFFFF : colors.skin;        // Very dark
-        const accentColor = isFlashing ? 0xFFFFFF : colors.accent;    // Amber highlights
+        const bodyColor = isFlashing ? 0xFFFFFF : 0x30231d;
+        const eyeColor = isFlashing ? 0xFFFFFF : 0xef4444;
+        const wingColor = isFlashing ? 0xFFFFFF : 0x1a120e;
+        const darkParts = isFlashing ? 0xFFFFFF : 0x160e0a;
 
-        const armExtend = this.attackSwing * 40;
+        const ox = x;
+        const oy = masterY;
 
-        // Update wing flutter
-        this.wingTimer += (dt || 16);
-        this.wingAngle = Math.sin(this.wingTimer * 0.015) * 0.4;
+        // ── 1. Elytra / large wings on back ──
+        const alaRotL = -20 + (isMoving ? Math.sin(time * 2.5) * 8 : 0);
+        const alaRotR = 20 - (isMoving ? Math.sin(time * 2.5) * 8 : 0);
+        this.drawRect(g, ox - 10, oy - 15, 12, 38, wingColor, alaRotL);
+        this.drawRect(g, ox + 10, oy - 15, 12, 38, wingColor, alaRotR);
 
-        // ── 1. LEGS (6 insect legs — 3 pairs) ──
-        const legY = masterY + 5;
-        g.lineStyle(3, bodyColor, 0.9);
+        // ── 2. Thorax and segmented abdomen ──
+        this.drawRect(g, ox, oy + 25, 20, 16, 0x1c1410);
+        this.drawRect(g, ox, oy + 12, 24, 14, darkParts);
+        this.drawRect(g, ox, oy - 4, 32, 26, bodyColor);
 
-        // Back pair
-        let leftLeg = 35, rightLeg = 35;
-        if (this.stateMachine.is('walk')) {
-            leftLeg += this.walkCycle * 1.2;
-            rightLeg -= this.walkCycle * 1.2;
-        } else if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-            leftLeg = 15; rightLeg = 15;
-        }
+        // ── 3. 6 Insectoid Legs ──
+        const legSwing = isMoving ? Math.sin(time * 2) * 12 : 0;
+        
+        // Left legs
+        g.save();
+        g.translate(ox - 14, oy);
+        this.drawRect(g, -8, 4, 6, 22, bodyColor, -60 + legSwing);
+        this.drawRect(g, -18, 14, 4.5, 24, darkParts, -15 + legSwing);
+        this.drawRect(g, -8, 14, 6, 22, bodyColor, -45 - legSwing);
+        this.drawRect(g, -16, 24, 4.5, 24, darkParts, 0 - legSwing);
+        this.drawRect(g, -6, 24, 6, 22, bodyColor, -30 + legSwing);
+        this.drawRect(g, -12, 32, 4.5, 24, darkParts, 15 + legSwing);
+        g.restore();
 
-        // 3 pairs of segmented insect legs
-        for (let pair = 0; pair < 3; pair++) {
-            const offsetX = (pair - 1) * 8;
-            const phase = pair * 0.3;
-            const lLen = leftLeg + Math.sin(this.walkCycle + phase) * 3;
-            const rLen = rightLeg - Math.sin(this.walkCycle + phase) * 3;
+        // Right legs
+        g.save();
+        g.translate(ox + 14, oy);
+        this.drawRect(g, 8, 4, 6, 22, bodyColor, 60 - legSwing);
+        this.drawRect(g, 18, 14, 4.5, 24, darkParts, 15 - legSwing);
+        this.drawRect(g, 8, 14, 6, 22, bodyColor, 45 + legSwing);
+        this.drawRect(g, 16, 24, 4.5, 24, darkParts, 0 + legSwing);
+        this.drawRect(g, 6, 24, 6, 22, bodyColor, 30 - legSwing);
+        this.drawRect(g, 12, 32, 4.5, 24, darkParts, -15 - legSwing);
+        g.restore();
 
-            // Left side
-            g.beginPath();
-            g.moveTo(x + offsetX - 5, legY);
-            g.lineTo(x + offsetX - 15, legY + lLen * 0.5); // Joint
-            g.lineTo(x + offsetX - 10 - (f * 8), legY + lLen); // Foot
-            g.strokePath();
-
-            // Right side
-            g.beginPath();
-            g.moveTo(x + offsetX + 5, legY);
-            g.lineTo(x + offsetX + 15, legY + rLen * 0.5);
-            g.lineTo(x + offsetX + 10 + (f * 8), legY + rLen);
-            g.strokePath();
-        }
-
-        // ── 2. WINGS (translucent, fluttering) ──
-        if (!this.stateMachine.is('hitstun') && !this.stateMachine.is('knockdown')) {
-            const wingBaseX = x - 5 * f;
-            const wingBaseY = masterY - 25;
-            const wingSpread = 35 + Math.sin(this.wingTimer * 0.02) * 8;
-
-            // Left wing
-            g.fillStyle(shellColor, 0.25);
-            g.beginPath();
-            g.moveTo(wingBaseX, wingBaseY);
-            g.lineTo(wingBaseX - wingSpread, wingBaseY - 30 + this.wingAngle * 20);
-            g.lineTo(wingBaseX - wingSpread * 0.6, wingBaseY + 10);
-            g.fillPath();
-
-            // Right wing
-            g.beginPath();
-            g.moveTo(wingBaseX, wingBaseY);
-            g.lineTo(wingBaseX + wingSpread, wingBaseY - 30 - this.wingAngle * 20);
-            g.lineTo(wingBaseX + wingSpread * 0.6, wingBaseY + 10);
-            g.fillPath();
-
-            // Wing veins
-            g.lineStyle(1, accentColor, 0.15);
-            g.beginPath();
-            g.moveTo(wingBaseX, wingBaseY);
-            g.lineTo(wingBaseX - wingSpread * 0.8, wingBaseY - 20);
-            g.moveTo(wingBaseX, wingBaseY);
-            g.lineTo(wingBaseX + wingSpread * 0.8, wingBaseY - 20);
-            g.strokePath();
-        }
-
-        // ── 3. TORSO (segmented carapace) ──
-        // Abdomen (lower segment)
-        g.fillStyle(bodyColor, 1);
-        g.fillEllipse(x, masterY + 5, 22, 18);
-
-        // Thorax (upper segment)
-        g.fillStyle(shellColor, 1);
-        g.fillEllipse(x, masterY - 15, 26, 25);
-
-        // Segment lines
-        g.lineStyle(1, 0x000000, 0.4);
-        g.beginPath();
-        g.moveTo(x - 10, masterY - 5);
-        g.lineTo(x + 10, masterY - 5);
-        g.moveTo(x - 8, masterY - 20);
-        g.lineTo(x + 8, masterY - 20);
-        g.strokePath();
-
-        // ── 4. BACK ARM (blade) ──
+        // ── 4. Upper Arm claws ──
+        const armSwing = isMoving ? Math.sin(time * 1.8) * 15 : 0;
         const armY = masterY - 28;
-        g.lineStyle(8, bodyColor, 0.8);
-        g.beginPath();
-        g.moveTo(x - 10 * f, armY + 2);
-        g.lineTo(x - 18 * f, armY + 16);
-        g.strokePath();
 
-        // ── 5. HEAD ──
-        const hx = x;
-        const hy = masterY - 45;
+        // Left Arm
+        g.save();
+        g.translate(ox - 16, oy - 12);
+        g.rotate((-20 + armSwing) * Math.PI / 180);
+        this.drawRect(g, 0, 10, 8, 20, bodyColor);
+        this.drawCircle(g, 0, 20, 4.5, darkParts);
+        this.drawTriangle(g, -2, 28, 4, 10, 0x110b08, -30);
+        this.drawTriangle(g, 2, 28, 4, 10, 0x110b08, 30);
+        g.restore();
 
-        // Head (slightly elongated insect shape)
-        g.fillStyle(skinColor, 1);
-        g.fillEllipse(hx, hy, 16, 13);
+        // Right Arm (holding the Festering Life Blade)
+        g.save();
+        g.translate(ox + 16, oy - 12);
+        if (this.attackSwing > 0) {
+            g.rotate((15 - armSwing - this.attackSwing * 90) * f * Math.PI / 180);
+        } else {
+            g.rotate((15 - armSwing) * Math.PI / 180);
+        }
+        this.drawRect(g, 0, 10, 8, 20, bodyColor);
+        this.drawCircle(g, 0, 20, 4.5, darkParts);
+        
+        // Festering Life Blade
+        g.translate(0, 20);
+        g.rotate(45 * Math.PI / 180);
+        // Handle
+        this.drawRect(g, 0, 4, 4, 12, isFlashing ? 0xFFFFFF : 0x2d2e2e);
+        // Blade
+        this.drawRect(g, 0, -20, 12, 38, isFlashing ? 0xFFFFFF : 0x454d52);
+        // Holes in the blade
+        if (!isFlashing) {
+            this.drawCircle(g, -2, -30, 2, 0x000000);
+            this.drawCircle(g, 2, -20, 2, 0x000000);
+            this.drawCircle(g, -2, -10, 2, 0x000000);
+        }
+        g.restore();
 
-        // Compound eyes (large, segmented)
-        const eyeColor = isFlashing ? 0xFFFFFF : 0xFF2200;
-        g.fillStyle(eyeColor, 1);
-        g.fillEllipse(hx - 7 * f, hy - 2, 6, 7); // Large eye
-        g.fillEllipse(hx + 3 * f, hy - 2, 5, 6); // Smaller eye
-
-        // Eye facets (tiny circles inside)
-        g.fillStyle(0xAA0000, 0.6);
-        g.fillCircle(hx - 7 * f, hy - 3, 1.5);
-        g.fillCircle(hx - 6 * f, hy, 1);
-        g.fillCircle(hx + 3 * f, hy - 3, 1.5);
+        // ── 5. Head and Face ──
+        this.drawCircle(g, ox, oy - 27, 11, bodyColor);
+        // Eyes
+        this.drawCircle(g, ox - 4.5, oy - 27, 3.5, eyeColor);
+        this.drawCircle(g, ox + 4.5, oy - 27, 3.5, eyeColor);
+        this.drawCircle(g, ox - 4.5, oy - 27, 1.5, isFlashing ? 0xFFFFFF : 0xfb923c);
+        this.drawCircle(g, ox + 4.5, oy - 27, 1.5, isFlashing ? 0xFFFFFF : 0xfb923c);
 
         // Antennae
-        g.lineStyle(2, bodyColor, 0.8);
-        const antPhase = Math.sin(this.wingTimer * 0.008);
-        g.beginPath();
-        g.moveTo(hx - 4, hy - 10);
-        g.lineTo(hx - 12 + antPhase * 4, hy - 25);
-        g.moveTo(hx + 4, hy - 10);
-        g.lineTo(hx + 12 - antPhase * 4, hy - 25);
-        g.strokePath();
+        this.drawLine(g, ox - 3, oy - 35, ox - 10, oy - 48, 2, 0x000000);
+        this.drawLine(g, ox - 10, oy - 48, ox - 18, oy - 58, 1.5, 0x000000);
+        this.drawLine(g, ox + 3, oy - 35, ox + 10, oy - 48, 2, 0x000000);
+        this.drawLine(g, ox + 10, oy - 48, ox + 18, oy - 58, 1.5, 0x000000);
 
         // Mandibles
-        g.lineStyle(2, 0x221100, 1);
-        g.beginPath();
-        g.moveTo(hx - 3, hy + 5);
-        g.lineTo(hx - 6 * f, hy + 10);
-        g.moveTo(hx + 3, hy + 5);
-        g.lineTo(hx + 6 * f, hy + 10);
-        g.strokePath();
-
-        // ── 6. FRONT ARM + festering life blade ──
-        g.lineStyle(8, bodyColor, 1);
-        g.beginPath();
-        g.moveTo(hx + 8 * f, armY + 2);
-
-        if (this.stateMachine.is('block')) {
-            // Crossed guard
-            g.lineTo(hx + 18 * f, armY - 5);
-            g.lineTo(hx + 3 * f, armY - 15);
-        } else if (this.attackSwing > 0) {
-            // Blade swing
-            g.lineTo(hx + (22 + armExtend) * f, armY - 5);
-            g.strokePath();
-
-            // Festering Life Blade (organic, dripping)
-            const bladeStartX = hx + (24 + armExtend) * f;
-            const bladeEndX = bladeStartX + 50 * f;
-            const bladeY = armY - 5;
-
-            g.lineStyle(5, 0x44AA00, 0.9);
-            g.beginPath();
-            g.moveTo(bladeStartX, bladeY);
-            g.lineTo(bladeEndX, bladeY - 8);
-            g.strokePath();
-
-            // Blade glow
-            g.lineStyle(2, 0xAAFF44, 0.4);
-            g.beginPath();
-            g.moveTo(bladeStartX, bladeY);
-            g.lineTo(bladeEndX, bladeY - 8);
-            g.strokePath();
-
-            // Dripping poison
-            if (Math.random() > 0.5) {
-                const dripX = bladeStartX + Math.random() * 40 * f;
-                const drip = this.scene.add.circle(dripX, bladeY + 3, 2, 0x44AA00, 0.7).setDepth(11);
-                this.scene.tweens.add({
-                    targets: drip, y: bladeY + 25, alpha: 0, duration: 400, onComplete: () => drip.destroy()
-                });
-            }
-        } else {
-            // Idle: blade held at side
-            g.lineTo(hx + 14 * f, armY + 18);
-            g.strokePath();
-
-            // Small blade resting
-            g.lineStyle(4, 0x44AA00, 0.7);
-            g.beginPath();
-            g.moveTo(hx + 14 * f, armY + 18);
-            g.lineTo(hx + 14 * f, armY + 40);
-            g.strokePath();
-        }
+        this.drawTriangle(g, ox - 3, oy - 19, 3, 8, 0x110b08, -45);
+        this.drawTriangle(g, ox + 3, oy - 19, 3, 8, 0x110b08, 45);
 
         // ── 7. HITSTUN STARS ──
         if (this.stateMachine.is('hitstun')) {

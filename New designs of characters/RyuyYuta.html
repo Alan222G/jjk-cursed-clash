@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Ryu Ishigori & Yuta Okkotsu (Con Rika Espectral)</title>
+    <style>
+        :root {
+            --bg-color: #0c0d12;
+            --card-bg: #151722;
+            --text-color: #e2e8f0;
+            --accent-ryu: #f59e0b;
+            --accent-yuta: #3b82f6;
+            --border-color: #26293b;
+            --code-bg: #08090d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #f59e0b, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #1e2130;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #94a3b8;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-ryu);
+            padding-top: 8px;
+        }
+
+        .tab-btn.active.yuta-tab {
+            border-top-color: var(--accent-yuta);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #181a26 0%, #06070a 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #2d3147;
+            box-shadow: inset 0 0 25px rgba(0,0,0,0.9);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 480px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 380px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Stickman Sandbox: Ryu (Cañón Recto) & Yuta (+ Rika Espectral)</h1>
+        <p>Modelos pulidos al máximo nivel. Rika rediseñada como una imponente aparición de pesadilla con cráneo segmentado, costillas expuestas y mandíbula de colmillos.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-ryu" onclick="switchCharacter('ryu')">Ryu Ishigori (Cañón Recto)</button>
+            <button class="tab-btn" id="btn-yuta" onclick="switchCharacter('yuta')">Yuta Okkotsu (+ Rika Pulida)</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-ryu);"></span>
+                    <span id="char-title">Previsualización: Ryu Ishigori</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-ryu">
+                        <h3>Opciones de Ryu</h3>
+                        <div class="control-group">
+                            <label for="color-ryu-chaqueta">Color de Chaqueta:</label>
+                            <input type="color" id="color-ryu-chaqueta" value="#2b1f1d" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-ryu-peinado">Color del Tupé:</label>
+                            <input type="color" id="color-ryu-peinado" value="#0d0d10" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-ryu-piel">Color de Piel:</label>
+                            <input type="color" id="color-ryu-piel" value="#ebd0c5" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-yuta">
+                        <h3>Opciones de Yuta & Rika</h3>
+                        <div class="control-group">
+                            <label for="color-yuta-uniforme">Uniforme (Yuta):</label>
+                            <input type="color" id="color-yuta-uniforme" value="#ffffff" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-rika-cuerpo">Espectro de Rika:</label>
+                            <input type="color" id="color-rika-cuerpo" value="#e2e8f0" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-yuta-piel">Color de Piel (Yuta):</label>
+                            <input type="color" id="color-yuta-piel" value="#f3e8ee" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Configuración</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Contornos Negros:</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Activar Movimiento:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-ryu">
+                    <div class="code-header">
+                        <h2>Código de Ryu (Cañón Recto)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-ryu')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-ryu"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-yuta">
+                    <div class="code-header">
+                        <h2>Código de Yuta + Rika Espectral</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-yuta')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-yuta"></code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <p class="footer-note">
+            ⚠️ <strong>Fidelidad de Proporciones:</strong> Rika se construye renderizando capas detrás de Yuta. Su diseño evita "círculos flotantes" encadenando costillas repetitivas y un cráneo de tendidos verticales.
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'ryu';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            ryu: { chaqueta: '#2b1f1d', peinado: '#0d0d10', piel: '#ebd0c5' },
+            yuta: { uniforme: '#ffffff', rika: '#e2e8f0', piel: '#f3e8ee' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-ryu').classList.toggle('active', char === 'ryu');
+            document.getElementById('btn-yuta').classList.toggle('active', char === 'yuta');
+            if(char === 'yuta') document.getElementById('btn-yuta').classList.add('yuta-tab');
+            else document.getElementById('btn-yuta').classList.remove('yuta-tab');
+            
+            document.getElementById('ctrl-ryu').classList.toggle('hidden', char !== 'ryu');
+            document.getElementById('ctrl-yuta').classList.toggle('hidden', char !== 'yuta');
+            
+            document.getElementById('code-ryu').classList.toggle('hidden', char !== 'ryu');
+            document.getElementById('code-yuta').classList.toggle('hidden', char !== 'yuta');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'ryu') {
+                badge.style.backgroundColor = 'var(--accent-ryu)';
+                title.innerText = 'Previsualización: Ryu Ishigori';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-yuta)';
+                title.innerText = 'Previsualización: Yuta Okkotsu (+ Rika Espectral)';
+            }
+        }
+
+        function updateColors() {
+            colors.ryu.chaqueta = document.getElementById('color-ryu-chaqueta').value;
+            colors.ryu.peinado = document.getElementById('color-ryu-peinado').value;
+            colors.ryu.piel = document.getElementById('color-ryu-piel').value;
+
+            colors.yuta.uniforme = document.getElementById('color-yuta-uniforme').value;
+            colors.yuta.rika = document.getElementById('color-rika-cuerpo').value;
+            colors.yuta.piel = document.getElementById('color-yuta-piel').value;
+
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(-base/2, -height/2);
+            ctx.lineTo(base/2, -height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\nsetStroke(color: "#000000", grosor: 1.5);' : '';
+
+            const codeRyu = `// === DISEÑO PERFECCIONADO: RYU ISHIGORI (CAÑÓN PERFECTAMENTE RECTO Y CUELLO AFELPADO) ===` + strokeCode + `
+
+// Capa 1: Torso Descubierto con Costados de Chaqueta
+dibujarRectangulo(pecho_descubierto, ancho: 25, alto: 38, color: "${colors.ryu.piel}");
+dibujarRectangulo(chaleco_izq, ancho: 7, alto: 38, color: "${colors.ryu.chaqueta}");
+dibujarRectangulo(chaleco_der, ancho: 7, alto: 38, color: "${colors.ryu.chaqueta}");
+dibujarRectangulo(cinturon, ancho: 26, alto: 6, color: "#111115");
+
+// Cuello Físico Conector (Anclaje de cabeza, sin efecto flotante)
+dibujarRectangulo(cuello_conector, ancho: 10, alto: 12, color: "${colors.ryu.piel}");
+
+// Detalle del Cuello Afelpado/Furry de la Chaqueta (Detrás del Cuello)
+dibujarCirculo(pelusa_cuello_izq, radio: 6, color: "#e2e8f0");
+dibujarCirculo(pelusa_cuello_der, radio: 6, color: "#e2e8f0");
+
+// Brazos Segmentados Completos (Articulaciones seguras)
+dibujarRectangulo(manga_corta_izq, ancho: 9, alto: 18, color: "${colors.ryu.chaqueta}");
+dibujarCirculo(codo_izq, radio: 4, color: "#f59e0b");
+dibujarRectangulo(antebrazo_izq, ancho: 7, alto: 18, color: "${colors.ryu.piel}");
+dibujarRectangulo(brazalete_oro_izq, ancho: 8.5, alto: 6, color: "#f59e0b");
+dibujarCirculo(mano_izq, radio: 4, color: "${colors.ryu.piel}");
+
+dibujarRectangulo(manga_corta_der, ancho: 9, alto: 18, color: "${colors.ryu.chaqueta}");
+dibujarCirculo(codo_der, radio: 4, color: "#f59e0b");
+dibujarRectangulo(antebrazo_der, ancho: 7, alto: 18, color: "${colors.ryu.piel}");
+dibujarRectangulo(brazalete_oro_der, ancho: 8.5, alto: 6, color: "#f59e0b");
+dibujarCirculo(mano_der, radio: 4, color: "${colors.ryu.piel}");
+
+// Piernas (Pantalón Oscuro Jujutsu)
+dibujarRectangulo(muslo_izq, ancho: 10, alto: 28, color: "#1a1a24");
+dibujarCirculo(rodilla_izq, radio: 4, color: "#22c55e");
+dibujarRectangulo(espinilla_izq, ancho: 8.5, alto: 25, color: "#1a1a24");
+
+dibujarRectangulo(muslo_der, ancho: 10, alto: 28, color: "#1a1a24");
+dibujarCirculo(rodilla_der, radio: 4, color: "#22c55e");
+dibujarRectangulo(espinilla_der, ancho: 8.5, alto: 25, color: "#1a1a24");
+
+// Capa 2: Cabeza y Rostro
+dibujarCirculo(cabeza_base, radio: 13, color: "${colors.ryu.piel}");
+dibujarCirculo(ojo_izq, radio: 1.5, color: "#ffffff");
+dibujarCirculo(ojo_der, radio: 1.5, color: "#ffffff");
+
+// === MEJORA: EL GRAN TUPÉ RECTO (CAÑÓN TOTALMENTE HORIZONTAL) ===
+dibujarCirculo(cabello_base_craneo, radio: 14, color: "${colors.ryu.peinado}");
+// El cañón se modela con rotación 0 para mantenerlo perfectamente recto al frente
+dibujarRectangulo(cañon_pompadour_recto, ancho: 28, alto: 12, rotacion: 0, color: "${colors.ryu.peinado}");
+dibujarCirculo(punta_cañon, radio: 5.5, color: "${colors.ryu.peinado}");
+dibujarCirculo(núcleo_energia_dorado, radio: 2.5, color: "#f59e0b");`;
+
+            const codeYuta = `// === DISEÑO MEJORADO: YUTA OKKOTSU (+ RIKA ESPECTRAL DE PESADILLA) ===` + strokeCode + `
+
+// === CAPA 0: DETALLE ESPECTRAL DE RIKA ORIMOTO (No círculos básicos) ===
+// Cola Espectral inferior (Efecto difuminado/humo)
+dibujarCapsula(cola_espectral_1, largo: 40, grosor: 18, color: "#1a1c29");
+dibujarCapsula(cola_espectral_2, largo: 30, grosor: 12, color: "#11121a");
+
+// Espina y Costillar Superior expuesto de Rika
+dibujarRectangulo(columna_rika, ancho: 8, alto: 45, color: "${colors.yuta.rika}");
+dibujarLinea(costilla_1, x1: -12, y1: 5, x2: 12, y2: 5, grosor: 3, color: "${colors.yuta.rika}");
+dibujarLinea(costilla_2, x1: -15, y1: -3, x2: 15, y2: -3, grosor: 3, color: "${colors.yuta.rika}");
+dibujarLinea(costilla_3, x1: -14, y1: -11, x2: 14, y2: -11, grosor: 3, color: "${colors.yuta.rika}");
+
+// Cabeza Monstruosa de Rika (Corona de tubos/tendones espinales)
+dibujarCirculo(cabeza_rika_base, radio: 18, color: "${colors.yuta.rika}");
+dibujarCapsula(tubo_cabeza_1, largo: 14, grosor: 4, rotacion: -30, color: "#cbd5e1");
+dibujarCapsula(tubo_cabeza_2, largo: 16, grosor: 4, rotacion: 0, color: "#cbd5e1");
+dibujarCapsula(tubo_cabeza_3, largo: 14, grosor: 4, rotacion: 30, color: "#cbd5e1");
+
+// Abismo Fauces y Dientes (Triángulos de colmillos arriba y abajo)
+dibujarRectangulo(fauce_oscura, ancho: 16, alto: 22, color: "#090514");
+dibujarTriangulo(colmillo_superior_1, base: 3.5, altura: 6, rotacion: 180, color: "#ffffff");
+dibujarTriangulo(colmillo_superior_2, base: 3.5, altura: 6, rotacion: 180, color: "#ffffff");
+dibujarTriangulo(colmillo_inferior_1, base: 3.5, altura: 6, rotacion: 0, color: "#ffffff");
+dibujarTriangulo(colmillo_inferior_2, base: 3.5, altura: 6, rotacion: 0, color: "#ffffff");
+
+// Ojo Espectral de Cíclope Oculto
+dibujarCirculo(iris_ciclope_rojo, radio: 3, color: "#ef4444");
+
+// Brazos de Rika (Monstruosos y Largos con garras)
+dibujarCapsula(brazo_largo_rika, largo: 38, grosor: 7, color: "${colors.yuta.rika}");
+dibujarTriangulo(garra_rika_1, base: 4, altura: 8, color: "#ffffff");
+dibujarTriangulo(garra_rika_2, base: 4, altura: 8, color: "#ffffff");
+
+// === CAPA 1: YUTA OKKOTSU ===
+dibujarRectangulo(torso_yuta, ancho: 24, alto: 38, color: "${colors.yuta.uniforme}");
+dibujarRectangulo(cuello_alto_yuta, ancho: 10, alto: 12, color: "${colors.yuta.uniforme}");
+
+// Brazos Segmentados de Yuta (Katana en mano derecha)
+dibujarRectangulo(brazo_yuta_izq, ancho: 8.5, alto: 22, color: "${colors.yuta.uniforme}");
+dibujarCirculo(codo_izq, radio: 4, color: "#3b82f6");
+dibujarRectangulo(antebrazo_yuta_izq, ancho: 7, alto: 20, color: "${colors.yuta.uniforme}");
+dibujarCirculo(mano_izq, radio: 4, color: "${colors.yuta.piel}");
+
+dibujarRectangulo(brazo_yuta_der, ancho: 8.5, alto: 22, color: "${colors.yuta.uniforme}");
+dibujarCirculo(codo_der, radio: 4, color: "#3b82f6");
+dibujarRectangulo(antebrazo_yuta_der, ancho: 7, alto: 20, color: "${colors.yuta.uniforme}");
+dibujarCirculo(mano_der, radio: 4, color: "${colors.yuta.piel}");
+// Katana Metálica
+dibujarRectangulo(empuñadura, ancho: 3, alto: 8, color: "#fbbf24");
+dibujarLinea(hoja_acero, x1: 0, y1: 0, x2: 30, y2: -15, grosor: 2, color: "#cbd5e1");
+
+// Piernas de Yuta (Pantalón Oscuro)
+dibujarRectangulo(pierna_izq, ancho: 9.5, alto: 28, color: "#181820");
+dibujarRectangulo(pierna_der, ancho: 9.5, alto: 28, color: "#181820");
+
+// Cabeza y Cabello desordenado
+dibujarCirculo(cabeza_yuta, radio: 13, color: "${colors.yuta.piel}");
+dibujarTriangulo(mechon_pelo_1, base: 6, altura: 14, color: "#000000");`;
+
+            document.getElementById('code-block-ryu').textContent = codeRyu;
+            document.getElementById('code-block-yuta').textContent = codeYuta;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.04;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 30;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+            const floatOffset = isMoving ? Math.sin(time * 1.5) * 3 : 0;
+
+            if (currentCharacter === 'ryu') {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // Piernas
+                drawRect(ox - 7, oy + 41, 10, 28, '#1a1a24', isMoving ? Math.cos(time)*4 : 0);
+                drawCircle(ox - 7, oy + 54, 4, '#22c55e');
+                drawRect(ox - 7, oy + 67, 8.5, 25, '#1a1a24', isMoving ? Math.cos(time + 0.5)*3 : 0);
+                
+                drawRect(ox + 7, oy + 41, 10, 28, '#1a1a24', isMoving ? -Math.cos(time)*4 : 0);
+                drawCircle(ox + 7, oy + 54, 4, '#22c55e');
+                drawRect(ox + 7, oy + 67, 8.5, 25, '#1a1a24', isMoving ? -Math.cos(time + 0.5)*3 : 0);
+
+                // Torso (Pecho descubierto)
+                drawRect(ox, oy - 10, 25, 38, colors.ryu.piel);
+                drawRect(ox, oy + 18, 25, 18, colors.ryu.piel);
+                
+                // Capas de la chaqueta (Chaleco abierto a los costados)
+                drawRect(ox - 9.5, oy - 10, 7, 38, colors.ryu.chaqueta);
+                drawRect(ox + 9.5, oy - 10, 7, 38, colors.ryu.chaqueta);
+                drawRect(ox, oy + 26, 26, 6, '#111115'); // Cinturón
+
+                // Musculatura del torso
+                drawLine(ox - 6, oy - 5, ox + 6, oy - 5, 1.5, '#9e7365');
+                drawLine(ox, oy + 2, ox, oy + 14, 1.5, '#9e7365');
+
+                // Detalle: CUELLO AFELPADO DE LA CHAQUETA (Atrás del cuello)
+                drawCircle(ox - 9, oy - 27, 6, '#e2e8f0');
+                drawCircle(ox + 9, oy - 27, 6, '#e2e8f0');
+                drawCircle(ox - 13, oy - 18, 5, '#e2e8f0');
+                drawCircle(ox + 13, oy - 18, 5, '#e2e8f0');
+
+                // CUELLO CONECTOR (Tono Piel)
+                drawRect(ox, oy - 33, 10, 12, colors.ryu.piel);
+
+                // Brazos segmentados
+                const rotArmL = isMoving ? Math.sin(time)*8 : 5;
+                drawRect(ox - 16, oy - 12, 9, 20, colors.ryu.chaqueta, rotArmL);
+                ctx.save();
+                ctx.translate(ox - 16, oy - 12);
+                ctx.rotate(rotArmL * Math.PI / 180);
+                drawCircle(-1, 10, 4, '#f59e0b');
+                drawRect(-1, 19, 7, 18, colors.ryu.piel, 0);
+                drawRect(-1, 19, 8.5, 6, '#f59e0b', 0); // Brazalete dorado
+                drawCircle(-1, 28, 4, colors.ryu.piel);
+                ctx.restore();
+
+                const rotArmR = isMoving ? -Math.sin(time)*8 : -5;
+                drawRect(ox + 16, oy - 12, 9, 20, colors.ryu.chaqueta, rotArmR);
+                ctx.save();
+                ctx.translate(ox + 16, oy - 12);
+                ctx.rotate(rotArmR * Math.PI / 180);
+                drawCircle(1, 10, 4, '#f59e0b');
+                drawRect(1, 19, 7, 18, colors.ryu.piel, 0);
+                drawRect(1, 19, 8.5, 6, '#f59e0b', 0); // Brazalete dorado
+                drawCircle(1, 28, 4, colors.ryu.piel);
+                ctx.restore();
+
+                // Cabeza
+                drawCircle(ox, oy - 49, 13, colors.ryu.piel);
+                drawCircle(ox - 4, oy - 49, 2, '#ffffff');
+                drawCircle(ox + 4, oy - 49, 2, '#ffffff');
+
+                // === EL GRAN TUPÉ MEJORADO (PERFECTAMENTE HORIZONTAL Y RECTO) ===
+                drawCircle(ox, oy - 58, 14, colors.ryu.peinado); // Base cráneo
+                
+                // Cañón Recto: Rotación 0 para que apunte perfectamente al frente horizontal
+                drawRect(ox + 14, oy - 62, 28, 12, colors.ryu.peinado, 0);
+                drawCircle(ox + 28, oy - 62, 6, colors.ryu.peinado); // Boca del cañón redondeada
+                drawCircle(ox + 29, oy - 62, 2.5, '#f59e0b'); // Núcleo de energía cargado en la punta
+
+            } else {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                // === CAPA 0: REDISEÑO DE RIKA ESPECTRAL DE PESADILLA ===
+                const rikaFloat = isMoving ? Math.sin(time * 0.8) * 4 : 0;
+                const rx = ox - 28;
+                const ry = oy - 25 + rikaFloat;
+                
+                // Cola espectral que se desvanece
+                drawRect(rx - 4, ry + 40, 20, 35, '#1e2130', 15);
+                drawRect(rx, ry + 20, 24, 40, '#151722', 10);
+
+                // Caja torácica y costillas expuestas de Rika (Huesos del pecho)
+                drawRect(rx + 6, ry + 2, 8, 40, colors.yuta.rika); // Columna
+                for (let i = 0; i < 4; i++) {
+                    const costillaY = ry - 10 + (i * 10);
+                    const costillaW = 32 - (i * 4);
+                    drawRect(rx + 6, costillaY, costillaW, 3, '#ffffff'); // Costillas individuales
+                }
+
+                // Cabeza de Rika
+                drawCircle(rx + 6, ry - 18, 18, colors.yuta.rika);
+
+                // Corona de tubos/tendones espinales (Corona de Rika de su diseño canon)
+                for (let i = -3; i <= 3; i++) {
+                    const angle = i * 18;
+                    ctx.save();
+                    ctx.translate(rx + 6, ry - 18);
+                    ctx.rotate(angle * Math.PI / 180);
+                    drawRect(0, -17, 3.5, 12, '#ffffff'); // Tendón espinal blanco
+                    ctx.restore();
+                }
+
+                // Fauce Abismal Central
+                drawRect(rx + 6, ry - 14, 16, 22, '#090514');
+                // Colmillos afilados (Arriba y abajo)
+                for (let i = -2; i <= 2; i++) {
+                    drawTriangle(rx + 6 + (i * 4), ry - 22, 3.5, 6, '#ffffff', 180); // Colmillos superiores
+                    drawTriangle(rx + 6 + (i * 4), ry - 6, 3.5, 6, '#ffffff', 0);    // Colmillos inferiores
+                }
+
+                // Ojo de cíclope espectral (Brillo rojo entre los tendones)
+                drawCircle(rx + 6, ry - 21, 3.5, '#ef4444');
+
+                // Brazos gigantes y monstruosos de Rika rodeando
+                ctx.save();
+                ctx.translate(rx + 15, ry + 5);
+                ctx.rotate((30 + (isMoving ? Math.sin(time)*8 : 0)) * Math.PI / 180);
+                drawRect(0, 15, 6.5, 34, colors.yuta.rika); // Brazo largo
+                // Garras individuales de Rika
+                drawTriangle(-3, 34, 4, 9, '#ffffff', 10);
+                drawTriangle(0, 35, 4, 10, '#ffffff', 0);
+                drawTriangle(3, 34, 4, 9, '#ffffff', -10);
+                ctx.restore();
+
+
+                // === CAPA 1: YUTA OKKOTSU ===
+                // Piernas
+                drawRect(ox - 7, oy + 41, 9.5, 28, '#181820', isMoving ? Math.cos(time*1.2)*5 : 0);
+                drawCircle(ox - 7, oy + 54, 4, '#3b82f6');
+                drawRect(ox - 7, oy + 67, 8, 25, '#181820', 0);
+                
+                drawRect(ox + 7, oy + 41, 9.5, 28, '#181820', isMoving ? -Math.cos(time*1.2)*5 : 0);
+                drawCircle(ox + 7, oy + 54, 4, '#3b82f6');
+                drawRect(ox + 7, oy + 67, 8, 25, '#181820', 0);
+
+                // Torso (Uniforme cerrado)
+                drawRect(ox, oy - 10, 24, 38, colors.yuta.uniforme);
+                drawRect(ox, oy + 18, 23, 18, colors.yuta.uniforme);
+
+                // Cuello Alto
+                drawRect(ox, oy - 33, 10, 12, colors.yuta.uniforme);
+
+                // Brazos segmentados y Katana
+                const rotArmL = isMoving ? Math.sin(time*1.2)*6 : 5;
+                drawRect(ox - 15, oy - 12, 8.5, 22, colors.yuta.uniforme, rotArmL);
+                ctx.save();
+                ctx.translate(ox - 15, oy - 12);
+                ctx.rotate(rotArmL * Math.PI / 180);
+                drawCircle(-1, 11, 4, '#3b82f6');
+                drawRect(-1, 20, 7, 20, colors.yuta.uniforme, 0);
+                drawCircle(-1, 30, 4, colors.yuta.piel);
+                ctx.restore();
+
+                const rotArmR = isMoving ? -Math.sin(time * 1.2) * 5 : -10;
+                drawRect(ox + 15, oy - 12, 8.5, 22, colors.yuta.uniforme, rotArmR);
+                ctx.save();
+                ctx.translate(ox + 15, oy - 12);
+                ctx.rotate(rotArmR * Math.PI / 180);
+                drawCircle(1, 11, 4, '#3b82f6');
+                drawRect(1, 20, 7, 20, colors.yuta.uniforme, 0);
+                drawCircle(1, 30, 4, colors.yuta.piel);
+                
+                // Katana de Yuta
+                ctx.translate(1, 30);
+                ctx.rotate(40 * Math.PI / 180);
+                drawRect(0, -4, 3, 8, '#fbbf24'); // Mango dorado
+                drawLine(0, -8, 0, -38, 2, '#cbd5e1'); // Filo plateado
+                ctx.restore();
+
+                // Cabeza de Yuta
+                drawCircle(ox, oy - 49, 13, colors.yuta.piel);
+                
+                // Expresión / Ojeras
+                drawLine(ox - 5, oy - 48, ox - 1, oy - 48, 1, '#2c2e3f');
+                drawLine(ox + 1, oy - 48, ox + 5, oy - 48, 1, '#2c2e3f');
+                drawCircle(ox - 3, oy - 49, 1.5, '#3b82f6');
+                drawCircle(ox + 3, oy - 49, 1.5, '#3b82f6');
+
+                // Cabello desordenado en picos
+                drawRect(ox, oy - 60, 24, 5, '#000000');
+                drawTriangle(ox - 7, oy - 53, 5, 12, '#000000', 25);
+                drawTriangle(ox - 2, oy - 51, 6, 14, '#000000', 8);
+                drawTriangle(ox + 3, oy - 51, 5, 13, '#000000', -10);
+                drawTriangle(ox + 8, oy - 53, 5, 11, '#000000', -20);
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const isRyu = (elementId === 'code-block-ryu');
+                const btn = document.querySelector(`#${isRyu ? 'code-ryu' : 'code-yuta'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

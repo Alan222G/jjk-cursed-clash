@@ -23,6 +23,115 @@ export default class Sukuna extends Fighter {
         g.fillCircle(x + 5 * facing, y - 2, 2);
     }
 
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xe8c3bc;
+        const kimonoColor = isFlashing ? 0xFFFFFF : 0xf5f5f0;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xd67a9d;
+        const obiColor = isFlashing ? 0xFFFFFF : 0x1c1c22;
+        const collarColor = isFlashing ? 0xFFFFFF : 0xe5e5df;
+
+        const ox = x;
+        const oy = masterY;
+
+        const rotArmSup = isMoving ? Math.sin(time * 1.2) * 12 : 12;
+        const rotArmInf = isMoving ? Math.sin(time * 1.2 + 0.3) * 10 : 8;
+        const rotLegSup = isMoving ? Math.cos(time * 1.2) * 5 : 0;
+        const rotLegInf = isMoving ? Math.cos(time * 1.2 + 0.5) * 4 : 0;
+
+        // ── Legs ──
+        this.drawRect(g, ox - 7, oy + 39, 10, 28, kimonoColor, rotLegSup);
+        this.drawRect(g, ox - 7 + (rotLegSup * 0.2), oy + 65, 9, 25, kimonoColor, rotLegInf);
+        this.drawRect(g, ox + 7, oy + 39, 10, 28, kimonoColor, -rotLegSup);
+        this.drawRect(g, ox + 7 - (rotLegSup * 0.2), oy + 65, 9, 25, kimonoColor, -rotLegInf);
+
+        // ── Torso (exposed skin with tattoos) ──
+        this.drawRect(g, ox, oy - 10, 22, 35, skinColor);
+
+        // Tattoo lines on torso
+        if (!isFlashing) {
+            this.drawLine(g, ox - 9, oy - 20, ox + 9, oy - 20, 2, 0x000000);
+            this.drawLine(g, ox - 7, oy - 10, ox + 7, oy - 10, 2, 0x000000);
+            this.drawCircle(g, ox, oy - 2, 3, 0x000000);
+        }
+
+        // ── Lower kimono (hakama) ──
+        this.drawRect(g, ox, oy + 16, 22, 18, kimonoColor);
+
+        // ── Obi belt ──
+        this.drawRect(g, ox, oy + 7, 24, 9, obiColor);
+
+        // ── V-shaped collar lines ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 10, oy - 25, ox, oy - 10, 3, collarColor);
+            this.drawLine(g, ox + 10, oy - 25, ox, oy - 10, 3, collarColor);
+        }
+
+        // ── Arms (exposed skin) ──
+        this.drawRect(g, ox - 14, oy - 11, 6, 22, skinColor, rotArmSup - 5);
+        if (!isFlashing) this.drawLine(g, ox - 17, oy - 11, ox - 11, oy - 11, 1.5, 0x000000);
+        this.drawRect(g, ox - 14, oy + 10, 5, 20, skinColor, rotArmInf);
+
+        this.drawRect(g, ox + 14, oy - 11, 6, 22, skinColor, -rotArmSup + 5);
+        if (!isFlashing) this.drawLine(g, ox + 11, oy - 11, ox + 17, oy - 11, 1.5, 0x000000);
+        this.drawRect(g, ox + 14, oy + 10, 5, 20, skinColor, -rotArmInf);
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 40, 13, skinColor);
+
+        // Eyes (red)
+        this.drawCircle(g, ox - 4, oy - 40, 1.8, isFlashing ? 0xFFFFFF : 0xff0000);
+        this.drawCircle(g, ox + 4, oy - 40, 1.8, isFlashing ? 0xFFFFFF : 0xff0000);
+
+        // ── Facial markings ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 4, oy - 48, ox + 4, oy - 48, 1.2, 0x000000); // Forehead
+            this.drawLine(g, ox - 3, oy - 43, ox + 3, oy - 43, 1.2, 0x000000); // Nose
+            this.drawLine(g, ox + 4, oy - 38, ox + 8, oy - 39, 1.2, 0x000000); // Right eye
+            this.drawLine(g, ox - 4, oy - 38, ox - 8, oy - 39, 1.2, 0x000000); // Left eye
+            this.drawLine(g, ox + 4, oy - 34, ox + 8, oy - 35, 1.2, 0x000000); // Right cheek
+            this.drawLine(g, ox - 4, oy - 34, ox - 8, oy - 35, 1.2, 0x000000); // Left cheek
+        }
+
+        // ── Hair (pink spiky) ──
+        this.drawTriangle(g, ox, oy - 53, 12, 16, hairColor, 0);
+        this.drawTriangle(g, ox + 6, oy - 51, 8, 14, hairColor, 25);
+        this.drawTriangle(g, ox - 6, oy - 51, 8, 14, hairColor, -25);
+        this.drawTriangle(g, ox + 11, oy - 47, 6, 10, hairColor, 40);
+        this.drawTriangle(g, ox - 11, oy - 47, 6, 10, hairColor, -40);
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.3) * 16, y - 60 + Math.sin(angle + 0.3) * 6,
+                    x + Math.cos(angle - 0.3) * 16, y - 60 + Math.sin(angle - 0.3) * 6
+                );
+            }
+        }
+    }
+
     trySpecialAttack() {
         if (this.isCasting) return;
 

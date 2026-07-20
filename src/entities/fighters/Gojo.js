@@ -40,122 +40,64 @@ export default class Gojo extends Fighter {
 
         const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
         const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
 
-        // Base color override during hit stun flash
-        const uColor = isFlashing ? 0xFFFFFF : 0x111118; // Compression shirt
-        const pColor = isFlashing ? 0xFFFFFF : 0x151520; // Hakama pants
-        const skinColor = isFlashing ? 0xFFFFFF : 0xFFE0CC;
+        const skinColor = isFlashing ? 0xFFFFFF : 0xf5ddcc;
+        const suitColor = isFlashing ? 0xFFFFFF : 0x1e1b29;
+        const hairColor = isFlashing ? 0xFFFFFF : 0xffffff;
 
-        const armExtend = this.attackSwing * 40;
+        const ox = x;
+        const oy = masterY;
 
-        // ── 1. LEGS (Hakama Pants) ──
-        // Drawn as overlapping wide trapezoids to simulate folded fabric folds
-        const legY = masterY + 5;
-        let leftKnee = 35;
-        let rightKnee = 35;
-        let pLx = -10, pRx = 10;
-        if (this.stateMachine.is('walk')) {
-            leftKnee += this.walkCycle * 1.5;
-            rightKnee -= this.walkCycle * 1.5;
-        } else if (this.stateMachine.is('jump') || this.stateMachine.is('fall')) {
-            leftKnee = 20; rightKnee = 20;
-            pLx = -14; pRx = 14;
-        }
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotArmInf = isMoving ? Math.sin(time + 0.5) * 8 : 10;
+        const rotLegSup = isMoving ? Math.cos(time) * 4 : 0;
+        const rotLegInf = isMoving ? Math.cos(time + 0.5) * 3 : 0;
+
+        // Capa 1: Cuerpo Base (Vestimenta)
+        // Legs
+        this.drawRect(g, ox - 7, oy + 41, 8, 28, suitColor, rotLegSup);
+        this.drawRect(g, ox - 7 + (rotLegSup*0.2), oy + 67, 7, 25, suitColor, rotLegInf);
         
-        // Back Leg (Trapezoid)
-        g.fillStyle(pColor, 0.85);
-        g.fillTriangle(x + pLx, legY, x + pLx - 10, legY + leftKnee, x + pLx + 10, legY + leftKnee - 5);
-        // Front Leg (Trapezoid)
-        g.fillStyle(pColor, 1);
-        g.fillTriangle(x + pRx, legY, x + pRx - 12 * f, legY + rightKnee, x + pRx + 12 * f, legY + rightKnee - 2);
+        this.drawRect(g, ox + 7, oy + 41, 8, 28, suitColor, -rotLegSup);
+        this.drawRect(g, ox + 7 - (rotLegSup*0.2), oy + 67, 7, 25, suitColor, -rotLegInf);
 
-        // ── 2. TORSO (Compression Shirt & Musculature via Polygons) ──
-        // Chest and Abdominal muscles depicted through intersecting triangles
-        g.fillStyle(uColor, 1);
-        g.beginPath();
-        g.moveTo(x - 16, masterY - 38); // Shoulders
-        g.lineTo(x + 16, masterY - 38);
-        g.lineTo(x + 12, masterY + 12); // Waist line
-        g.lineTo(x - 12, masterY + 12);
-        g.fillPath();
+        // Torso & Neck
+        this.drawRect(g, ox, oy + 18, 22, 18, suitColor);
+        this.drawRect(g, ox, oy - 10, 22, 38, suitColor);
+        this.drawRect(g, ox, oy - 32, 10, 12, suitColor);
 
-        // Tessellated Abdominal Muscles (if facing forward, slight visible seams)
-        g.lineStyle(1, 0x222233, 0.4);
-        g.beginPath();
-        g.moveTo(x, masterY - 38); g.lineTo(x, masterY + 10);
-        g.moveTo(x - 8, masterY - 15); g.lineTo(x + 8, masterY - 15);
-        g.moveTo(x - 6, masterY); g.lineTo(x + 6, masterY);
-        g.strokePath();
+        // Arms (using the rotation angles)
+        this.drawRect(g, ox - 14, oy - 13, 6, 22, suitColor, rotArmSup - 10);
+        this.drawRect(g, ox - 14 - (rotArmSup * 0.1), oy + 8, 5, 20, suitColor, rotArmInf - 5);
 
-        // ── 3. BACK ARM ──
-        const armY = masterY - 34;
-        g.lineStyle(10, uColor, 0.8);
-        g.beginPath();
-        g.moveTo(x - 12 * f, armY + 2);
-        g.lineTo(x - 22 * f, armY + 18);
-        g.strokePath();
+        this.drawRect(g, ox + 14, oy - 13, 6, 22, suitColor, -rotArmSup + 10);
+        this.drawRect(g, ox + 14 + (rotArmSup * 0.1), oy + 8, 5, 20, suitColor, -rotArmInf + 5);
 
-        // ── 4. HEAD & FACE ──
-        const hx = x;
-        const hy = masterY - 56;
+        // Head
+        this.drawCircle(g, ox, oy - 45, 13, skinColor);
         
-        // Neck polygon
-        g.fillStyle(skinColor, 1);
-        g.fillRect(hx - 4, hy + 5, 8, 8);
+        // Blindfold (Estilo Clásico)
+        this.drawRect(g, ox, oy - 45, 26, 10, 0x000000);
 
-        // Face Base Profile (Euclidean Polygon)
-        g.beginPath();
-        g.moveTo(hx - 12, hy - 10);
-        g.lineTo(hx + 12, hy - 10);
-        g.lineTo(hx + 8, hy + 12);
-        g.lineTo(hx - 8, hy + 12);
-        g.fillPath();
+        // Hair (Spiky triangles)
+        this.drawTriangle(g, ox, oy - 58, 10, 18, hairColor, 0);
+        this.drawTriangle(g, ox + 6, oy - 56, 7, 15, hairColor, 15);
+        this.drawTriangle(g, ox - 6, oy - 56, 7, 15, hairColor, -15);
+        this.drawTriangle(g, ox + 11, oy - 53, 6, 12, hairColor, 30);
+        this.drawTriangle(g, ox - 11, oy - 53, 6, 12, hairColor, -30);
 
-        // Hair (Isosceles Triangles Matrix)
-        g.fillStyle(0xF5F5FF, 1);
-        for(let i = -14; i <= 14; i += 4) {
-            // Math function to define parabolic height of hair spikes
-            const spikeH = 14 + Math.cos((i / 14) * (Math.PI / 2)) * 10;
-            const slant = (i * 0.5) * f;
-            g.fillTriangle(hx + i, hy - 8, hx + i + 2, hy - 8, hx + i + slant, hy - 8 - spikeH);
-        }
-
-        // Eyewear / Blindfold
+        // Six Eyes Glow (Concentric Circles)
         if (this.hitFlash > 0 || this.infinityActive) {
-            // Six Eyes glow (Concentric Circles)
             const pulse = 0.5 + Math.sin(this.animTimer * 0.006) * 0.5;
-            g.lineStyle(1, 0xFFFFFF, pulse);
-            g.strokeCircle(hx - 5 * f, hy - 2, 4);
-            g.strokeCircle(hx + 5 * f, hy - 2, 4);
-            
             g.fillStyle(0x44CCFF, pulse);
-            g.fillCircle(hx - 5 * f, hy - 2, 2);
-            g.fillCircle(hx + 5 * f, hy - 2, 2);
-        } else {
-            // Flat geometric blindfold wrap over head
-            g.fillStyle(0x111122, 1);
-            g.fillRect(hx - 14, hy - 6, 28, 8);
+            g.fillCircle(ox - 5 * f, oy - 45, 3);
+            g.fillCircle(ox + 5 * f, oy - 45, 3);
+            g.lineStyle(1, 0xFFFFFF, pulse);
+            g.strokeCircle(ox - 5 * f, oy - 45, 5);
+            g.strokeCircle(ox + 5 * f, oy - 45, 5);
         }
-
-        // ── 5. FRONT ARM ──
-        g.lineStyle(10, uColor, 1);
-        g.beginPath();
-        g.moveTo(hx + 10 * f, armY + 2);
-
-        if (this.stateMachine.is('block')) {
-            // Block (Triangular crossed arms structure)
-            g.lineTo(hx + 20 * f, armY - 5);
-            g.lineTo(hx + 5 * f, armY - 15);
-        } else if (this.attackSwing > 0) {
-            // Geometric extension of punch
-            g.lineTo(hx + (25 + armExtend) * f, armY - 5);
-            g.fillStyle(0x4488FF, 0.8);
-            g.fillCircle(hx + (28 + armExtend) * f, armY - 5, 8);
-        } else {
-            // Idle slope
-            g.lineTo(hx + 16 * f, armY + 20);
-        }
-        g.strokePath();
 
         // ── 6. VIRTUAL SHIELDS AND AURAS ──
         if (this.stateMachine.is('infinity')) {

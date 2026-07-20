@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antigravity - Diseñador de Personajes (Gojo & Sukuna)</title>
+    <style>
+        :root {
+            --bg-color: #0d0e12;
+            --card-bg: #161821;
+            --text-color: #e3e6eb;
+            --accent-color: #3b82f6;
+            --accent-sukuna: #ec4899;
+            --border-color: #2a2e3f;
+            --code-bg: #090a0f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: #8f9cae;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                flex-direction: column;
+            }
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            align-self: flex-start;
+            width: 100%;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: radial-gradient(circle, #202436 0%, #0d0e12 100%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #33394d;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            width: 100%;
+            aspect-ratio: 16/9;
+            max-height: 450px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .character-controls {
+            background-color: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .character-controls h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #444;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .control-group label {
+            color: #b0bac9;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .code-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .code-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: 100%;
+        }
+
+        .code-header {
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-copy:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-copy.success {
+            background-color: #10b981;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            overflow-x: auto;
+            flex-grow: 1;
+            margin: 0;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 340px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: -5px;
+        }
+
+        .tab-btn {
+            background-color: #1f2230;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            color: #8f9cae;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-top: 3px solid var(--accent-color);
+            padding-top: 8px;
+        }
+
+        .tab-btn.active.sukuna-tab {
+            border-top-color: var(--accent-sukuna);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #5d6775;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Antigravity Stickman & Melon Sandbox Designer</h1>
+        <p>Abre este archivo en tu navegador para ver la previsualización interactiva de tus personajes con el motor físico simulado. Puedes personalizar los colores y copiar el código listo para tu juego.</p>
+    </header>
+
+    <div class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btn-gojo" onclick="switchCharacter('gojo')">Satoru Gojo</button>
+            <button class="tab-btn" id="btn-sukuna" onclick="switchCharacter('sukuna')">Ryomen Sukuna</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-section">
+                <div class="canvas-title">
+                    <span id="char-badge" style="width: 12px; height: 12px; border-radius: 50%; background-color: var(--accent-color);"></span>
+                    <span id="char-title">Previsualización: Gojo Satoru</span>
+                </div>
+                
+                <div class="canvas-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="character-controls" id="ctrl-gojo">
+                        <h3>Opciones de Gojo</h3>
+                        <div class="control-group">
+                            <label for="color-gojo-pelo">Color de Cabello:</label>
+                            <input type="color" id="color-gojo-pelo" value="#ffffff" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-gojo-traje">Color de Traje:</label>
+                            <input type="color" id="color-gojo-traje" value="#12121a" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-gojo-piel">Color de Piel:</label>
+                            <input type="color" id="color-gojo-piel" value="#faddd8" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls hidden" id="ctrl-sukuna">
+                        <h3>Opciones de Sukuna</h3>
+                        <div class="control-group">
+                            <label for="color-sukuna-pelo">Color de Cabello:</label>
+                            <input type="color" id="color-sukuna-pelo" value="#d67a9d" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-sukuna-kimono">Color de Kimono:</label>
+                            <input type="color" id="color-sukuna-kimono" value="#f5f5f0" onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="color-sukuna-piel">Color de Piel:</label>
+                            <input type="color" id="color-sukuna-piel" value="#e8c3bc" onchange="updateColors()">
+                        </div>
+                    </div>
+
+                    <div class="character-controls">
+                        <h3>Configuración Estética</h3>
+                        <div class="control-group">
+                            <label for="toggle-borders">Bordes Negros (Estilo Sandbox):</label>
+                            <input type="checkbox" id="toggle-borders" checked onchange="updateColors()">
+                        </div>
+                        <div class="control-group">
+                            <label for="toggle-movement">Simular Movimiento/Físicas:</label>
+                            <input type="checkbox" id="toggle-movement" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-section">
+                <div class="code-card" id="code-gojo">
+                    <div class="code-header">
+                        <h2>Código para Antigravity (Gojo)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-gojo')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-gojo"></code></pre>
+                </div>
+
+                <div class="code-card hidden" id="code-sukuna">
+                    <div class="code-header">
+                        <h2>Código para Antigravity (Sukuna)</h2>
+                        <button class="btn-copy" onclick="copyCode('code-block-sukuna')">Copiar Código</button>
+                    </div>
+                    <pre><code id="code-block-sukuna"></code></pre>
+                </div>
+            </div>
+        </div>
+        
+        <p class="footer-note">
+            💡 <strong>Instrucciones de integración:</strong> Cada segmento de personaje está estructurado como una forma simple con rotación y posición relativa. Para tu juego en Antigravity, usa el orden secuencial para evitar que las prendas de ropa queden por detrás de la piel.
+        </p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentCharacter = 'gojo';
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let colors = {
+            gojo: { pelo: '#ffffff', traje: '#12121a', piel: '#faddd8' },
+            sukuna: { pelo: '#d67a9d', kimono: '#f5f5f0', piel: '#e8c3bc' },
+            useBorders: true
+        };
+
+        function switchCharacter(char) {
+            currentCharacter = char;
+            document.getElementById('btn-gojo').classList.toggle('active', char === 'gojo');
+            document.getElementById('btn-sukuna').classList.toggle('active', char === 'sukuna');
+            
+            document.getElementById('ctrl-gojo').classList.toggle('hidden', char !== 'gojo');
+            document.getElementById('ctrl-sukuna').classList.toggle('hidden', char !== 'sukuna');
+            
+            document.getElementById('code-gojo').classList.toggle('hidden', char !== 'gojo');
+            document.getElementById('code-sukuna').classList.toggle('hidden', char !== 'sukuna');
+            
+            const badge = document.getElementById('char-badge');
+            const title = document.getElementById('char-title');
+            if (char === 'gojo') {
+                badge.style.backgroundColor = 'var(--accent-color)';
+                title.innerText = 'Previsualización: Gojo Satoru';
+            } else {
+                badge.style.backgroundColor = 'var(--accent-sukuna)';
+                title.innerText = 'Previsualización: Ryomen Sukuna';
+            }
+        }
+
+        function updateColors() {
+            colors.gojo.pelo = document.getElementById('color-gojo-pelo').value;
+            colors.gojo.traje = document.getElementById('color-gojo-traje').value;
+            colors.gojo.piel = document.getElementById('color-gojo-piel').value;
+
+            colors.sukuna.pelo = document.getElementById('color-sukuna-pelo').value;
+            colors.sukuna.kimono = document.getElementById('color-sukuna-kimono').value;
+            colors.sukuna.piel = document.getElementById('color-sukuna-piel').value;
+
+            colors.useBorders = document.getElementById('toggle-borders').checked;
+            generateCodeBlocks();
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, -height);
+            ctx.lineTo(-base/2, 0);
+            ctx.lineTo(base/2, 0);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (colors.useBorders) {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        function generateCodeBlocks() {
+            const strokeCode = colors.useBorders ? '\n// Activa bordes de color negro\nsetStroke(color: "#000000", grosor: 1.5);' : '';
+
+            const codeGojo = `// === DISEÑO MEJORADO: GOJO SATORU ===` + strokeCode + `
+
+// Capa 1: Cuerpo Base (Vestimenta)
+dibujarRectangulo(torso_superior, ancho: 22, alto: 38, color: "${colors.gojo.traje}");
+dibujarRectangulo(torso_inferior, ancho: 22, alto: 18, color: "${colors.gojo.traje}");
+dibujarRectangulo(cuello, ancho: 10, alto: 12, color: "${colors.gojo.traje}");
+
+// Extremidades superiores segmentadas
+dibujarRectangulo(brazo_superior_izq, ancho: 6, alto: 22, color: "${colors.gojo.traje}");
+dibujarRectangulo(brazo_inferior_izq, ancho: 5, alto: 20, color: "${colors.gojo.traje}");
+dibujarRectangulo(brazo_superior_der, ancho: 6, alto: 22, color: "${colors.gojo.traje}");
+dibujarRectangulo(brazo_inferior_der, ancho: 5, alto: 20, color: "${colors.gojo.traje}");
+
+// Extremidades inferiores segmentadas
+dibujarRectangulo(pierna_superior_izq, ancho: 8, alto: 28, color: "${colors.gojo.traje}");
+dibujarRectangulo(pierna_inferior_izq, ancho: 7, alto: 25, color: "${colors.gojo.traje}");
+dibujarRectangulo(pierna_superior_der, ancho: 8, alto: 28, color: "${colors.gojo.traje}");
+dibujarRectangulo(pierna_inferior_der, ancho: 7, alto: 25, color: "${colors.gojo.traje}");
+
+// Capa 2: Cabeza y Venda de Ojos (Clásica)
+dibujarCirculo(cabeza_base, radio: 13, color: "${colors.gojo.piel}");
+dibujarRectangulo(venda_ojos, ancho: 26, alto: 10, color: "#000000");
+
+// Capa 3: Cabello (Triángulos Estilo Stickman)
+dibujarTriangulo(pelo_central, base: 10, altura: 18, color: "${colors.gojo.pelo}", rotacion: 0);
+dibujarTriangulo(pelo_der1, base: 7, altura: 15, color: "${colors.gojo.pelo}", rotacion: 15);
+dibujarTriangulo(pelo_izq1, base: 7, altura: 15, color: "${colors.gojo.pelo}", rotacion: -15);
+dibujarTriangulo(pelo_der2, base: 6, altura: 12, color: "${colors.gojo.pelo}", rotacion: 30);
+dibujarTriangulo(pelo_izq2, base: 6, altura: 12, color: "${colors.gojo.pelo}", rotacion: -30);`;
+
+            const codeSukuna = `// === DISEÑO MEJORADO: RYOMEN SUKUNA ===` + strokeCode + `
+
+// Capa 1: Torso Piel, Túnica y Tatuajes Sagrados
+dibujarRectangulo(torso_pecho, ancho: 22, alto: 35, color: "${colors.sukuna.piel}");
+dibujarLinea(tatuaje_pecho_sup, x1: -9, y1: 10, x2: 9, y2: 10, grosor: 2, color: "#000000");
+dibujarLinea(tatuaje_pecho_inf, x1: -7, y1: 0, x2: 7, y2: 0, grosor: 2, color: "#000000");
+dibujarCirculo(tatuaje_abdomen_circulo, radio: 3, color: "#000000");
+
+dibujarRectangulo(torso_pelvis_tunica, ancho: 22, alto: 18, color: "${colors.sukuna.kimono}");
+dibujarRectangulo(cinturon_obi, ancho: 24, alto: 9, color: "#1c1c22");
+
+// Extremidades inferiores (Pantalón Kimono)
+dibujarRectangulo(pierna_superior_izq, ancho: 10, alto: 28, color: "${colors.sukuna.kimono}");
+dibujarRectangulo(pierna_inferior_izq, ancho: 9, alto: 25, color: "${colors.sukuna.kimono}");
+dibujarRectangulo(pierna_superior_der, ancho: 10, alto: 28, color: "${colors.sukuna.kimono}");
+dibujarRectangulo(pierna_inferior_der, ancho: 9, alto: 25, color: "${colors.sukuna.kimono}");
+
+// Extremidades superiores (Brazos Piel + Línea de Tatuaje)
+dibujarRectangulo(brazo_superior_izq, ancho: 6, alto: 22, color: "${colors.sukuna.piel}");
+dibujarLinea(tatuaje_brazo_sup_izq, x1: -17, y1: -11, x2: -11, y2: -11, grosor: 1.5, color: "#000000");
+dibujarRectangulo(brazo_inferior_izq, ancho: 5, alto: 20, color: "${colors.sukuna.piel}");
+
+dibujarRectangulo(brazo_superior_der, ancho: 6, alto: 22, color: "${colors.sukuna.piel}");
+dibujarLinea(tatuaje_brazo_sup_der, x1: 11, y1: -11, x2: 17, y2: -11, grosor: 1.5, color: "#000000");
+dibujarRectangulo(brazo_inferior_der, ancho: 5, alto: 20, color: "${colors.sukuna.piel}");
+
+// Capa 2: Cruzado en "V" del Kimono Abierto
+dibujarLinea(cuello_v_derecho, x1: -10, y1: 15, x2: 0, y2: 0, grosor: 3, color: "#e5e5df");
+dibujarLinea(cuello_v_izquierdo, x1: 10, y1: 15, x2: 0, y2: 0, grosor: 3, color: "#e5e5df");
+
+// Capa 3: Cabeza y Marcas Faciales Completas
+dibujarCirculo(cabeza_base, radio: 13, color: "${colors.sukuna.piel}");
+dibujarCirculo(ojo_derecho, radio: 2, color: "#ff0000");
+dibujarCirculo(ojo_izquierdo, radio: 2, color: "#ff0000");
+dibujarLinea(marca_frente, x1: -4, y1: 8, x2: 4, y2: 8, grosor: 1.2, color: "#000000");
+dibujarLinea(marca_nariz, x1: -3, y1: 3, x2: 3, y2: 3, grosor: 1.2, color: "#000000");
+dibujarLinea(marca_ojo_der, x1: 4, y1: -2, x2: 8, y2: -4, grosor: 1.2, color: "#000000");
+dibujarLinea(marca_ojo_izq, x1: -4, y1: -2, x2: -8, y2: -4, grosor: 1.2, color: "#000000");
+dibujarLinea(marca_mejilla_der, x1: 4, y1: -6, x2: 8, y2: -7, grosor: 1.2, color: "#000000");
+dibujarLinea(marca_mejilla_izq, x1: -4, y1: -6, x2: -8, y2: -7, grosor: 1.2, color: "#000000");
+
+// Capa 4: Cabello de Sukuna
+dibujarTriangulo(pelo_central, base: 12, altura: 16, color: "${colors.sukuna.pelo}", rotacion: 0);
+dibujarTriangulo(pelo_der, base: 8, altura: 14, color: "${colors.sukuna.pelo}", rotacion: 25);
+dibujarTriangulo(pelo_izq, base: 8, altura: 14, color: "${colors.sukuna.pelo}", rotacion: -25);
+dibujarTriangulo(pelo_atras_der, base: 6, altura: 10, color: "${colors.sukuna.pelo}", rotacion: 40);
+dibujarTriangulo(pelo_atras_izq, base: 6, altura: 10, color: "${colors.sukuna.pelo}", rotacion: -40);`;
+
+            document.getElementById('code-block-gojo').textContent = codeGojo;
+            document.getElementById('code-block-sukuna').textContent = codeSukuna;
+        }
+
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const isMoving = document.getElementById('toggle-movement').checked;
+            if (isMoving) time += 0.04;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 30;
+
+            ctx.save();
+            ctx.scale(1.8, 1.8);
+            
+            const renderX = (centerX / 1.8);
+            const renderY = (centerY / 1.8);
+
+            const floatOffset = isMoving ? Math.sin(time * 1.5) * 4 : 0;
+
+            if (currentCharacter === 'gojo') {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+                const rotArmInf = isMoving ? Math.sin(time + 0.5) * 8 : 10;
+                const rotLegSup = isMoving ? Math.cos(time) * 4 : 0;
+                const rotLegInf = isMoving ? Math.cos(time + 0.5) * 3 : 0;
+
+                drawRect(ox - 7, oy + 41, 8, 28, colors.gojo.traje, rotLegSup);
+                drawRect(ox - 7 + (rotLegSup*0.2), oy + 67, 7, 25, colors.gojo.traje, rotLegInf);
+                
+                drawRect(ox + 7, oy + 41, 8, 28, colors.gojo.traje, -rotLegSup);
+                drawRect(ox + 7 - (rotLegSup*0.2), oy + 67, 7, 25, colors.gojo.traje, -rotLegInf);
+
+                drawRect(ox, oy + 18, 22, 18, colors.gojo.traje);
+                drawRect(ox, oy - 10, 22, 38, colors.gojo.traje);
+                drawRect(ox, oy - 32, 10, 12, colors.gojo.traje);
+
+                drawRect(ox - 14, oy - 13, 6, 22, colors.gojo.traje, rotArmSup - 10);
+                drawRect(ox - 14 - (rotArmSup * 0.1), oy + 8, 5, 20, colors.gojo.traje, rotArmInf - 5);
+
+                drawRect(ox + 14, oy - 13, 6, 22, colors.gojo.traje, -rotArmSup + 10);
+                drawRect(ox + 14 + (rotArmSup * 0.1), oy + 8, 5, 20, colors.gojo.traje, -rotArmInf + 5);
+
+                drawCircle(ox, oy - 45, 13, colors.gojo.piel);
+                
+                // Venda de ojos cubriendo el rostro (Estilo Clásico)
+                drawRect(ox, oy - 45, 26, 10, '#000000');
+
+                drawTriangle(ox, oy - 58, 10, 18, colors.gojo.pelo, 0);
+                drawTriangle(ox + 6, oy - 56, 7, 15, colors.gojo.pelo, 15);
+                drawTriangle(ox - 6, oy - 56, 7, 15, colors.gojo.pelo, -15);
+                drawTriangle(ox + 11, oy - 53, 6, 12, colors.gojo.pelo, 30);
+                drawTriangle(ox - 11, oy - 53, 6, 12, colors.gojo.pelo, -30);
+
+            } else {
+                const ox = renderX;
+                const oy = renderY + floatOffset;
+
+                const rotArmSup = isMoving ? Math.sin(time * 1.2) * 12 : 12;
+                const rotArmInf = isMoving ? Math.sin(time * 1.2 + 0.3) * 10 : 8;
+                const rotLegSup = isMoving ? Math.cos(time * 1.2) * 5 : 0;
+                const rotLegInf = isMoving ? Math.cos(time * 1.2 + 0.5) * 4 : 0;
+
+                drawRect(ox - 7, oy + 39, 10, 28, colors.sukuna.kimono, rotLegSup);
+                drawRect(ox - 7 + (rotLegSup*0.2), oy + 65, 9, 25, colors.sukuna.kimono, rotLegInf);
+
+                drawRect(ox + 7, oy + 39, 10, 28, colors.sukuna.kimono, -rotLegSup);
+                drawRect(ox + 7 - (rotLegSup*0.2), oy + 65, 9, 25, colors.sukuna.kimono, -rotLegInf);
+
+                drawRect(ox, oy - 10, 22, 35, colors.sukuna.piel);
+                
+                // Tatuajes del Torso completo de Sukuna
+                drawLine(ox - 9, oy - 20, ox + 9, oy - 20, 2, '#000000');
+                drawLine(ox - 7, oy - 10, ox + 7, oy - 10, 2, '#000000');
+                drawCircle(ox, oy - 2, 3, '#000000');
+
+                drawRect(ox, oy + 16, 22, 18, colors.sukuna.kimono);
+                drawRect(ox, oy + 7, 24, 9, '#1c1c22');
+
+                drawLine(ox - 10, oy - 25, ox, oy - 10, 3, '#e5e5df');
+                drawLine(ox + 10, oy - 25, ox, oy - 10, 3, '#e5e5df');
+
+                drawRect(ox - 14, oy - 11, 6, 22, colors.sukuna.piel, rotArmSup - 5);
+                drawLine(ox - 17, oy - 11, ox - 11, oy - 11, 1.5, '#000000');
+                drawRect(ox - 14, oy + 10, 5, 20, colors.sukuna.piel, rotArmInf);
+
+                drawRect(ox + 14, oy - 11, 6, 22, colors.sukuna.piel, -rotArmSup + 5);
+                drawLine(ox + 11, oy - 11, ox + 17, oy - 11, 1.5, '#000000');
+                drawRect(ox + 14, oy + 10, 5, 20, colors.sukuna.piel, -rotArmInf);
+
+                drawCircle(ox, oy - 40, 13, colors.sukuna.piel);
+                drawCircle(ox - 4, oy - 40, 1.8, '#ff0000');
+                drawCircle(ox + 4, oy - 40, 1.8, '#ff0000');
+
+                // Marcas faciales completas de Sukuna
+                drawLine(ox - 4, oy - 48, ox + 4, oy - 48, 1.2, '#000000'); // Frente
+                drawLine(ox - 3, oy - 43, ox + 3, oy - 43, 1.2, '#000000'); // Nariz
+                drawLine(ox + 4, oy - 38, ox + 8, oy - 39, 1.2, '#000000'); // Ojo Der
+                drawLine(ox - 4, oy - 38, ox - 8, oy - 39, 1.2, '#000000'); // Ojo Izq
+                drawLine(ox + 4, oy - 34, ox + 8, oy - 35, 1.2, '#000000'); // Mejilla Der
+                drawLine(ox - 4, oy - 34, ox - 8, oy - 35, 1.2, '#000000'); // Mejilla Izq
+
+                drawTriangle(ox, oy - 53, 12, 16, colors.sukuna.pelo, 0);
+                drawTriangle(ox + 6, oy - 51, 8, 14, colors.sukuna.pelo, 25);
+                drawTriangle(ox - 6, oy - 51, 8, 14, colors.sukuna.pelo, -25);
+                drawTriangle(ox + 11, oy - 47, 6, 10, colors.sukuna.pelo, 40);
+                drawTriangle(ox - 11, oy - 47, 6, 10, colors.sukuna.pelo, -40);
+            }
+
+            ctx.restore();
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const btn = document.querySelector(`#${elementId === 'code-block-gojo' ? 'code-gojo' : 'code-sukuna'} .btn-copy`);
+                btn.textContent = '¡Copiado!';
+                btn.classList.add('success');
+                setTimeout(() => {
+                    btn.textContent = 'Copiar Código';
+                    btn.classList.remove('success');
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+            });
+        }
+
+        resizeCanvas();
+        generateCodeBlocks();
+        animate();
+    </script>
+</body>
+</html>

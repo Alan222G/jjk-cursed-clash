@@ -19,6 +19,104 @@ export default class Megumi extends Fighter {
         this.cloneSpawnTimer = 0;
     }
 
+    // ── Megumi Fushiguro design: dark navy uniform, gold buttons, spiky hair ──
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xfceade;
+        const uniformColor = isFlashing ? 0xFFFFFF : 0x14192d;
+        const buttonColor = isFlashing ? 0xFFFFFF : 0xd4af37;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x0d1017;
+        const bootColor = isFlashing ? 0xFFFFFF : 0x4d3a2b;
+
+        const ox = x;
+        const oy = masterY;
+
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotArmInf = isMoving ? Math.sin(time + 0.5) * 8 : 10;
+        const rotLegSup = isMoving ? Math.cos(time) * 5 : 0;
+        const rotLegInf = isMoving ? Math.cos(time + 0.5) * 3 : 0;
+
+        // ── Legs (dark uniform pants) ──
+        this.drawRect(g, ox - 8, oy + 39, 9, 32, uniformColor, rotLegSup);
+        this.drawRect(g, ox + 8, oy + 39, 9, 32, uniformColor, -rotLegSup);
+
+        // ── Boots ──
+        this.drawRect(g, ox - 8, oy + 62, 11, 6, bootColor);
+        this.drawRect(g, ox + 8, oy + 62, 11, 6, bootColor);
+
+        // ── Torso (dark uniform jacket) ──
+        this.drawRect(g, ox, oy + 5, 20, 24, uniformColor);
+        this.drawRect(g, ox, oy - 8, 22, 18, uniformColor);
+
+        // ── Gold buttons ──
+        this.drawCircle(g, ox + 5, oy - 6, 2, buttonColor);
+        this.drawCircle(g, ox + 6, oy + 6, 2, buttonColor);
+
+        // ── Arms (dark uniform sleeves) ──
+        this.drawRect(g, ox - 13, oy - 3, 7, 24, uniformColor, rotArmSup + 10);
+        this.drawRect(g, ox + 13, oy - 3, 7, 24, uniformColor, -rotArmSup - 10);
+
+        // ── Hands ──
+        this.drawCircle(g, ox - 15, oy + 12, 4, skinColor);
+        this.drawCircle(g, ox + 15, oy + 12, 4, skinColor);
+
+        // ── High collar ──
+        this.drawRect(g, ox, oy - 18, 12, 8, uniformColor);
+        if (!isFlashing) this.drawLine(g, ox - 5, oy - 22, ox + 6, oy - 15, 2.5, 0x111111); // Crossed lapel
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 30, 10, skinColor);
+
+        // ── Eyebrows & eyes (serious expression) ──
+        if (!isFlashing) {
+            this.drawLine(g, ox - 5, oy - 32, ox - 2, oy - 32, 1.8, 0x111111);
+            this.drawLine(g, ox + 2, oy - 32, ox + 5, oy - 32, 1.8, 0x111111);
+        }
+        this.drawCircle(g, ox - 3.5, oy - 29, 1.2, isFlashing ? 0xFFFFFF : 0x111111);
+        this.drawCircle(g, ox + 3.5, oy - 29, 1.2, isFlashing ? 0xFFFFFF : 0x111111);
+
+        // ── Hair (very spiky dark hair) ──
+        this.drawCircle(g, ox, oy - 35, 11, hairColor);
+        this.drawTriangle(g, ox - 12, oy - 35, 6, 12, hairColor, -60);
+        this.drawTriangle(g, ox + 12, oy - 35, 6, 12, hairColor, 60);
+        this.drawTriangle(g, ox - 9, oy - 44, 7, 14, hairColor, -30);
+        this.drawTriangle(g, ox + 9, oy - 44, 7, 14, hairColor, 30);
+        this.drawTriangle(g, ox - 4, oy - 48, 8, 16, hairColor, -10);
+        this.drawTriangle(g, ox + 4, oy - 48, 8, 16, hairColor, 10);
+        this.drawTriangle(g, ox, oy - 49, 8, 18, hairColor, 0); // Central spike
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.3) * 16, y - 60 + Math.sin(angle + 0.3) * 6,
+                    x + Math.cos(angle - 0.3) * 16, y - 60 + Math.sin(angle - 0.3) * 6
+                );
+            }
+        }
+    }
+
     trySpecialAttack() {
         if (this.isSinking) return;
         const tier = this.ceSystem.getTier();

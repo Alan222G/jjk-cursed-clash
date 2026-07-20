@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Personajes - Dagon & Hanami</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #06070d;
+            color: #94a3b8;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Pestañas de Selección (Solo Dagon y Hanami) */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background-color: #111322;
+            color: #94a3b8;
+            border: 1px solid #1e2235;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #f1f5f9;
+            background-color: #171a2e;
+        }
+
+        .tab-btn.active {
+            background-color: #1b1e36;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        /* Layout Grid Principal */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Paneles */
+        .panel {
+            background-color: #0c0e17;
+            border: 1px solid #1a1d30;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .panel-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #5865f2;
+            border-radius: 50%;
+        }
+
+        /* Contenedor del Lienzo */
+        .canvas-wrapper {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Ajustes de Configuración */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .settings-box {
+            background-color: #090a10;
+            border: 1px dashed #1e2237;
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .settings-box-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+            border-bottom: 1px dotted #1e2237;
+            padding-bottom: 6px;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Controles Estilizados */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 18px;
+            border-radius: 3px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #2e3456;
+            border-radius: 3px;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #3b82f6;
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Editor de Código de la Derecha */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .code-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .copy-btn {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .copy-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .code-container {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            padding: 16px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 480px;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #a7f3d0;
+            white-space: pre-wrap;
+        }
+
+        .comment { color: #4b5563; }
+        .keyword { color: #f472b6; }
+        .string { color: #fbbf24; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Selector de Pestañas Exclusivo -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-dagon" onclick="switchCharacter('dagon')">Dagon (Evolucionado)</button>
+            <button class="tab-btn" id="tab-hanami" onclick="switchCharacter('hanami')">Hanami (Espíritu de la Naturaleza)</button>
+        </div>
+
+        <div class="workspace">
+            <!-- PANEL IZQUIERDO: PREVISUALIZACIÓN Y CONTROLES -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span class="panel-dot"></span>
+                    <span id="preview-header-text">Previsualización: Dagon</span>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="editorCanvas" width="560" height="360"></canvas>
+                </div>
+
+                <!-- Configuración de opciones -->
+                <div class="settings-grid">
+                    <div class="settings-box">
+                        <div class="settings-box-title" id="character-options-title">Opciones de Dagon</div>
+                        <div id="dynamic-options-container">
+                            <!-- Inyectado mediante JS -->
+                        </div>
+                    </div>
+
+                    <div class="settings-box">
+                        <div class="settings-box-title">Estética</div>
+                        <div class="option-row">
+                            <span>Contornos Claros:</span>
+                            <input type="checkbox" id="opt-contornos" checked onchange="draw()">
+                        </div>
+                        <div class="option-row">
+                            <span>Postura (Respiración):</span>
+                            <input type="checkbox" id="opt-respiracion" checked onchange="toggleBreathing()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DERECHO: CÓDIGO VECTORIAL -->
+            <div class="panel">
+                <div class="code-header">
+                    <span class="code-title" id="code-box-title">Código de Dagon</span>
+                    <button class="copy-btn" onclick="copyCode()">Copiar Código</button>
+                </div>
+                <div class="code-container">
+                    <pre id="code-display"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentCharacter = 'dagon';
+        let animationFrameId = null;
+        let breatheAngle = 0;
+
+        // Configuración específica de Dagon y Hanami según tu nueva referencia
+        let config = {
+            dagon: {
+                colorRojo: '#8a1a1a', // Rojo oscuro de la cabeza y músculos
+                colorCrema: '#e3d0ae', // Placas de piel claras segmentadas
+                colorCoraza: '#111111', // Coraza negra del abdomen central
+                mostrarTentaculos: true
+            },
+            hanami: {
+                colorHueso: '#f4f6f7', // Blanco pálido/hueso
+                colorManto: '#800c0c', // Manto rojo del hombro
+                colorDetalles: '#111111', // Marcas negras de corteza
+                mostrarRamas: true
+            }
+        };
+
+        // --- RENDERIZADO DE OPCIONES DINÁMICAS ---
+        function renderOptionsUI() {
+            const container = document.getElementById('dynamic-options-container');
+            const title = document.getElementById('character-options-title');
+
+            if (currentCharacter === 'dagon') {
+                title.textContent = "Opciones de Dagon";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Piel Muscular Roja:</span>
+                        <input type="color" value="${config.dagon.colorRojo}" oninput="config.dagon.colorRojo = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Piel Segmentada Crema:</span>
+                        <input type="color" value="${config.dagon.colorCrema}" oninput="config.dagon.colorCrema = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Tentáculos de Cara:</span>
+                        <input type="checkbox" ${config.dagon.mostrarTentaculos ? 'checked' : ''} onchange="config.dagon.mostrarTentaculos = this.checked; draw();">
+                    </div>
+                `;
+            } else {
+                title.textContent = "Opciones de Hanami";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Cuerpo de Hueso:</span>
+                        <input type="color" value="${config.hanami.colorHueso}" oninput="config.hanami.colorHueso = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Manto de Hombro:</span>
+                        <input type="color" value="${config.hanami.colorManto}" oninput="config.hanami.colorManto = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Mostrar Ramas/Ojos:</span>
+                        <input type="checkbox" ${config.hanami.mostrarRamas ? 'checked' : ''} onchange="config.hanami.mostrarRamas = this.checked; draw();">
+                    </div>
+                `;
+            }
+        }
+
+        // --- FUNCIONES GEOMÉTRICAS ---
+        function getStrokeParams() {
+            const contornosClaros = document.getElementById('opt-contornos').checked;
+            return {
+                color: contornosClaros ? '#1e293b' : '#000000',
+                width: contornosClaros ? 2.2 : 3.5
+            };
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.strokeRect(-w/2, -h/2, w, h);
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            const stroke = getStrokeParams();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, -height/2);
+            ctx.lineTo(-base/2, height/2);
+            ctx.lineTo(base/2, height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawTrapezoid(x, y, topW, bottomW, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(-topW / 2, -h / 2);
+            ctx.lineTo(topW / 2, -h / 2);
+            ctx.lineTo(bottomW / 2, h / 2);
+            ctx.lineTo(-bottomW / 2, h / 2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // --- SISTEMA DE DIBUJO ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 15;
+
+            const respiracionActiva = document.getElementById('opt-respiracion').checked;
+            const bob = respiracionActiva ? Math.sin(breatheAngle) * 2.2 : 0;
+            const scaleY = respiracionActiva ? 1 + Math.sin(breatheAngle) * 0.012 : 1;
+
+            if (currentCharacter === 'dagon') {
+                // =========================================================
+                // DAGON (HUMANOIDE EVOLUCIONADO - NUEVA REFERENCIA)
+                // =========================================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.9, 1.9);
+
+                // Piernas (Musculosas rojas con placas frontales crema)
+                // Pierna Izq
+                drawRect(-11, 45, 9, 32, config.dagon.colorRojo, 10);
+                drawRect(-11, 40, 5, 20, config.dagon.colorCrema, 10); // Placa crema
+                drawRect(-13, 62, 11, 6, config.dagon.colorRojo); // Pie
+                // Pierna Der
+                drawRect(11, 45, 9, 32, config.dagon.colorRojo, -10);
+                drawRect(11, 40, 5, 20, config.dagon.colorCrema, -10); // Placa crema
+                drawRect(13, 62, 11, 6, config.dagon.colorRojo); // Pie
+
+                // --- Cuerpo superior (Afectado por respiración) ---
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Base del torso (Piel segmentada crema de fondo)
+                drawTrapezoid(0, 10, 21, 25, 42, config.dagon.colorCrema);
+                // Textura de líneas horizontales del abdomen crema
+                drawLine(-8, 2, 8, 2, 1.5, '#73614c');
+                drawLine(-10, 12, 10, 12, 1.5, '#73614c');
+                drawLine(-9, 22, 9, 22, 1.5, '#73614c');
+
+                // Caparazón / Placa de armadura negra central del pecho (Fiel a la foto)
+                drawTrapezoid(0, 6, 21, 10, 30, config.dagon.colorCoraza);
+                drawTriangle(0, 18, 14, 10, config.dagon.colorCoraza, 180);
+
+                // Capa muscular roja cubriendo hombros y espalda
+                drawTrapezoid(0, -10, 26, 20, 14, config.dagon.colorRojo);
+
+                // Brazos Musculosos de color Rojo Oscuro
+                // Brazo Izquierdo
+                ctx.save();
+                ctx.translate(-13, -10);
+                ctx.rotate(-20 * Math.PI / 180);
+                drawRect(0, 14, 9, 26, config.dagon.colorRojo);
+                drawCircle(0, 26, 5, config.dagon.colorRojo);
+                ctx.restore();
+
+                // Brazo Derecho
+                ctx.save();
+                ctx.translate(13, -10);
+                ctx.rotate(20 * Math.PI / 180);
+                drawRect(0, 14, 9, 26, config.dagon.colorRojo);
+                drawCircle(0, 26, 5, config.dagon.colorRojo);
+                ctx.restore();
+
+                // Cabeza Grande Roja de Cthulhu / Pulpo
+                drawCircle(0, -25, 14, config.dagon.colorRojo);
+                
+                // Manchas negras en la corona de la cabeza (Referencia)
+                drawCircle(-4, -34, 1.5, '#111111');
+                drawCircle(0, -36, 2, '#111111');
+                drawCircle(5, -33, 1.5, '#111111');
+
+                // Ojo blanco brillante lateral (Fiel a la imagen)
+                drawCircle(-7, -25, 3.2, '#ffffff');
+                drawCircle(-7, -25, 1, '#111111');
+
+                // Tentáculos faciales colgando (Mouth Tentacles)
+                if (config.dagon.mostrarTentaculos) {
+                    drawRect(-4, -13, 3, 11, config.dagon.colorRojo, 8);
+                    drawRect(0, -11, 3.2, 13, config.dagon.colorRojo);
+                    drawRect(4, -13, 3, 11, config.dagon.colorRojo, -8);
+                }
+
+                ctx.restore();
+                ctx.restore();
+
+            } else if (currentCharacter === 'hanami') {
+                // =========================================================
+                // HANAMI (CON DETALLES DE CORTEZA Y MANTO - REFERENCIA)
+                // =========================================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.9, 1.9);
+
+                // Piernas de Madera con Textura Negra
+                drawRect(-9, 45, 8, 30, config.hanami.colorHueso);
+                drawLine(-9, 32, -9, 58, 1.8, '#111111'); // Línea de corteza
+                drawRect(9, 45, 8, 30, config.hanami.colorHueso);
+                drawLine(9, 32, 9, 58, 1.8, '#111111');
+
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Hakama o Cintura inferior
+                drawTrapezoid(0, 22, 16, 24, 20, '#1a1a1f');
+
+                // Torso de Hueso Blanco con Marcas Negras Orgánicas
+                drawTrapezoid(0, -8, 15, 19, 32, config.hanami.colorHueso);
+                
+                // Marcas tribales negras en el pecho (Estilo la referencia)
+                drawLine(-6, -18, -6, 2, 2.5, '#111111');
+                drawLine(6, -18, 6, 2, 2.5, '#111111');
+                drawCircle(-6, -8, 3, '#111111');
+                drawCircle(6, -8, 3, '#111111');
+
+                // Cinturón negro
+                drawRect(0, 9, 21, 5, '#111111');
+
+                // Manto Rojo Espectacular en el hombro izquierdo/espalda (Se ve atrás de Hanami en la foto)
+                ctx.save();
+                ctx.translate(-14, -15);
+                ctx.rotate(-15 * Math.PI / 180);
+                drawTrapezoid(0, 0, 10, 16, 18, config.hanami.colorManto);
+                ctx.restore();
+
+                // Brazo Izquierdo (Hueso con vendas y marcas)
+                ctx.save();
+                ctx.translate(-12, -18);
+                ctx.rotate(-25 * Math.PI / 180);
+                drawRect(0, 14, 8, 26, config.hanami.colorHueso);
+                drawLine(0, 4, 0, 24, 2, '#111111'); // Marca negra en el brazo
+                drawCircle(0, 26, 4.5, '#111111');
+                ctx.restore();
+
+                // Brazo Derecho (Grande con marcas de madera)
+                ctx.save();
+                ctx.translate(12, -18);
+                ctx.rotate(35 * Math.PI / 180);
+                drawRect(0, 14, 8, 26, config.hanami.colorHueso);
+                drawLine(0, 4, 0, 24, 2, '#111111');
+                drawCircle(0, 26, 4.5, '#111111');
+                ctx.restore();
+
+                // Cabeza Blanca de Hanami
+                drawCircle(0, -38, 13, config.hanami.colorHueso);
+                
+                // Sombra vertical negra en la cara (Fiel a la máscara de Hanami)
+                drawLine(-4, -48, -4, -28, 2.5, '#111111');
+                drawLine(4, -48, 4, -28, 2.5, '#111111');
+
+                // Cuernos de Rama saliendo de las cuencas oculares
+                if (config.hanami.mostrarRamas) {
+                    // Rama Izquierda (Madera detallada marrón)
+                    drawLine(-5, -39, -15, -53, 3, '#4d3219');
+                    drawLine(-10, -46, -16, -45, 1.8, '#4d3219');
+                    // Rama Derecha
+                    drawLine(5, -39, 15, -53, 3, '#4d3219');
+                    drawLine(10, -46, 16, -45, 1.8, '#4d3219');
+                }
+
+                ctx.restore();
+                ctx.restore();
+            }
+        }
+
+        // --- BUCLE DE ANIMACIÓN ---
+        function animate() {
+            breatheAngle += 0.045;
+            draw();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function toggleBreathing() {
+            const isChecked = document.getElementById('opt-respiracion').checked;
+            if (isChecked) {
+                if (!animationFrameId) animate();
+            } else {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                draw();
+            }
+        }
+
+        // --- ACTUALIZACIÓN DE CÓDIGO ---
+        function updateCodeDisplay() {
+            const codeDisplay = document.getElementById('code-display');
+            const codeTitle = document.getElementById('code-box-title');
+            const strokeVal = document.getElementById('opt-contornos').checked ? "1.8" : "3.5";
+
+            if (currentCharacter === 'dagon') {
+                codeTitle.textContent = "Código de Dagon (Placas y Tentáculos)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === SPRITE EVOLUCIONADO: DAGON ===</span>
+setStroke(color: <span class="string">"#000000"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Cabeza Molusco con Tentáculos Colgantes</span>
+dibujarCirculo(cabeza_roja, radio: 14, color: <span class="string">"${config.dagon.colorRojo}"</span>);
+dibujarRectangulo(tentaculo_central, x: 0, y: -11, ancho: 3.2, alto: 13, color: <span class="string">"${config.dagon.colorRojo}"</span>);
+
+<span class="comment">// 2. Abdomen Segmentado de Fondo</span>
+dibujarTrapezoide(abdomen_crema, x: 0, y: 10, ancho_sup: 21, ancho_inf: 25, alto: 42, color: <span class="string">"${config.dagon.colorCrema}"</span>);
+dibujarLineaHorizontal(linea_abdomen_1, y: 2, color: <span class="string">"#73614c"</span>);
+
+<span class="comment">// 3. Coraza Negra Central del Pecho</span>
+dibujarTrapezoide(coraza_frontal, x: 0, y: 6, ancho_sup: 21, ancho_inf: 10, alto: 30, color: <span class="string">"${config.dagon.colorCoraza}"</span>);
+
+<span class="comment">// 4. Extremidades Musculosas con Placas</span>
+dibujarRectangulo(pierna_izq, x: -11, y: 45, ancho: 9, alto: 32, color: <span class="string">"${config.dagon.colorRojo}"</span>);
+`;
+            } else {
+                codeTitle.textContent = "Código de Hanami (Líneas de Corteza y Manto)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === SPRITE DETALLADO: HANAMI ===</span>
+setStroke(color: <span class="string">"#000000"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Cabeza Ósea con Ramas de Madera</span>
+dibujarCirculo(mascara_hueso, radio: 13, color: <span class="string">"${config.hanami.colorHueso}"</span>);
+dibujarLinea(cuerno_madera_izq, x1: -5, y1: -39, x2: -15, y2: -53, color: <span class="string">"#4d3219"</span>);
+
+<span class="comment">// 2. Manto Rojo Espectacular del Hombro</span>
+dibujarTrapezoide(manto_hombro, x: -14, y: -15, ancho_sup: 10, ancho_inf: 16, alto: 18, color: <span class="string">"${config.hanami.colorManto}"</span>);
+
+<span class="comment">// 3. Torso con Marcas de Corteza y Rayas Negras</span>
+dibujarTrapezoide(pecho_blanco, x: 0, y: -8, ancho_sup: 15, ancho_inf: 19, alto: 32, color: <span class="string">"${config.hanami.colorHueso}"</span>);
+dibujarLineaVertical(tribal_izq, x: -6, y_inicio: -18, y_fin: 2, color: <span class="string">"#111111"</span>);
+
+<span class="comment">// 4. Brazos Robustos</span>
+dibujarRectangulo(brazo_der, x: 12, y: -18, ancho: 8, alto: 26, color: <span class="string">"${config.hanami.colorHueso}"</span>);
+`;
+            }
+        }
+
+        // Intercambiar pestañas
+        function switchCharacter(charName) {
+            currentCharacter = charName;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${charName}`).classList.add('active');
+            document.getElementById('preview-header-text').textContent = `Previsualización: ${charName === 'dagon' ? 'Dagon (Evolucionado)' : 'Hanami'}`;
+
+            renderOptionsUI();
+            updateCodeDisplay();
+            draw();
+        }
+
+        // Copiar Código
+        function copyCode() {
+            const codeText = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = "¡Copiado!";
+                copyBtn.style.backgroundColor = "#10b981";
+                setTimeout(() => {
+                    copyBtn.textContent = "Copiar Código";
+                    copyBtn.style.backgroundColor = "#2563eb";
+                }, 1500);
+            });
+        }
+
+        const originalDraw = draw;
+        draw = function() {
+            originalDraw();
+            updateCodeDisplay();
+        };
+
+        // --- INICIALIZACIÓN ---
+        renderOptionsUI();
+        toggleBreathing();
+    </script>
+</body>
+</html>

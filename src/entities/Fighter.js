@@ -1542,6 +1542,110 @@ export default class Fighter {
         return { x: this.sprite.x, y: this.sprite.y };
     }
 
+    // ── Helper Drawing Methods for new Character Designs ──
+    drawRect(g, x, y, w, h, color, rotationDeg = 0) {
+        g = g || this.graphics;
+        const ox = this.sprite.x;
+        const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
+        const f = this.facing;
+
+        const dx = x - ox;
+        const dy = y - oy;
+        const rx = ox + dx * f;
+        const ry = oy + dy;
+        const rRot = rotationDeg * f;
+
+        const rad = rRot * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const halfW = w / 2;
+        const halfH = h / 2;
+        const corners = [
+            { dx: -halfW, dy: -halfH },
+            { dx: halfW, dy: -halfH },
+            { dx: halfW, dy: halfH },
+            { dx: -halfW, dy: halfH }
+        ];
+        g.fillStyle(color, 1);
+        g.beginPath();
+        g.moveTo(rx + corners[0].dx * cos - corners[0].dy * sin, ry + corners[0].dx * sin + corners[0].dy * cos);
+        for (let i = 1; i < 4; i++) {
+            g.lineTo(rx + corners[i].dx * cos - corners[i].dy * sin, ry + corners[i].dx * sin + corners[i].dy * cos);
+        }
+        g.closePath();
+        g.fillPath();
+        g.lineStyle(1.5, 0x000000, 1);
+        g.strokePath();
+    }
+
+    drawCircle(g, x, y, r, color) {
+        g = g || this.graphics;
+        const ox = this.sprite.x;
+        const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
+        const f = this.facing;
+
+        const dx = x - ox;
+        const dy = y - oy;
+        const rx = ox + dx * f;
+        const ry = oy + dy;
+
+        g.fillStyle(color, 1);
+        g.fillCircle(rx, ry, r);
+        g.lineStyle(1.5, 0x000000, 1);
+        g.strokeCircle(rx, ry, r);
+    }
+
+    drawTriangle(g, x, y, base, height, color, rotationDeg = 0) {
+        g = g || this.graphics;
+        const ox = this.sprite.x;
+        const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
+        const f = this.facing;
+
+        const dx = x - ox;
+        const dy = y - oy;
+        const rx = ox + dx * f;
+        const ry = oy + dy;
+        const rRot = rotationDeg * f;
+
+        const rad = rRot * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const corners = [
+            { dx: 0, dy: -height },
+            { dx: -base / 2, dy: 0 },
+            { dx: base / 2, dy: 0 }
+        ];
+        g.fillStyle(color, 1);
+        g.beginPath();
+        g.moveTo(rx + corners[0].dx * cos - corners[0].dy * sin, ry + corners[0].dx * sin + corners[0].dy * cos);
+        g.lineTo(rx + corners[1].dx * cos - corners[1].dy * sin, ry + corners[1].dx * sin + corners[1].dy * cos);
+        g.lineTo(rx + corners[2].dx * cos - corners[2].dy * sin, ry + corners[2].dx * sin + corners[2].dy * cos);
+        g.closePath();
+        g.fillPath();
+        g.lineStyle(1.5, 0x000000, 1);
+        g.strokePath();
+    }
+
+    drawLine(g, x1, y1, x2, y2, thickness, color) {
+        g = g || this.graphics;
+        const ox = this.sprite.x;
+        const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
+        const f = this.facing;
+
+        const dx1 = x1 - ox;
+        const dy1 = y1 - oy;
+        const dx2 = x2 - ox;
+        const dy2 = y2 - oy;
+
+        const rx1 = ox + dx1 * f;
+        const ry1 = oy + dy1;
+        const rx2 = ox + dx2 * f;
+        const ry2 = oy + dy2;
+
+        g.lineStyle(thickness, color, 1);
+        g.lineBetween(rx1, ry1, rx2, ry2);
+    }
+
     destroy() {
         this.sprite.destroy();
         this.hitbox.destroy();

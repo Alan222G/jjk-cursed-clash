@@ -14,6 +14,109 @@ export default class Choso extends Fighter {
         this.wingKingShootTimer = 0;
     }
 
+    // ── Choso's unique design: dark purple tunic, white hakama, blood mark ──
+    drawBody(dt) {
+        const g = this.graphics;
+        g.clear();
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+        const f = this.facing;
+        const isFlashing = this.hitFlash > 0 && Math.floor(this.hitFlash) % 2 === 0;
+
+        if (this.isDead) {
+            g.fillStyle(0x111118, 0.5);
+            g.fillEllipse(x, y + 20, 80, 25);
+            return;
+        }
+
+        const bobY = this.stateMachine.isAny('idle', 'block') ? this.idleBob : 0;
+        const masterY = y + bobY;
+        const isMoving = this.stateMachine.is('walk');
+        const time = (this.scene.time.now * 0.004);
+
+        const skinColor = isFlashing ? 0xFFFFFF : 0xfceade;
+        const tunicColor = isFlashing ? 0xFFFFFF : 0x4a325c;
+        const whiteCloth = isFlashing ? 0xFFFFFF : 0xffffff;
+        const hairColor = isFlashing ? 0xFFFFFF : 0x261b17;
+        const bootColor = isFlashing ? 0xFFFFFF : 0x4a3b32;
+        const scarfDark = isFlashing ? 0xFFFFFF : 0x332140;
+        const scarfDarker = isFlashing ? 0xFFFFFF : 0x281a33;
+
+        const ox = x;
+        const oy = masterY;
+
+        const rotArmSup = isMoving ? Math.sin(time) * 10 : 5;
+        const rotArmInf = isMoving ? Math.sin(time + 0.5) * 8 : 10;
+        const rotLegSup = isMoving ? Math.cos(time) * 5 : 0;
+        const rotLegInf = isMoving ? Math.cos(time + 0.5) * 3 : 0;
+
+        // ── Legs (white hakama pants) ──
+        this.drawRect(g, ox - 8, oy + 39, 11, 28, whiteCloth, rotLegSup);
+        this.drawRect(g, ox - 8 + (rotLegSup * 0.2), oy + 65, 9, 25, whiteCloth, rotLegInf);
+        this.drawRect(g, ox + 8, oy + 39, 11, 28, whiteCloth, -rotLegSup);
+        this.drawRect(g, ox + 8 - (rotLegSup * 0.2), oy + 65, 9, 25, whiteCloth, -rotLegInf);
+
+        // ── Boots ──
+        this.drawRect(g, ox - 8, oy + 80, 13, 5, bootColor);
+        this.drawRect(g, ox + 8, oy + 80, 13, 5, bootColor);
+
+        // ── Torso (purple tunic) ──
+        this.drawRect(g, ox, oy - 10, 22, 35, tunicColor);
+
+        // ── Waist belt / obi ──
+        this.drawRect(g, ox, oy + 16, 22, 10, tunicColor);
+
+        // ── Lower tunic apron ──
+        this.drawRect(g, ox, oy + 28, 24, 16, tunicColor);
+
+        // ── Scarf / high collar ──
+        this.drawRect(g, ox, oy - 18, 18, 11, scarfDark);
+        this.drawRect(g, ox, oy - 23, 16, 6, scarfDarker);
+
+        // ── Arms (wide white sleeves) ──
+        this.drawRect(g, ox - 14, oy - 5, 10, 24, whiteCloth, rotArmSup - 15);
+        this.drawRect(g, ox + 14, oy - 5, 10, 24, whiteCloth, -rotArmSup + 15);
+
+        // ── Hands ──
+        this.drawCircle(g, ox - 20, oy + 11, 4.5, skinColor);
+        this.drawCircle(g, ox + 20, oy + 11, 4.5, skinColor);
+
+        // ── Head ──
+        this.drawCircle(g, ox, oy - 35, 11, skinColor);
+
+        // ── Blood mark (horizontal dark band across face) ──
+        if (!isFlashing) {
+            this.drawRect(g, ox, oy - 35, 16, 3, 0x241a24);
+        }
+
+        // ── Eyes (tired purple) ──
+        this.drawCircle(g, ox - 4, oy - 37, 2, isFlashing ? 0xFFFFFF : 0x7a5a73);
+        this.drawCircle(g, ox + 4, oy - 37, 2, isFlashing ? 0xFFFFFF : 0x7a5a73);
+        this.drawCircle(g, ox - 4, oy - 37, 0.8, isFlashing ? 0xFFFFFF : 0x111111);
+        this.drawCircle(g, ox + 4, oy - 37, 0.8, isFlashing ? 0xFFFFFF : 0x111111);
+
+        // ── Hair (dark brown with twin pigtails) ──
+        this.drawCircle(g, ox, oy - 45, 9, hairColor);
+        this.drawTriangle(g, ox - 7, oy - 54, 8, 16, hairColor, -25);
+        this.drawTriangle(g, ox + 7, oy - 54, 8, 16, hairColor, 25);
+        this.drawTriangle(g, ox - 12, oy - 44, 4, 10, hairColor, -65);
+        this.drawTriangle(g, ox + 12, oy - 44, 4, 10, hairColor, 65);
+
+        // ── Hitstun stars ──
+        if (this.stateMachine.is('hitstun')) {
+            const starT = this.animTimer * 0.01;
+            for (let i = 0; i < 3; i++) {
+                const angle = starT + (i * Math.PI * 2 / 3);
+                g.fillStyle(0xFFFF00, 0.8);
+                g.fillTriangle(
+                    x + Math.cos(angle) * 22, y - 55 + Math.sin(angle) * 10,
+                    x + Math.cos(angle + 0.3) * 16, y - 60 + Math.sin(angle + 0.3) * 6,
+                    x + Math.cos(angle - 0.3) * 16, y - 60 + Math.sin(angle - 0.3) * 6
+                );
+            }
+        }
+    }
+
     // Override normal attacks to apply blood poison
     getBasicAttackData(type) {
         const base = { ...super.getBasicAttackData(type) };

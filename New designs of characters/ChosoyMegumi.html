@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Personajes - Choso & Megumi</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #06070d;
+            color: #94a3b8;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Pestañas de Selección (Solo Choso y Megumi) */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            background-color: #111322;
+            color: #94a3b8;
+            border: 1px solid #1e2235;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #f1f5f9;
+            background-color: #171a2e;
+        }
+
+        .tab-btn.active {
+            background-color: #1b1e36;
+            color: #ffffff;
+            border-color: #3b82f6;
+        }
+
+        /* Layout Grid Principal */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Paneles */
+        .panel {
+            background-color: #0c0e17;
+            border: 1px solid #1a1d30;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 16px;
+        }
+
+        .panel-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #a855f7;
+            border-radius: 50%;
+        }
+
+        /* Contenedor del Lienzo */
+        .canvas-wrapper {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Ajustes de Configuración */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .settings-box {
+            background-color: #090a10;
+            border: 1px dashed #1e2237;
+            border-radius: 6px;
+            padding: 14px;
+        }
+
+        .settings-box-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 12px;
+            border-bottom: 1px dotted #1e2237;
+            padding-bottom: 6px;
+        }
+
+        .option-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Controles Estilizados */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 18px;
+            border-radius: 3px;
+            cursor: pointer;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #2e3456;
+            border-radius: 3px;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #3b82f6;
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Editor de Código de la Derecha */
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .code-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .copy-btn {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .copy-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .code-container {
+            background-color: #04050a;
+            border: 1px solid #141624;
+            border-radius: 6px;
+            padding: 16px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 480px;
+        }
+
+        pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #a7f3d0;
+            white-space: pre-wrap;
+        }
+
+        .comment { color: #4b5563; }
+        .keyword { color: #f472b6; }
+        .string { color: #fbbf24; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Selector de Pestañas Choso y Megumi -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-choso" onclick="switchCharacter('choso')">Choso (Útero Maldito)</button>
+            <button class="tab-btn" id="tab-megumi" onclick="switchCharacter('megumi')">Megumi Fushiguro</button>
+        </div>
+
+        <div class="workspace">
+            <!-- PANEL IZQUIERDO: PREVISUALIZACIÓN Y CONTROLES -->
+            <div class="panel">
+                <div class="panel-title">
+                    <span class="panel-dot"></span>
+                    <span id="preview-header-text">Previsualización: Choso</span>
+                </div>
+
+                <div class="canvas-wrapper">
+                    <canvas id="editorCanvas" width="560" height="360"></canvas>
+                </div>
+
+                <!-- Configuración de opciones -->
+                <div class="settings-grid">
+                    <div class="settings-box">
+                        <div class="settings-box-title" id="character-options-title">Opciones de Choso</div>
+                        <div id="dynamic-options-container">
+                            <!-- Inyectado mediante JS -->
+                        </div>
+                    </div>
+
+                    <div class="settings-box">
+                        <div class="settings-box-title">Estética</div>
+                        <div class="option-row">
+                            <span>Bordes de Trazo:</span>
+                            <input type="checkbox" id="opt-contornos" checked onchange="draw()">
+                        </div>
+                        <div class="option-row">
+                            <span>Postura (Respiración):</span>
+                            <input type="checkbox" id="opt-respiracion" checked onchange="toggleBreathing()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL DERECHO: CÓDIGO VECTORIAL -->
+            <div class="panel">
+                <div class="code-header">
+                    <span class="code-title" id="code-box-title">Código de Choso</span>
+                    <button class="copy-btn" onclick="copyCode()">Copiar Código</button>
+                </div>
+                <div class="code-container">
+                    <pre id="code-display"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentCharacter = 'choso';
+        let animationFrameId = null;
+        let breatheAngle = 0;
+
+        // Configuración de Choso y Megumi
+        let config = {
+            choso: {
+                colorTunica: '#4a325c', // Púrpura oscuro característico
+                colorRopaInterior: '#ffffff', // Mangas y pantalones blancos
+                colorMarca: '#241a24', // Franja oscura de su cara
+                mostrarColetas: true
+            },
+            megumi: {
+                colorUniforme: '#14192d', // Azul marino muy oscuro
+                colorPiel: '#fceade', // Tono de piel claro
+                colorBotones: '#d4af37', // Botones dorados
+                mostrarPeloPuntiagudo: true
+            }
+        };
+
+        // --- RENDERIZADO DE OPCIONES DINÁMICAS ---
+        function renderOptionsUI() {
+            const container = document.getElementById('dynamic-options-container');
+            const title = document.getElementById('character-options-title');
+
+            if (currentCharacter === 'choso') {
+                title.textContent = "Opciones de Choso";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Color de Túnica:</span>
+                        <input type="color" value="${config.choso.colorTunica}" oninput="config.choso.colorTunica = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Color de Ropa Blanca:</span>
+                        <input type="color" value="${config.choso.colorRopaInterior}" oninput="config.choso.colorRopaInterior = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Mostrar Coletas:</span>
+                        <input type="checkbox" ${config.choso.mostrarColetas ? 'checked' : ''} onchange="config.choso.mostrarColetas = this.checked; draw();">
+                    </div>
+                `;
+            } else {
+                title.textContent = "Opciones de Megumi";
+                container.innerHTML = `
+                    <div class="option-row">
+                        <span>Color del Uniforme:</span>
+                        <input type="color" value="${config.megumi.colorUniforme}" oninput="config.megumi.colorUniforme = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Color de Botones:</span>
+                        <input type="color" value="${config.megumi.colorBotones}" oninput="config.megumi.colorBotones = this.value; draw();">
+                    </div>
+                    <div class="option-row">
+                        <span>Pelo Estilo Puntiagudo:</span>
+                        <input type="checkbox" ${config.megumi.mostrarPeloPuntiagudo ? 'checked' : ''} onchange="config.megumi.mostrarPeloPuntiagudo = this.checked; draw();">
+                    </div>
+                `;
+            }
+        }
+
+        // --- FUNCIONES GEOMÉTRICAS ---
+        function getStrokeParams() {
+            const contornosClaros = document.getElementById('opt-contornos').checked;
+            return {
+                color: contornosClaros ? '#111111' : 'transparent',
+                width: contornosClaros ? 2.5 : 0
+            };
+        }
+
+        function drawRect(x, y, w, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, -h/2, w, h);
+            if (stroke.width > 0) {
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.strokeRect(-w/2, -h/2, w, h);
+            }
+            ctx.restore();
+        }
+
+        function drawCircle(x, y, r, color) {
+            const stroke = getStrokeParams();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (stroke.width > 0) {
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.stroke();
+            }
+        }
+
+        function drawTriangle(x, y, base, height, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(0, -height/2);
+            ctx.lineTo(-base/2, height/2);
+            ctx.lineTo(base/2, height/2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (stroke.width > 0) {
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawTrapezoid(x, y, topW, bottomW, h, color, rotation = 0) {
+            const stroke = getStrokeParams();
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.moveTo(-topW / 2, -h / 2);
+            ctx.lineTo(topW / 2, -h / 2);
+            ctx.lineTo(bottomW / 2, h / 2);
+            ctx.lineTo(-bottomW / 2, h / 2);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            if (stroke.width > 0) {
+                ctx.strokeStyle = stroke.color;
+                ctx.lineWidth = stroke.width;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawLine(x1, y1, x2, y2, thickness, color) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineWidth = thickness;
+            ctx.strokeStyle = color;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+
+        // --- SISTEMA DE DIBUJO ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2 + 10;
+
+            const respiracionActiva = document.getElementById('opt-respiracion').checked;
+            const bob = respiracionActiva ? Math.sin(breatheAngle) * 2.5 : 0;
+            const scaleY = respiracionActiva ? 1 + Math.sin(breatheAngle) * 0.015 : 1;
+
+            if (currentCharacter === 'choso') {
+                // =========================================================
+                // CHOSO (ÚTERO MALDITO)
+                // =========================================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.8, 1.8);
+
+                // Piernas Blancas Anchas (Pantalones Hakama)
+                drawTrapezoid(-12, 44, 15, 20, 24, config.choso.colorRopaInterior);
+                drawTrapezoid(12, 44, 15, 20, 24, config.choso.colorRopaInterior);
+
+                // Tobillos vendados y zapatos
+                drawRect(-12, 58, 8, 6, config.choso.colorRopaInterior);
+                drawRect(12, 58, 8, 6, config.choso.colorRopaInterior);
+                drawRect(-12, 63, 13, 5, '#4a3b32'); // Botas marrones
+                drawRect(12, 63, 13, 5, '#4a3b32');
+
+                // --- Cuerpo superior oscilante ---
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Mangas Blancas de Fondo (Muy anchas)
+                drawRect(-18, -2, 14, 28, config.choso.colorRopaInterior, -15);
+                drawRect(18, -2, 14, 28, config.choso.colorRopaInterior, 15);
+
+                // Túnica Púrpura Ajustada (Faja/Cinturón central)
+                drawRect(0, 16, 22, 10, config.choso.colorTunica);
+
+                // Parte inferior de la túnica (Delantal púrpura largo)
+                drawTrapezoid(0, 30, 22, 25, 20, config.choso.colorTunica);
+
+                // Torso principal púrpura
+                drawTrapezoid(0, -2, 22, 26, 26, config.choso.colorTunica);
+
+                // Bufanda/Cuello alto púrpura oscuro
+                drawRect(0, -18, 18, 11, '#332140');
+                drawRect(0, -23, 16, 6, '#281a33');
+
+                // Manos (Piel clara)
+                drawCircle(-22, 11, 4.5, '#fceade');
+                drawCircle(22, 11, 4.5, '#fceade');
+
+                // Cabeza de Choso
+                drawCircle(0, -35, 11, '#fceade');
+
+                // Franja horizontal oscura en su rostro (Marca de sangre distintiva)
+                drawRect(0, -35, 16, 3, config.choso.colorMarca);
+
+                // Ojos cansados/marcas púrpuras debajo
+                drawCircle(-4, -37, 2, '#7a5a73');
+                drawCircle(4, -37, 2, '#7a5a73');
+                drawCircle(-4, -37, 0.8, '#111111');
+                drawCircle(4, -37, 0.8, '#111111');
+
+                // Pelo de Choso (Coletas de punta hacia arriba de la referencia)
+                if (config.choso.mostrarColetas) {
+                    // Pelo base
+                    drawCircle(0, -45, 9, '#261b17');
+                    // Coletas apuntando arriba
+                    drawTriangle(-7, -54, 8, 16, '#261b17', -25);
+                    drawTriangle(7, -54, 8, 16, '#261b17', 25);
+                    // Picos pequeños rebeldes
+                    drawTriangle(-12, -44, 4, 10, '#261b17', -65);
+                    drawTriangle(12, -44, 4, 10, '#261b17', 65);
+                }
+
+                ctx.restore();
+                ctx.restore();
+
+            } else if (currentCharacter === 'megumi') {
+                // =========================================================
+                // MEGUMI FUSHIGURO
+                // =========================================================
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.scale(1.8, 1.8);
+
+                // Pantalones oscuros rectos
+                drawRect(-8, 44, 9, 32, config.megumi.colorUniforme);
+                drawRect(8, 44, 9, 32, config.megumi.colorUniforme);
+
+                // Zapatos oscuros / botas marrones de la referencia
+                drawRect(-8, 62, 11, 6, '#4d3a2b');
+                drawRect(8, 62, 11, 6, '#4d3a2b');
+
+                // --- Cuerpo superior oscilante ---
+                ctx.save();
+                ctx.translate(0, bob);
+                ctx.scale(1, scaleY);
+
+                // Torso del Uniforme (Chaqueta de cuello alto cruzada)
+                drawTrapezoid(0, 10, 18, 20, 24, config.megumi.colorUniforme);
+                drawTrapezoid(0, -4, 22, 18, 18, config.megumi.colorUniforme);
+
+                // Botones Dorados Metálicos de la chaqueta (Detalle característico)
+                drawCircle(5, -6, 2, config.megumi.colorBotones);
+                drawCircle(6, 6, 2, config.megumi.colorBotones);
+
+                // Mangas largas oscuras
+                drawRect(-13, 0, 7, 24, config.megumi.colorUniforme, 10);
+                drawRect(13, 0, 7, 24, config.megumi.colorUniforme, -10);
+
+                // Manos
+                drawCircle(-15, 12, 4, config.megumi.colorPiel);
+                drawCircle(15, 12, 4, config.megumi.colorPiel);
+
+                // Cuello alto cruzado
+                drawRect(0, -15, 12, 8, config.megumi.colorUniforme);
+                drawLine(-5, -19, 6, -12, 2.5, '#111111'); // Solapa cruzada
+
+                // Cabeza
+                drawCircle(0, -27, 10, config.megumi.colorPiel);
+
+                // Expresión facial seria de Megumi
+                drawLine(-5, -29, -2, -29, 1.8, '#111111'); // Cejas
+                drawLine(2, -29, 5, -29, 1.8, '#111111');
+                drawCircle(-3.5, -26, 1.2, '#111111'); // Ojos
+                drawCircle(3.5, -26, 1.2, '#111111');
+
+                // Pelo de Megumi (Cabello puntiagudo muy alborotado)
+                if (config.megumi.mostrarPeloPuntiagudo) {
+                    const colorPelo = '#0d1017';
+                    // Base redonda del cráneo
+                    drawCircle(0, -32, 11, colorPelo);
+
+                    // Picos de pelo característicos por todo el alrededor
+                    drawTriangle(-12, -32, 6, 12, colorPelo, -60);
+                    drawTriangle(12, -32, 6, 12, colorPelo, 60);
+                    
+                    drawTriangle(-9, -41, 7, 14, colorPelo, -30);
+                    drawTriangle(9, -41, 7, 14, colorPelo, 30);
+
+                    drawTriangle(-4, -45, 8, 16, colorPelo, -10);
+                    drawTriangle(4, -45, 8, 16, colorPelo, 10);
+                    drawTriangle(0, -46, 8, 18, colorPelo, 0); // Pico central
+                }
+
+                ctx.restore();
+                ctx.restore();
+            }
+        }
+
+        // --- BUCLE DE ANIMACIÓN ---
+        function animate() {
+            breatheAngle += 0.045;
+            draw();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function toggleBreathing() {
+            const isChecked = document.getElementById('opt-respiracion').checked;
+            if (isChecked) {
+                if (!animationFrameId) animate();
+            } else {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                draw();
+            }
+        }
+
+        // --- ACTUALIZACIÓN DE CÓDIGO VECTORIAL ---
+        function updateCodeDisplay() {
+            const codeDisplay = document.getElementById('code-display');
+            const codeTitle = document.getElementById('code-box-title');
+            const strokeVal = document.getElementById('opt-contornos').checked ? "2.5" : "0";
+
+            if (currentCharacter === 'choso') {
+                codeTitle.textContent = "Código de Choso (Útero Maldito)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === DISEÑO VECTORIAL: CHOSO ===</span>
+setStroke(color: <span class="string">"#111111"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Cabeza y Marca de Sangre Distintiva</span>
+dibujarCirculo(cabeza, radio: 11, color: <span class="string">"#fceade"</span>);
+dibujarRectangulo(marca_rostro, ancho: 16, alto: 3, color: <span class="string">"${config.choso.colorMarca}"</span>);
+
+<span class="comment">// 2. Peinado de Doble Coleta Alzada</span>
+dibujarCirculo(base_pelo, radio: 9, color: <span class="string">"#261b17"</span>);
+dibujarTriangulo(coleta_izq, angulo: -25, color: <span class="string">"#261b17"</span>);
+dibujarTriangulo(coleta_der, angulo: 25, color: <span class="string">"#261b17"</span>);
+
+<span class="comment">// 3. Túnica Púrpura de Combate</span>
+dibujarTrapezoide(tunica_superior, color: <span class="string">"${config.choso.colorTunica}"</span>);
+dibujarRectangulo(faja_cintura, color: <span class="string">"${config.choso.colorTunica}"</span>);
+
+<span class="comment">// 4. Hakama y mangas holgadas</span>
+dibujarRectangulo(manga_izq, color: <span class="string">"${config.choso.colorRopaInterior}"</span>);
+dibujarTrapezoide(pantalon_izq, color: <span class="string">"${config.choso.colorRopaInterior}"</span>);
+`;
+            } else {
+                codeTitle.textContent = "Código de Megumi (Uniforme de Jujutsu)";
+                codeDisplay.innerHTML = `
+<span class="comment">// === DISEÑO VECTORIAL: MEGUMI ===</span>
+setStroke(color: <span class="string">"#111111"</span>, grosor: ${strokeVal});
+
+<span class="comment">// 1. Cabello Súper Puntiagudo de Erizo</span>
+dibujarCirculo(craneo, radio: 11, color: <span class="string">"#0d1017"</span>);
+dibujarTriangulo(pico_central, ancho: 8, alto: 18, color: <span class="string">"#0d1017"</span>);
+
+<span class="comment">// 2. Uniforme Oficial Oscuro</span>
+dibujarTrapezoide(chaqueta_torso, color: <span class="string">"${config.megumi.colorUniforme}"</span>);
+dibujarRectangulo(cuello_alto, color: <span class="string">"${config.megumi.colorUniforme}"</span>);
+
+<span class="comment">// 3. Botones Dorados del Uniforme</span>
+dibujarCirculo(boton_dorado_1, radio: 2, color: <span class="string">"${config.megumi.colorBotones}"</span>);
+dibujarCirculo(boton_dorado_2, radio: 2, color: <span class="string">"${config.megumi.colorBotones}"</span>);
+
+<span class="comment">// 4. Pantalones y Calzado</span>
+dibujarRectangulo(pierna_der, color: <span class="string">"${config.megumi.colorUniforme}"</span>);
+`;
+            }
+        }
+
+        // Intercambiar pestañas
+        function switchCharacter(charName) {
+            currentCharacter = charName;
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${charName}`).classList.add('active');
+            document.getElementById('preview-header-text').textContent = `Previsualización: ${charName === 'choso' ? 'Choso' : 'Megumi'}`;
+
+            renderOptionsUI();
+            updateCodeDisplay();
+            draw();
+        }
+
+        // Copiar Código
+        function copyCode() {
+            const codeText = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = "¡Copiado!";
+                copyBtn.style.backgroundColor = "#10b981";
+                setTimeout(() => {
+                    copyBtn.textContent = "Copiar Código";
+                    copyBtn.style.backgroundColor = "#2563eb";
+                }, 1500);
+            });
+        }
+
+        const originalDraw = draw;
+        draw = function() {
+            originalDraw();
+            updateCodeDisplay();
+        };
+
+        // --- INICIALIZACIÓN ---
+        renderOptionsUI();
+        toggleBreathing();
+    </script>
+</body>
+</html>
