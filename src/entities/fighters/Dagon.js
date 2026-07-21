@@ -340,11 +340,11 @@ export default class Dagon extends Fighter {
         const ox = x;
         const oy = masterY - 15;
 
-        // Helper drawing methods
+        // Helper drawing methods in local graphics space
         const drawRelRect = (dx, dy, w, h, color, rotDeg = 0) => {
             g.save();
-            g.translate(ox + dx * f, oy + dy);
-            g.rotate(rotDeg * f * Math.PI / 180);
+            g.translate(dx, dy);
+            g.rotate(rotDeg * Math.PI / 180);
             g.fillStyle(color, 1);
             g.fillRect(-w/2, -h/2, w, h);
             g.lineStyle(1.5, 0x000000, 1);
@@ -353,27 +353,21 @@ export default class Dagon extends Fighter {
         };
 
         const drawRelCircle = (dx, dy, r, color) => {
-            const rx = ox + dx * f;
-            const ry = oy + dy;
             g.fillStyle(color, 1);
-            g.fillCircle(rx, ry, r);
+            g.fillCircle(dx, dy, r);
             g.lineStyle(1.5, 0x000000, 1);
-            g.strokeCircle(rx, ry, r);
+            g.strokeCircle(dx, dy, r);
         };
 
         const drawRelLine = (dx1, dy1, dx2, dy2, width, color) => {
-            const rx1 = ox + dx1 * f;
-            const ry1 = oy + dy1;
-            const rx2 = ox + dx2 * f;
-            const ry2 = oy + dy2;
             g.lineStyle(width, color, 1);
-            g.lineBetween(rx1, ry1, rx2, ry2);
+            g.lineBetween(dx1, dy1, dx2, dy2);
         };
 
         const drawRelTriangle = (dx, dy, base, height, color, rotDeg = 0) => {
             g.save();
-            g.translate(ox + dx * f, oy + dy);
-            g.rotate(rotDeg * f * Math.PI / 180);
+            g.translate(dx, dy);
+            g.rotate(rotDeg * Math.PI / 180);
             g.fillStyle(color, 1);
             g.beginPath();
             g.moveTo(0, -height/2);
@@ -388,8 +382,8 @@ export default class Dagon extends Fighter {
 
         const drawRelTrapezoid = (dx, dy, topW, bottomW, h, color, rotDeg = 0) => {
             g.save();
-            g.translate(ox + dx * f, oy + dy);
-            g.rotate(rotDeg * f * Math.PI / 180);
+            g.translate(dx, dy);
+            g.rotate(rotDeg * Math.PI / 180);
             g.fillStyle(color, 1);
             g.beginPath();
             g.moveTo(-topW / 2, -h / 2);
@@ -431,8 +425,8 @@ export default class Dagon extends Fighter {
         // 3. ARMS
         const drawDagonArm = (sideSign, angle, extend = 0) => {
             g.save();
-            g.translate(ox + (sideSign * 13) * f, oy - 10);
-            g.rotate(angle * f * Math.PI / 180);
+            g.translate(sideSign * 13, -10);
+            g.rotate(angle * Math.PI / 180);
             
             const armLen = 26 + extend;
             g.fillStyle(colorRojo, 1);

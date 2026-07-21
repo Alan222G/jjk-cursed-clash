@@ -26,9 +26,20 @@ export default class InputManager {
         return this.keys[action] && this.keys[action].isDown;
     }
 
-    /** Check if a key was just pressed this frame */
+    /** Check if a key was just pressed this frame (cached per frame) */
     justPressed(action) {
-        return this.keys[action] && Phaser.Input.Keyboard.JustDown(this.keys[action]);
+        if (!this.keys[action]) return false;
+        const now = this.scene.time.now;
+        if (!this._lastFrameTime || this._lastFrameTime !== now) {
+            this._lastFrameTime = now;
+            this._justPressedCache = {};
+        }
+        if (this._justPressedCache[action] !== undefined) {
+            return this._justPressedCache[action];
+        }
+        const res = Phaser.Input.Keyboard.JustDown(this.keys[action]);
+        this._justPressedCache[action] = res;
+        return res;
     }
 
     /** Get horizontal input (-1, 0, 1) */

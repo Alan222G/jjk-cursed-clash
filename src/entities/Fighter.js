@@ -1175,11 +1175,11 @@ export default class Fighter {
             return;
         }
 
-        const S = 1.35; // Scale up 35%
-        this.graphics.setScale(S);
-        this.graphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
-        this.auraGraphics.setScale(S);
-        this.auraGraphics.setPosition(this.sprite.x * (1 - S), this.sprite.y * (1 - S));
+        const S = this.charData?.scale || 1.35;
+        this.graphics.setScale(S * this.facing, S);
+        this.graphics.setPosition(this.sprite.x, this.sprite.y);
+        this.auraGraphics.setScale(S * this.facing, S);
+        this.auraGraphics.setPosition(this.sprite.x, this.sprite.y);
 
         // Ground check — physics world bottom is at GROUND_Y,
         // so collideWorldBounds handles floor collision natively
@@ -1767,47 +1767,47 @@ export default class Fighter {
         g = g || this.graphics;
         const ox = this.sprite.x;
         const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
-        const f = this.facing;
 
-        const dx = x - ox;
-        const dy = y - oy;
-        const rx = ox + dx * f;
-        const ry = oy + dy;
-        const rRot = rotationDeg * f;
+        const rx = (x > 100 || x < -100) ? (x - ox) : x;
+        const ry = (y > 100) ? (y - oy) : y;
+        const rad = rotationDeg * Math.PI / 180;
 
-        const rad = rRot * Math.PI / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
-        const halfW = w / 2;
-        const halfH = h / 2;
-        const corners = [
-            { dx: -halfW, dy: -halfH },
-            { dx: halfW, dy: -halfH },
-            { dx: halfW, dy: halfH },
-            { dx: -halfW, dy: halfH }
-        ];
-        g.fillStyle(color, 1);
-        g.beginPath();
-        g.moveTo(rx + corners[0].dx * cos - corners[0].dy * sin, ry + corners[0].dx * sin + corners[0].dy * cos);
-        for (let i = 1; i < 4; i++) {
-            g.lineTo(rx + corners[i].dx * cos - corners[i].dy * sin, ry + corners[i].dx * sin + corners[i].dy * cos);
+        if (rotationDeg !== 0) {
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const halfW = w / 2;
+            const halfH = h / 2;
+            const corners = [
+                { dx: -halfW, dy: -halfH },
+                { dx: halfW, dy: -halfH },
+                { dx: halfW, dy: halfH },
+                { dx: -halfW, dy: halfH }
+            ];
+            g.fillStyle(color, 1);
+            g.beginPath();
+            g.moveTo(rx + corners[0].dx * cos - corners[0].dy * sin, ry + corners[0].dx * sin + corners[0].dy * cos);
+            for (let i = 1; i < 4; i++) {
+                g.lineTo(rx + corners[i].dx * cos - corners[i].dy * sin, ry + corners[i].dx * sin + corners[i].dy * cos);
+            }
+            g.closePath();
+            g.fillPath();
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokePath();
+        } else {
+            g.fillStyle(color, 1);
+            g.fillRect(rx - w / 2, ry - h / 2, w, h);
+            g.lineStyle(1.5, 0x000000, 1);
+            g.strokeRect(rx - w / 2, ry - h / 2, w, h);
         }
-        g.closePath();
-        g.fillPath();
-        g.lineStyle(1.5, 0x000000, 1);
-        g.strokePath();
     }
 
     drawCircle(g, x, y, r, color) {
         g = g || this.graphics;
         const ox = this.sprite.x;
         const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
-        const f = this.facing;
 
-        const dx = x - ox;
-        const dy = y - oy;
-        const rx = ox + dx * f;
-        const ry = oy + dy;
+        const rx = (x > 100 || x < -100) ? (x - ox) : x;
+        const ry = (y > 100) ? (y - oy) : y;
 
         g.fillStyle(color, 1);
         g.fillCircle(rx, ry, r);
@@ -1819,15 +1819,10 @@ export default class Fighter {
         g = g || this.graphics;
         const ox = this.sprite.x;
         const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
-        const f = this.facing;
 
-        const dx = x - ox;
-        const dy = y - oy;
-        const rx = ox + dx * f;
-        const ry = oy + dy;
-        const rRot = rotationDeg * f;
-
-        const rad = rRot * Math.PI / 180;
+        const rx = (x > 100 || x < -100) ? (x - ox) : x;
+        const ry = (y > 100) ? (y - oy) : y;
+        const rad = rotationDeg * Math.PI / 180;
         const cos = Math.cos(rad);
         const sin = Math.sin(rad);
         const corners = [
@@ -1850,17 +1845,11 @@ export default class Fighter {
         g = g || this.graphics;
         const ox = this.sprite.x;
         const oy = this.sprite.y + (this.stateMachine.isAny('idle', 'block') ? (this.idleBob || 0) : 0);
-        const f = this.facing;
 
-        const dx1 = x1 - ox;
-        const dy1 = y1 - oy;
-        const dx2 = x2 - ox;
-        const dy2 = y2 - oy;
-
-        const rx1 = ox + dx1 * f;
-        const ry1 = oy + dy1;
-        const rx2 = ox + dx2 * f;
-        const ry2 = oy + dy2;
+        const rx1 = (x1 > 100 || x1 < -100) ? (x1 - ox) : x1;
+        const ry1 = (y1 > 100) ? (y1 - oy) : y1;
+        const rx2 = (x2 > 100 || x2 < -100) ? (x2 - ox) : x2;
+        const ry2 = (y2 > 100) ? (y2 - oy) : y2;
 
         g.lineStyle(thickness, color, 1);
         g.lineBetween(rx1, ry1, rx2, ry2);

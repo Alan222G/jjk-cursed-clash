@@ -131,30 +131,30 @@ export default class Nanami extends Fighter {
         this.drawCircle(g, ox - 9 - Math.sin(22*Math.PI/180)*28, oy - 10 + Math.cos(22*Math.PI/180)*28, 3.8, skinColor);
 
         // Front Arm holding ratio sword
-        const armExtend = this.attackSwing * 40;
-        let fx, fy;
+        const armExtend = this.attackSwing * 35;
+        let fx = ox + 9;
+        let fy = oy + 17;
+        let armRot = -15;
+
         if (this.attackSwing > 0) {
-            fx = ox + (9 + 22 + armExtend) * f;
-            fy = oy - 10 + 5;
-            this.drawRect(g, ox + 9, oy - 10, 7.5, 28 + armExtend, suitColor, 85 * f);
+            fx = ox + 9 + 22 + armExtend;
+            fy = oy - 5;
+            armRot = -85;
+            this.drawRect(g, ox + 9 + armExtend/2, oy - 5, 28 + armExtend, 7.5, suitColor, armRot);
         } else {
-            fx = ox + 9;
-            fy = oy - 10 + 27;
-            this.drawRect(g, ox + 9, oy - 10, 7.5, 28, suitColor, -15 * f);
+            this.drawRect(g, ox + 9, oy - 10, 7.5, 28, suitColor, armRot);
         }
         this.drawCircle(g, fx, fy, 3.8, skinColor);
 
         // Ratio Sword (Cleaver wrapped in spotted bandage)
-        const rx = fx;
-        const ry = fy;
+        const lfx = fx - this.sprite.x;
+        const lfy = fy - masterY;
         g.save();
-        // Translate and rotate cleaver based on hand position
+        g.translate(lfx, lfy);
         if (this.attackSwing > 0) {
-            g.translate(rx, ry);
-            g.rotate((85 + this.attackSwing * 90) * f * Math.PI / 180);
+            g.rotate((-85 - this.attackSwing * 45) * Math.PI / 180);
         } else {
-            g.translate(rx, ry);
-            g.rotate(85 * f * Math.PI / 180);
+            g.rotate(75 * Math.PI / 180);
         }
 
         // Empuñadura (Handle)

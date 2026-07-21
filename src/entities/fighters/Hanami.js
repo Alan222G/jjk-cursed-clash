@@ -311,8 +311,8 @@ export default class Hanami extends Fighter {
         // Helper drawing methods
         const drawRelRect = (dx, dy, w, h, color, rotDeg = 0) => {
             g.save();
-            g.translate(ox + dx * f, oy + dy);
-            g.rotate(rotDeg * f * Math.PI / 180);
+            g.translate(dx, dy);
+            g.rotate(rotDeg * Math.PI / 180);
             g.fillStyle(color, 1);
             g.fillRect(-w/2, -h/2, w, h);
             g.lineStyle(1.5, 0x000000, 1);
@@ -321,27 +321,21 @@ export default class Hanami extends Fighter {
         };
 
         const drawRelCircle = (dx, dy, r, color) => {
-            const rx = ox + dx * f;
-            const ry = oy + dy;
             g.fillStyle(color, 1);
-            g.fillCircle(rx, ry, r);
+            g.fillCircle(dx, dy, r);
             g.lineStyle(1.5, 0x000000, 1);
-            g.strokeCircle(rx, ry, r);
+            g.strokeCircle(dx, dy, r);
         };
 
         const drawRelLine = (dx1, dy1, dx2, dy2, width, color) => {
-            const rx1 = ox + dx1 * f;
-            const ry1 = oy + dy1;
-            const rx2 = ox + dx2 * f;
-            const ry2 = oy + dy2;
             g.lineStyle(width, color, 1);
-            g.lineBetween(rx1, ry1, rx2, ry2);
+            g.lineBetween(dx1, dy1, dx2, dy2);
         };
 
         const drawRelTrapezoid = (dx, dy, topW, bottomW, h, color, rotDeg = 0) => {
             g.save();
-            g.translate(ox + dx * f, oy + dy);
-            g.rotate(rotDeg * f * Math.PI / 180);
+            g.translate(dx, dy);
+            g.rotate(rotDeg * Math.PI / 180);
             g.fillStyle(color, 1);
             g.beginPath();
             g.moveTo(-topW / 2, -h / 2);
@@ -360,8 +354,8 @@ export default class Hanami extends Fighter {
         
         // Left Leg
         g.save();
-        g.translate(ox - 9 * f, oy + 45);
-        g.rotate(legAngle * f * Math.PI / 180);
+        g.translate(-9, 45);
+        g.rotate(legAngle * Math.PI / 180);
         g.fillStyle(colorHueso, 1);
         g.fillRect(-8/2, -30/2, 8, 30);
         g.lineStyle(1.5, 0x000000, 1);
@@ -374,8 +368,8 @@ export default class Hanami extends Fighter {
 
         // Right Leg
         g.save();
-        g.translate(ox + 9 * f, oy + 45);
-        g.rotate(-legAngle * f * Math.PI / 180);
+        g.translate(9, 45);
+        g.rotate(-legAngle * Math.PI / 180);
         g.fillStyle(colorHueso, 1);
         g.fillRect(-8/2, -30/2, 8, 30);
         g.lineStyle(1.5, 0x000000, 1);
@@ -407,8 +401,8 @@ export default class Hanami extends Fighter {
         // 4. ARMS
         const drawHanamiArm = (sideSign, angle, extend = 0) => {
             g.save();
-            g.translate(ox + (sideSign * 12) * f, oy - 18);
-            g.rotate(angle * f * Math.PI / 180);
+            g.translate(sideSign * 12, -18);
+            g.rotate(angle * Math.PI / 180);
             
             const armLen = 26 + extend;
             g.fillStyle(colorHueso, 1);

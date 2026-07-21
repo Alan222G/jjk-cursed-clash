@@ -154,11 +154,11 @@ export default class GameScene extends Phaser.Scene {
         cam.scrollX = spawnCenterX - GAME_WIDTH / 2;
         cam.scrollY = 0;
         
-        // Camera zoom limits — tight range for smooth feel
-        this.camZoomMin = 0.70;  // Zoomed out — see the arena without extreme zoom
-        this.camZoomMax = 0.85;  // Zoomed in — close combat
+        // Camera zoom limits — wide dynamic range for epic stickman fight feel
+        this.camZoomMin = 0.75;  // Zoomed out — see arena when far apart
+        this.camZoomMax = 1.25;  // Zoomed in — close, intense combat
         this.camPadding = 200;   // Minimum pixel padding from edge of screen to fighters
-        this.camLerpSpeed = 0.03; // Very smooth interpolation (was 0.06)
+        this.camLerpSpeed = 0.05; // Smooth interpolation
 
         // ── Pause Menu ──
         this.input.keyboard.on('keydown-ESC', () => {
