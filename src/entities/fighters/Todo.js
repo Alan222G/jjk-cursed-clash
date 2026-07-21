@@ -60,13 +60,25 @@ export default class Todo extends Fighter {
         }
 
         // 3. ARMS
-        const clapCycle = isMoving ? Math.sin(time * 3) : -0.5;
-        const isClapping = (this.stateMachine.is('attack') || (isMoving && Math.abs(clapCycle) > 0.85));
+        const isCastingBoogie = this.stateMachine.is('special');
+        let armRotL = isMoving ? Math.sin(time * 1.5) * 10 - 15 : -15;
+        let armRotR = isMoving ? -Math.sin(time * 1.5) * 10 + 15 : 15;
+        let rArmX = ox + 18;
+        let rArmY = oy - 14;
 
-        // Left arm
+        if (isCastingBoogie) {
+            armRotL = 52;
+            armRotR = -52;
+        } else if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            armRotR = -85 * swing;
+            rArmX = ox + 18 + 20 * swing;
+            rArmY = oy - 14 - 2 * swing;
+        }
+
+        // Left arm (Back arm)
         g.save();
         g.translate(ox - 18, oy - 14);
-        const armRotL = isClapping ? 52 : (-20 + Math.sin(time * 1.5) * 10);
         g.rotate(armRotL * Math.PI / 180);
         this.drawRect(g, 0, 12, 11, 24, skinColor);
         this.drawCircle(g, 0, 23, 6, shadowColor); // Elbow joint
@@ -74,10 +86,9 @@ export default class Todo extends Fighter {
         this.drawCircle(g, 0, 41, 6, skinColor); // Hand
         g.restore();
 
-        // Right arm
+        // Right arm (Front arm)
         g.save();
-        g.translate(ox + 18, oy - 14);
-        const armRotR = isClapping ? -52 : (20 - Math.sin(time * 1.5) * 10);
+        g.translate(rArmX, rArmY);
         g.rotate(armRotR * Math.PI / 180);
         this.drawRect(g, 0, 12, 11, 24, skinColor);
         this.drawCircle(g, 0, 23, 6, shadowColor);
@@ -85,8 +96,8 @@ export default class Todo extends Fighter {
         this.drawCircle(g, 0, 41, 6, skinColor);
         g.restore();
 
-        // Boogie Woogie clap energy effect
-        if (isClapping) {
+        // Boogie Woogie clap energy effect (only when casting Boogie Woogie)
+        if (isCastingBoogie) {
             g.save();
             const pulse = Math.sin(time * 15) * 5;
             g.fillStyle(0x38bdf8, 0.8);

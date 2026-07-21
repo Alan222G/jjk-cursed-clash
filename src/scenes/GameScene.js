@@ -817,20 +817,15 @@ export default class GameScene extends Phaser.Scene {
         cam.scrollX = Phaser.Math.Linear(cam.scrollX, targetScrollX, lerpSpeed);
         cam.scrollY = Phaser.Math.Linear(cam.scrollY, targetScrollY, lerpSpeed);
 
-        // ── Sync HTML background to camera (restored original dynamic formula but scaled up to cover screen) ──
+        // ── HTML Background — static, full cover without movements ──
         const bgImg = document.getElementById('game-bg-img');
         if (bgImg) {
-            // Scale background to match zoom, scaled up by 1.65 so it fully covers screen with zoom bounds
-            const scaleX = cam.zoom * 1.65;
-            // Map the camera scroll ratio (0 to 1) to translate the background image within its extra scaled boundaries
-            const scrollRatioX = cam.scrollX / (this.worldWidth - viewW || 1);
-            const scrollRatioY = cam.scrollY / (this.worldHeight - viewH || 1);
-            
-            const panX = -(scrollRatioX - 0.5) * (GAME_WIDTH * (scaleX - 1));
-            const panY = -(scrollRatioY - 0.5) * (GAME_HEIGHT * (scaleX - 1)) * 0.4; // Subtle vertical parallax
-            
-            bgImg.style.transform = `scale(${scaleX}) translate(${panX / scaleX}px, ${panY / scaleX}px)`;
-            bgImg.style.transformOrigin = 'center center';
+            bgImg.style.transform = 'none';
+            bgImg.style.width = '100vw';
+            bgImg.style.height = '100vh';
+            bgImg.style.objectFit = 'cover';
+            bgImg.style.top = '0';
+            bgImg.style.left = '0';
         }
     }
 

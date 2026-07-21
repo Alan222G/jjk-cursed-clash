@@ -147,14 +147,12 @@ export default class Nanami extends Fighter {
         this.drawCircle(g, fx, fy, 3.8, skinColor);
 
         // Ratio Sword (Cleaver wrapped in spotted bandage)
-        const lfx = fx - this.sprite.x;
-        const lfy = fy - masterY;
         g.save();
-        g.translate(lfx, lfy);
+        g.translate(ox + (fx - ox) * f, fy);
         if (this.attackSwing > 0) {
-            g.rotate((-85 - this.attackSwing * 45) * Math.PI / 180);
+            g.rotate((-85 - this.attackSwing * 45) * f * Math.PI / 180);
         } else {
-            g.rotate(75 * Math.PI / 180);
+            g.rotate(75 * f * Math.PI / 180);
         }
 
         // Empuñadura (Handle)

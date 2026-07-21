@@ -379,11 +379,31 @@ export default class Jogo extends Fighter {
         }
 
         // ── Arms (dark sleeves under cloak) ──
-        this.drawRect(g, ox - 13, oy - 18, 8, 28, sleeveColor, rotArmSup - 15);
-        this.drawRect(g, ox + 13, oy - 18, 8, 28, sleeveColor, -rotArmSup + 15);
+        let leftArmAngle = rotArmSup - 15;
+        let rightArmAngle = -rotArmSup + 15;
+        let leftHandX = ox - 18;
+        let leftHandY = oy + 4;
+        let rightHandX = ox + 18;
+        let rightHandY = oy + 4;
+
+        if (this.attackSwing > 0) {
+            const swing = this.attackSwing;
+            if (f > 0) {
+                rightArmAngle = -85 * swing;
+                rightHandX = ox + 18 + 16 * swing;
+                rightHandY = oy - 18;
+            } else {
+                leftArmAngle = 85 * swing;
+                leftHandX = ox - 18 - 16 * swing;
+                leftHandY = oy - 18;
+            }
+        }
+
+        this.drawRect(g, ox - 13, oy - 18, 8, 28, sleeveColor, leftArmAngle);
+        this.drawRect(g, ox + 13, oy - 18, 8, 28, sleeveColor, rightArmAngle);
         // Pale hands
-        this.drawCircle(g, ox - 18, oy + 4, 4, headColor);
-        this.drawCircle(g, ox + 18, oy + 4, 4, headColor);
+        this.drawCircle(g, leftHandX, leftHandY, 4, headColor);
+        this.drawCircle(g, rightHandX, rightHandY, 4, headColor);
 
         // ── Head (pale cyclops) ──
         this.drawCircle(g, ox, oy - 42, 13, headColor);
