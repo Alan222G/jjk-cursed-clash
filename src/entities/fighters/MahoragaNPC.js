@@ -29,10 +29,10 @@ export default class MahoragaNPC {
         this.ultimateReady = false;
         this.state = 'idle'; // 'idle', 'walk', 'attack', 'hitstun', 'dead'
 
-        // ── Physics Body (same size as Sukuna 20 fingers) ──
-        this.sprite = scene.add.rectangle(x, y, 75, 150, 0x000000, 0);
+        // ── Physics Body (Giant Colossal General — 1.25x size) ──
+        this.sprite = scene.add.rectangle(x, y, 95, 190, 0x000000, 0);
         scene.physics.add.existing(this.sprite);
-        this.sprite.body.setSize(75, 150);
+        this.sprite.body.setSize(95, 190);
         this.sprite.body.setGravityY(PHYSICS.GRAVITY);
         this.sprite.body.setDragX(PHYSICS.DRAG_X);
         this.sprite.body.setCollideWorldBounds(true);
@@ -173,6 +173,9 @@ export default class MahoragaNPC {
         const sy = this.sprite.y;
         const f = this.facing;
         const g = this.graphics;
+
+        g.setScale(1.25);
+        g.setPosition(sx * (1 - 1.25), sy * (1 - 1.25));
 
         const skinColor = 0xe2e8f0;
         const hakamaColor = 0x14151f;

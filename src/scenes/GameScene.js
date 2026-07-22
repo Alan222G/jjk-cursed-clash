@@ -780,20 +780,8 @@ export default class GameScene extends Phaser.Scene {
         const midX = (p1x + p2x) / 2;
         const midY = (p1y + p2y) / 2;
 
-        // ── Distance-based zoom ──
-        const dx = Math.abs(p1x - p2x);
-        const dy = Math.abs(p1y - p2y);
-        const dist = Math.max(dx, dy * 1.5); // Weight vertical distance more
-
-        // Calculate zoom: the further apart, the more we zoom out
-        // At dist=0 → maxZoom, at dist=1200+ → minZoom
-        const zoomRange = this.camZoomMax - this.camZoomMin;
-        const distNorm = Phaser.Math.Clamp(dist / 1200, 0, 1);
-        const targetZoom = this.camZoomMax - distNorm * zoomRange;
-
-        // Smooth lerp zoom
-        const lerpSpeed = this.camLerpSpeed;
-        cam.zoom = Phaser.Math.Linear(cam.zoom, targetZoom, lerpSpeed);
+        // Fixed camera zoom (no dynamic zoom in or out)
+        cam.zoom = 1.0;
 
         // ── Camera scroll target (centered on midpoint) ──
         const viewW = GAME_WIDTH / cam.zoom;
