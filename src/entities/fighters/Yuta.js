@@ -1155,7 +1155,8 @@ export default class Yuta extends Fighter {
             this.drawCircle(g, ox - 4, oy - 42, 1.8, 0x3b82f6);
             this.drawCircle(g, ox + 4, oy - 42, 1.8, 0x3b82f6);
         }
-        g.fillCircle(x + 18 * f, armY + 20, 2);
+        // Ring on finger (Rika's ring)
+        this.drawCircle(g, ox + 18, oy + 6, 2, 0xFFDD00);
 
         // Copy mode aura
         if (this.copyActive) {

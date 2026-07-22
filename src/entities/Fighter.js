@@ -120,8 +120,16 @@ export default class Fighter {
     }
 
     setupMatrixStack(g) {
+        if (!g) return;
         g.matrixStack = [];
         g.currentMatrix = [1, 0, 0, 1, 0, 0];
+
+        const origClear = g.clear.bind(g);
+        g.clear = () => {
+            g.matrixStack = [];
+            g.currentMatrix = [1, 0, 0, 1, 0, 0];
+            return origClear();
+        };
 
         g.save = () => {
             g.matrixStack.push([...g.currentMatrix]);
@@ -131,11 +139,15 @@ export default class Fighter {
         g.restore = () => {
             if (g.matrixStack.length > 0) {
                 g.currentMatrix = g.matrixStack.pop();
+            } else {
+                g.currentMatrix = [1, 0, 0, 1, 0, 0];
             }
             return g;
         };
 
         g.translate = (x, y) => {
+            x = Number.isFinite(x) ? x : 0;
+            y = Number.isFinite(y) ? y : 0;
             const m = g.currentMatrix;
             const tx = m[0] * x + m[2] * y + m[4];
             const ty = m[1] * x + m[3] * y + m[5];
@@ -145,6 +157,7 @@ export default class Fighter {
         };
 
         g.rotate = (angle) => {
+            angle = Number.isFinite(angle) ? angle : 0;
             const m = g.currentMatrix;
             const cos = Math.cos(angle);
             const sin = Math.sin(angle);
@@ -293,14 +306,6 @@ export default class Fighter {
             const c2 = transformPoint(x2, y2);
             const c3 = transformPoint(x3, y3);
             origStrokeTriangle(c1.x, c1.y, c2.x, c2.y, c3.x, c3.y);
-            return g;
-        };
-
-        const origClear = g.clear.bind(g);
-        g.clear = () => {
-            g.matrixStack = [];
-            g.currentMatrix = [1, 0, 0, 1, 0, 0];
-            origClear();
             return g;
         };
     }

@@ -174,9 +174,6 @@ export default class MahoragaNPC {
         const f = this.facing;
         const g = this.graphics;
 
-        g.setScale(1.25);
-        g.setPosition(sx * (1 - 1.25), sy * (1 - 1.25));
-
         const skinColor = 0xe2e8f0;
         const hakamaColor = 0x14151f;
         const beltColor = 0xf1f5f9;
