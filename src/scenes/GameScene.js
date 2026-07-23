@@ -55,6 +55,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // Reset camera FX (clear persistent fadeOut from MapSelectScene) and fade in smoothly
+        this.cameras.main.resetFX();
+        this.cameras.main.fadeIn(400, 0, 0, 0);
+
         // ── Background & Environment ──
         const bgImg = document.getElementById('game-bg-img');
         if (bgImg) {
@@ -64,9 +68,11 @@ export default class GameScene extends Phaser.Scene {
                 bgImg.src = 'assets/backgrounds/shibuya.png';
             }
             bgImg.style.display = 'block';
+            bgImg.style.opacity = '1';
         }
 
         this.events.on('shutdown', () => {
+            this.cameras.main.resetFX();
             if (bgImg) {
                 bgImg.style.display = 'none';
                 bgImg.style.transform = '';

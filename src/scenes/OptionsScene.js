@@ -7,6 +7,8 @@ export default class OptionsScene extends Phaser.Scene {
     }
 
     create() {
+        this.cameras.main.resetFX();
+        this.cameras.main.fadeIn(300, 0, 0, 0);
         this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x0A0A12).setOrigin(0);
 
         const cx = GAME_WIDTH / 2;

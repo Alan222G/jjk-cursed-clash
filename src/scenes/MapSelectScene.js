@@ -33,6 +33,9 @@ export default class MapSelectScene extends Phaser.Scene {
     }
 
     create() {
+        this.cameras.main.resetFX();
+        this.cameras.main.fadeIn(300, 0, 0, 0);
+
         // Stop all previous audio
         this.sound.stopAll();
 

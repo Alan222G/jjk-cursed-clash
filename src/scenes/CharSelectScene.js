@@ -80,6 +80,8 @@ export default class CharSelectScene extends Phaser.Scene {
     }
 
     create() {
+        this.cameras.main.resetFX();
+        this.cameras.main.fadeIn(300, 0, 0, 0);
         this.timer = 0;
 
         // ── Player cursor positions on the GRID (row, col) ──
